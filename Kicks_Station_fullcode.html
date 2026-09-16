@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KicksLokal | Premium Urban Footwear</title>
+    <title>Kicks Station | Premium Urban Footwear</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -87,6 +87,15 @@
             width: 100%;
         }
     </style>
+    <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-XXXXXXXXXX');
+</script>
 </head>
 
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 font-grotesk antialiased selection:bg-blue-600 selection:text-white relative transition-colors duration-300 text-left">
@@ -99,7 +108,7 @@
     </button>
 
     <!-- TOMBOL WHATSAPP -->
-    <a href="https://wa.me/6285931100080?text=Halo%20KicksLokal,%20saya%20mau%20bertanya%20tentang%20produk."
+    <a href="https://wa.me/6285931100080?text=Halo%20Kicks Station,%20saya%20mau%20bertanya%20tentang%20produk."
         target="_blank"
         class="whatsapp-float-anim fixed bottom-6 right-6 z-40 bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110">
         <ion-icon name="logo-whatsapp" class="text-3xl"></ion-icon>
@@ -112,7 +121,7 @@
                 <div class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-2xl text-xl font-black tracking-tight shadow-md flex items-center justify-center transition-all duration-300 hover:-rotate-6 hover:scale-105 cursor-pointer">
                     Kilo!
                 </div>
-                <span class="text-2xl font-black tracking-wider text-gray-900 dark:text-white">KicksLokal</span>
+                <span class="text-2xl font-black tracking-wider text-gray-900 dark:text-white">Kicks Station</span>
             </div>
             <nav class="hidden md:flex items-center gap-8 font-medium">
                 <a href="#" onclick="setActiveNav(this)" class="nav-link text-blue-600 font-semibold dark:text-blue-400 transition-colors">Beranda</a>
@@ -1553,7 +1562,7 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="text-center max-w-2xl mx-auto mb-16">
                 <span class="text-blue-600 dark:text-blue-400 font-bold uppercase tracking-widest text-xs" data-i18n="feat_sub">Mengapa Memilih Kami</span>
-                <h2 class="text-3xl font-black text-gray-900 dark:text-white mt-2" data-i18n="feat_title">Keunggulan KicksLokal</h2>
+                <h2 class="text-3xl font-black text-gray-900 dark:text-white mt-2" data-i18n="feat_title">Keunggulan Kicks Station</h2>
                 <p class="text-gray-500 dark:text-gray-400 mt-2 text-sm" data-i18n="feat_desc">Komitmen kami untuk menghadirkan pengalaman belanja sepatu terbaik, aman, dan terpercaya.</p>
             </div>
 
@@ -1660,7 +1669,7 @@
                     <div class="bg-blue-600 text-white px-3 py-1.5 rounded-2xl text-xl font-black tracking-tight shadow-md flex items-center justify-center">
                         Kilo!
                     </div>
-                    <span class="text-2xl font-black tracking-wider">KicksLokal</span>
+                    <span class="text-2xl font-black tracking-wider">Kicks Station</span>
                 </div>
                 <p class="text-gray-400 text-sm leading-relaxed max-w-md">Menghadirkan kurasi eksklusif produk dari brand pilihan dengan penawaran harga terbaik di bawah pasaran.</p>
             </div>
@@ -1675,7 +1684,7 @@
             </div>
         </div>
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-gray-900 mt-12 pt-8 text-center text-sm text-gray-500">
-            &copy; 2026 KicksLokal Indonesia. All rights reserved.
+            &copy; 2026 Kicks Station Indonesia. All rights reserved.
         </div>
     </footer>
 
@@ -1979,7 +1988,7 @@
                 alert('Keranjang belanja Anda kosong!');
                 return;
             }
-            let text = "Halo KicksLokal, saya ingin memesan:\n\n";
+            let text = "Halo Kicks Station, saya ingin memesan:\n\n";
             let total = 0;
             cart.forEach((item, index) => {
                 let subtotal = item.price * item.qty;
