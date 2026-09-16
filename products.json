@@ -22,5 +22,855 @@
       "44 2/3",
       "45 1/3"
     ]
+  },
+  {
+    "id": 2,
+    "nama": "Diadora Savia LT Green",
+    "brand": "diadora",
+    "harga": 519500,
+    "harga_coret": 699000,
+    "tipe": "running",
+    "asal": "internasional",
+    "pengguna": "wanita",
+    "upload_order": 49,
+    "gambar": "images/e/e (9).jpeg",
+    "sizes": [
+      "37 (23cm)"
+    ]
+  },
+  {
+    "id": 3,
+    "nama": "Diadora Sakra LT Green",
+    "brand": "diadora",
+    "harga": 537000,
+    "harga_coret": 699000,
+    "tipe": "running",
+    "asal": "internasional",
+    "pengguna": "wanita",
+    "upload_order": 48,
+    "gambar": "images/e/e (8).jpeg",
+    "sizes": [
+      "37",
+      "38",
+      "39"
+    ]
+  },
+  {
+    "id": 4,
+    "nama": "Diadora Rayvild White",
+    "brand": "diadora",
+    "harga": 424500,
+    "harga_coret": 559000,
+    "tipe": "running",
+    "asal": "internasional",
+    "pengguna": "wanita",
+    "upload_order": 47,
+    "gambar": "images/e/e (7).jpeg",
+    "sizes": [
+      "38",
+      "40"
+    ]
+  },
+  {
+    "id": 5,
+    "nama": "Adidas GameCourt 2 White",
+    "brand": "adidas",
+    "harga": 914500,
+    "harga_coret": 1199000,
+    "tipe": "running",
+    "asal": "internasional",
+    "pengguna": "pria",
+    "upload_order": 46,
+    "gambar": "images/e/e (6).jpeg",
+    "sizes": [
+      "43 1/3 [27.5cm]"
+    ]
+  },
+  {
+    "id": 6,
+    "nama": "Specs Airglide Women",
+    "brand": "specs",
+    "harga": 555000,
+    "harga_coret": 740000,
+    "tipe": "running",
+    "asal": "lokal",
+    "pengguna": "wanita",
+    "upload_order": 45,
+    "gambar": "images/e/e (5).jpeg",
+    "sizes": [
+      "37",
+      "38",
+      "39",
+      "40"
+    ]
+  },
+  {
+    "id": 7,
+    "nama": "Skechers Go Walk Flex - Reveal",
+    "brand": "skechers",
+    "harga": 837000,
+    "harga_coret": 1199000,
+    "tipe": "kasual",
+    "asal": "internasional",
+    "pengguna": "pria",
+    "upload_order": 44,
+    "gambar": "images/e/e (4).jpeg",
+    "sizes": [
+      "45 [29.5cm]"
+    ]
+  },
+  {
+    "id": 8,
+    "nama": "Nike Isofly Special For Basket",
+    "brand": "nike",
+    "harga": 787500,
+    "harga_coret": 1100000,
+    "tipe": "running",
+    "asal": "internasional",
+    "pengguna": "unisex",
+    "upload_order": 43,
+    "gambar": "images/e/e (3).jpeg",
+    "sizes": [
+      "38.5",
+      "39",
+      "40"
+    ]
+  },
+  {
+    "id": 9,
+    "nama": "New Balance Trail Running 410 V8",
+    "brand": "new balance",
+    "harga": 887000,
+    "harga_coret": 1299000,
+    "tipe": "running",
+    "asal": "internasional",
+    "pengguna": "pria",
+    "upload_order": 42,
+    "gambar": "images/e/e (2).jpeg",
+    "sizes": [
+      "40.5",
+      "41",
+      "41.5",
+      "42",
+      "42.5",
+      "43",
+      "44",
+      "45"
+    ]
+  },
+  {
+    "id": 10,
+    "nama": "Skecher Go Walk Joy - Highlight",
+    "brand": "skechers",
+    "harga": 874500,
+    "harga_coret": 1299000,
+    "tipe": "kasual",
+    "asal": "internasional",
+    "pengguna": "wanita",
+    "upload_order": 41,
+    "gambar": "images/e/e (1).jpeg",
+    "sizes": [
+      "37",
+      "37.5",
+      "38",
+      "38.5",
+      "39"
+    ]
+  },
+  {
+    "id": 11,
+    "nama": "Skechers Bobs Geo Lite - Fixed Edge Taupe",
+    "brand": "skechers",
+    "harga": 839500,
+    "harga_coret": 1199000,
+    "tipe": "kasual",
+    "asal": "internasional",
+    "pengguna": "pria",
+    "upload_order": 40,
+    "gambar": "images/d/d (10).jpeg",
+    "sizes": [
+      "41",
+      "43"
+    ]
+  },
+  {
+    "id": 12,
+    "nama": "Skechers Bobs Arc Waves 2.0 - Class Form",
+    "brand": "skechers",
+    "harga": 969500,
+    "harga_coret": 1299000,
+    "tipe": "kasual",
+    "asal": "internasional",
+    "pengguna": "pria",
+    "upload_order": 39,
+    "gambar": "images/d/d (9).jpeg",
+    "sizes": [
+      "40",
+      "41",
+      "42",
+      "43",
+      "45"
+    ]
+  },
+  {
+    "id": 13,
+    "nama": "Skechers Pure Genius - Pure Vibes",
+    "brand": "skechers",
+    "harga": 869500,
+    "harga_coret": 1199000,
+    "tipe": "kasual",
+    "asal": "internasional",
+    "pengguna": "wanita",
+    "upload_order": 38,
+    "gambar": "images/d/d (8).jpeg",
+    "sizes": [
+      "36",
+      "37",
+      "38",
+      "39"
+    ]
+  },
+  {
+    "id": 14,
+    "nama": "Diadora Pericle Biru Tua",
+    "brand": "diadora",
+    "harga": 587000,
+    "harga_coret": 899000,
+    "tipe": "running",
+    "asal": "internasional",
+    "pengguna": "pria",
+    "upload_order": 37,
+    "gambar": "images/d/d (7).jpeg",
+    "sizes": [
+      "39",
+      "44",
+      "45"
+    ]
+  },
+  {
+    "id": 15,
+    "nama": "Skechers Go Walk Max Cushioning Hyper Burst - Zoltar",
+    "brand": "skechers",
+    "harga": 1079500,
+    "harga_coret": 1599000,
+    "tipe": "kasual",
+    "asal": "internasional",
+    "pengguna": "pria",
+    "upload_order": 36,
+    "gambar": "images/d/d (6).jpeg",
+    "sizes": [
+      "44"
+    ]
+  },
+  {
+    "id": 16,
+    "nama": "Nike Revolution 8 Artic Orange",
+    "brand": "nike",
+    "harga": 769500,
+    "harga_coret": 989000,
+    "tipe": "running",
+    "asal": "internasional",
+    "pengguna": "wanita",
+    "upload_order": 35,
+    "gambar": "images/d/d (5).jpeg",
+    "sizes": [
+      "38",
+      "40.5"
+    ]
+  },
+  {
+    "id": 17,
+    "nama": "Skechers Go Walk Arch Fit - Joy - Dale",
+    "brand": "skechers",
+    "harga": 868500,
+    "harga_coret": 1207000,
+    "tipe": "kasual",
+    "asal": "internasional",
+    "pengguna": "pria",
+    "upload_order": 34,
+    "gambar": "images/d/d (4).jpeg",
+    "sizes": [
+      "41",
+      "42.5"
+    ]
+  },
+  {
+    "id": 18,
+    "nama": "Diadora Soyko Beige",
+    "brand": "diadora",
+    "harga": 562500,
+    "harga_coret": 750000,
+    "tipe": "running",
+    "asal": "internasional",
+    "pengguna": "wanita",
+    "upload_order": 33,
+    "gambar": "images/d/d (3).jpeg",
+    "sizes": [
+      "37",
+      "38",
+      "39",
+      "40"
+    ]
+  },
+  {
+    "id": 19,
+    "nama": "Nike Flex Experience RN 12 Black",
+    "brand": "nike",
+    "harga": 734500,
+    "harga_coret": 919000,
+    "tipe": "running",
+    "asal": "internasional",
+    "pengguna": "pria",
+    "upload_order": 32,
+    "gambar": "images/d/d (2).jpeg",
+    "sizes": [
+      "42",
+      "42.5",
+      "43",
+      "44"
+    ]
+  },
+  {
+    "id": 20,
+    "nama": "Nike Gamma Force White",
+    "brand": "nike",
+    "harga": 1049500,
+    "harga_coret": 1499000,
+    "tipe": "kasual",
+    "asal": "internasional",
+    "pengguna": "wanita",
+    "upload_order": 31,
+    "gambar": "images/d/d (1).jpeg",
+    "sizes": [
+      "38",
+      "38.5"
+    ]
+  },
+  {
+    "id": 21,
+    "nama": "Diadora Speranza Black",
+    "brand": "diadora",
+    "harga": 444500,
+    "harga_coret": 599000,
+    "tipe": "running",
+    "asal": "internasional",
+    "pengguna": "pria",
+    "upload_order": 30,
+    "gambar": "images/c/c (10).jpeg",
+    "sizes": [
+      "39",
+      "40",
+      "41",
+      "42",
+      "43"
+    ]
+  },
+  {
+    "id": 22,
+    "nama": "Skechers Go Walk Arch Fit - Joy - Dale",
+    "brand": "skechers",
+    "harga": 868500,
+    "harga_coret": 1207000,
+    "tipe": "kasual",
+    "asal": "internasional",
+    "pengguna": "pria",
+    "upload_order": 29,
+    "gambar": "images/c/c (9).jpeg",
+    "sizes": [
+      "42",
+      "42.5"
+    ]
+  },
+  {
+    "id": 23,
+    "nama": "Nike Revolution 7 Full Black Special",
+    "brand": "nike",
+    "harga": 714500,
+    "harga_coret": 899000,
+    "tipe": "running",
+    "asal": "internasional",
+    "pengguna": "pria",
+    "upload_order": 28,
+    "gambar": "images/c/c (8).jpeg",
+    "sizes": [
+      "40",
+      "40.5",
+      "41",
+      "42",
+      "42.5",
+      "43",
+      "44",
+      "44.5"
+    ]
+  },
+  {
+    "id": 24,
+    "nama": "Skecher Flex Appeal 5.0 - Luxe Glow",
+    "brand": "skechers",
+    "harga": 874500,
+    "harga_coret": 1299000,
+    "tipe": "kasual",
+    "asal": "internasional",
+    "pengguna": "wanita",
+    "upload_order": 27,
+    "gambar": "images/c/c (7).jpeg",
+    "sizes": [
+      "37",
+      "40"
+    ]
+  },
+  {
+    "id": 25,
+    "nama": "New Balance Running Special Coast V4",
+    "brand": "new balance",
+    "harga": 599500,
+    "harga_coret": 899000,
+    "tipe": "running",
+    "asal": "internasional",
+    "pengguna": "wanita",
+    "upload_order": 26,
+    "gambar": "images/c/c (6).jpeg",
+    "sizes": [
+      "37.5",
+      "40"
+    ]
+  },
+  {
+    "id": 26,
+    "nama": "Diadora Razelio Mono Black",
+    "brand": "diadora",
+    "harga": 474500,
+    "harga_coret": 599000,
+    "tipe": "running",
+    "asal": "internasional",
+    "pengguna": "pria",
+    "upload_order": 25,
+    "gambar": "images/c/c (5).jpeg",
+    "sizes": [
+      "39",
+      "42",
+      "43"
+    ]
+  },
+  {
+    "id": 27,
+    "nama": "New Balance M520GV6 Grey",
+    "brand": "new balance",
+    "harga": 799500,
+    "harga_coret": 1199000,
+    "tipe": "running",
+    "asal": "internasional",
+    "pengguna": "pria",
+    "upload_order": 24,
+    "gambar": "images/c/c (4).jpeg",
+    "sizes": [
+      "42",
+      "43"
+    ]
+  },
+  {
+    "id": 28,
+    "nama": "Diadora Retriso Blue",
+    "brand": "diadora",
+    "harga": 585000,
+    "harga_coret": 780000,
+    "tipe": "running",
+    "asal": "internasional",
+    "pengguna": "wanita",
+    "upload_order": 23,
+    "gambar": "images/c/c (3).jpeg",
+    "sizes": [
+      "37",
+      "38",
+      "39",
+      "40"
+    ]
+  },
+  {
+    "id": 29,
+    "nama": "Nike Air Max Bolt",
+    "brand": "nike",
+    "harga": 1024500,
+    "harga_coret": 1499000,
+    "tipe": "running",
+    "asal": "internasional",
+    "pengguna": "wanita",
+    "upload_order": 22,
+    "gambar": "images/c/c (2).jpeg",
+    "sizes": [
+      "38 (24cm) [6 pcs]"
+    ]
+  },
+  {
+    "id": 30,
+    "nama": "Skechers Microspec Advance",
+    "brand": "skechers",
+    "harga": 419500,
+    "harga_coret": 499000,
+    "tipe": "running",
+    "asal": "internasional",
+    "pengguna": "unisex",
+    "upload_order": 21,
+    "gambar": "images/c/c (1).jpeg",
+    "sizes": [
+      "30",
+      "32",
+      "33.5",
+      "35",
+      "36"
+    ]
+  },
+  {
+    "id": 31,
+    "nama": "Diadora Seperio Off White",
+    "brand": "diadora",
+    "harga": 469500,
+    "harga_coret": 599000,
+    "tipe": "running",
+    "asal": "internasional",
+    "pengguna": "pria",
+    "upload_order": 20,
+    "gambar": "images/b/b (10).jpeg",
+    "sizes": [
+      "39",
+      "40",
+      "41",
+      "42",
+      "43",
+      "44"
+    ]
+  },
+  {
+    "id": 32,
+    "nama": "Diadora Sanremo Purple",
+    "brand": "diadora",
+    "harga": 540000,
+    "harga_coret": 720000,
+    "tipe": "running",
+    "asal": "internasional",
+    "pengguna": "wanita",
+    "upload_order": 19,
+    "gambar": "images/b/b (9).jpeg",
+    "sizes": [
+      "37",
+      "38",
+      "39",
+      "40"
+    ]
+  },
+  {
+    "id": 33,
+    "nama": "Diadora Rhino Grey White",
+    "brand": "diadora",
+    "harga": 439500,
+    "harga_coret": 599000,
+    "tipe": "kasual",
+    "asal": "internasional",
+    "pengguna": "pria",
+    "upload_order": 18,
+    "gambar": "images/b/b (8).jpeg",
+    "sizes": [
+      "40",
+      "41",
+      "43",
+      "44"
+    ]
+  },
+  {
+    "id": 34,
+    "nama": "Skechers Vertex - Spyre Navy",
+    "brand": "skechers",
+    "harga": 839500,
+    "harga_coret": 1199000,
+    "tipe": "kasual",
+    "asal": "internasional",
+    "pengguna": "pria",
+    "upload_order": 17,
+    "gambar": "images/b/b (7).jpeg",
+    "sizes": [
+      "42 [27cm]"
+    ]
+  },
+  {
+    "id": 35,
+    "nama": "Diadora Rallies White Purple",
+    "brand": "diadora",
+    "harga": 510000,
+    "harga_coret": 680000,
+    "tipe": "running",
+    "asal": "internasional",
+    "pengguna": "wanita",
+    "upload_order": 16,
+    "gambar": "images/b/b (6).jpeg",
+    "sizes": [
+      "37",
+      "38",
+      "39",
+      "40"
+    ]
+  },
+  {
+    "id": 36,
+    "nama": "Diadora Sanremo Black White",
+    "brand": "diadora",
+    "harga": 444500,
+    "harga_coret": 599000,
+    "tipe": "running",
+    "asal": "internasional",
+    "pengguna": "unisex",
+    "upload_order": 15,
+    "gambar": "images/b/b (5).jpeg",
+    "sizes": [
+      "38",
+      "40",
+      "41",
+      "42",
+      "43"
+    ]
+  },
+  {
+    "id": 37,
+    "nama": "Diadora Rixie Orange Brown",
+    "brand": "diadora",
+    "harga": 469500,
+    "harga_coret": 599000,
+    "tipe": "running",
+    "asal": "internasional",
+    "pengguna": "unisex",
+    "upload_order": 14,
+    "gambar": "images/b/b (4).jpeg",
+    "sizes": [
+      "39",
+      "40",
+      "41",
+      "42",
+      "43",
+      "44",
+      "45"
+    ]
+  },
+  {
+    "id": 38,
+    "nama": "Skechers Pure Genius - Optimis Mix",
+    "brand": "skechers",
+    "harga": 694500,
+    "harga_coret": 899000,
+    "tipe": "kasual",
+    "asal": "internasional",
+    "pengguna": "wanita",
+    "upload_order": 13,
+    "gambar": "images/b/b (3).jpeg",
+    "sizes": [
+      "36",
+      "37",
+      "38",
+      "39",
+      "40"
+    ]
+  },
+  {
+    "id": 39,
+    "nama": "Skechers Dynalite - Marad Full Black",
+    "brand": "skechers",
+    "harga": 869500,
+    "harga_coret": 1199000,
+    "tipe": "running",
+    "asal": "internasional",
+    "pengguna": "pria",
+    "upload_order": 12,
+    "gambar": "images/b/b (2).jpeg",
+    "sizes": [
+      "41",
+      "42",
+      "43"
+    ]
+  },
+  {
+    "id": 40,
+    "nama": "Diadora Solero Black",
+    "brand": "diadora",
+    "harga": 562500,
+    "harga_coret": 750000,
+    "tipe": "running",
+    "asal": "internasional",
+    "pengguna": "pria",
+    "upload_order": 11,
+    "gambar": "images/b/b (1).jpeg",
+    "sizes": [
+      "41",
+      "42",
+      "43",
+      "44"
+    ]
+  },
+  {
+    "id": 41,
+    "nama": "Skechers Flection - Shurman",
+    "brand": "skechers",
+    "harga": 864500,
+    "harga_coret": 1199000,
+    "tipe": "kasual",
+    "asal": "internasional",
+    "pengguna": "pria",
+    "upload_order": 10,
+    "gambar": "images/a/a (10).jpeg",
+    "sizes": [
+      "39",
+      "39.5",
+      "41",
+      "42",
+      "43"
+    ]
+  },
+  {
+    "id": 42,
+    "nama": "Skechers Virtue - Stunner",
+    "brand": "skechers",
+    "harga": 795000,
+    "harga_coret": 1100000,
+    "tipe": "kasual",
+    "asal": "internasional",
+    "pengguna": "wanita",
+    "upload_order": 9,
+    "gambar": "images/a/a (9).jpeg",
+    "sizes": [
+      "38",
+      "39"
+    ]
+  },
+  {
+    "id": 43,
+    "nama": "Skechers Glide Step - PRO SR Black",
+    "brand": "skechers",
+    "harga": 919500,
+    "harga_coret": 1199000,
+    "tipe": "kasual",
+    "asal": "internasional",
+    "pengguna": "pria",
+    "upload_order": 8,
+    "gambar": "images/a/a (8).jpeg",
+    "sizes": [
+      "41",
+      "43"
+    ]
+  },
+  {
+    "id": 44,
+    "nama": "Nike Zoom Rival Fly 4 Black White",
+    "brand": "nike",
+    "harga": 1174500,
+    "harga_coret": 1599000,
+    "tipe": "running",
+    "asal": "internasional",
+    "pengguna": "unisex",
+    "upload_order": 7,
+    "gambar": "images/a/a (7).jpeg",
+    "sizes": [
+      "38.5",
+      "42"
+    ]
+  },
+  {
+    "id": 45,
+    "nama": "Adidas Duramo SL",
+    "brand": "adidas",
+    "harga": 725000,
+    "harga_coret": 900000,
+    "tipe": "running",
+    "asal": "internasional",
+    "pengguna": "pria",
+    "upload_order": 6,
+    "gambar": "images/a/a (6).jpeg",
+    "sizes": [
+      "39 1/3",
+      "40",
+      "41 1/3",
+      "42"
+    ]
+  },
+  {
+    "id": 46,
+    "nama": "Adidas Supernova Glide Running Shoes (Womens)",
+    "brand": "adidas",
+    "harga": 1287500,
+    "harga_coret": 1800000,
+    "tipe": "running",
+    "asal": "internasional",
+    "pengguna": "wanita",
+    "upload_order": 5,
+    "gambar": "images/a/a (5).jpeg",
+    "sizes": [
+      "38",
+      "38 2/3",
+      "39 1/3"
+    ]
+  },
+  {
+    "id": 47,
+    "nama": "Adidas Supernova Glide Running Shoes (Mens)",
+    "brand": "adidas",
+    "harga": 1300000,
+    "harga_coret": 1800000,
+    "tipe": "running",
+    "asal": "internasional",
+    "pengguna": "pria",
+    "upload_order": 4,
+    "gambar": "images/a/a (4).jpeg",
+    "sizes": [
+      "40 2/3",
+      "42",
+      "42 2/3",
+      "43 1/3",
+      "44"
+    ]
+  },
+  {
+    "id": 48,
+    "nama": "Nike Zoom Rival Fly 4 Viotect Purple",
+    "brand": "nike",
+    "harga": 1187000,
+    "harga_coret": 1599000,
+    "tipe": "running",
+    "asal": "internasional",
+    "pengguna": "pria",
+    "upload_order": 3,
+    "gambar": "images/a/a (3).jpeg",
+    "sizes": [
+      "42.5"
+    ]
+  },
+  {
+    "id": 49,
+    "nama": "Skechers Glide Step - Zefyr Black",
+    "brand": "skechers",
+    "harga": 914500,
+    "harga_coret": 1199000,
+    "tipe": "kasual",
+    "asal": "internasional",
+    "pengguna": "pria",
+    "upload_order": 2,
+    "gambar": "images/a/a (2).jpeg",
+    "sizes": [
+      "40",
+      "41",
+      "42",
+      "43"
+    ]
+  },
+  {
+    "id": 50,
+    "nama": "Skechers Go Walk Flex - Grand Rose",
+    "brand": "skechers",
+    "harga": 887000,
+    "harga_coret": 1299000,
+    "tipe": "kasual",
+    "asal": "internasional",
+    "pengguna": "wanita",
+    "upload_order": 1,
+    "gambar": "images/a/a (1).jpeg",
+    "sizes": [
+      "36",
+      "38.5"
+    ]
   }
 ]
