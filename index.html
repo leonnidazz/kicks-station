@@ -108,8 +108,7 @@
     </button>
 
     <!-- TOMBOL WHATSAPP -->
-    <a href="https://wa.me/6285931100080?text=Halo%20Kicks Station,%20saya%20mau%20bertanya%20tentang%20produk."
-        target="_blank"
+    <a id="whatsapp-float" href="#" target="_blank"
         class="whatsapp-float-anim fixed bottom-6 right-6 z-40 bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110">
         <ion-icon name="logo-whatsapp" class="text-3xl"></ion-icon>
     </a>
@@ -1982,7 +1981,17 @@
         function toggleCart() {
             document.getElementById('cart-modal').classList.toggle('hidden');
         }
+const affiliates = {
+    hasan: "6285640054840",
+    rosyad: "6288221120405",
+    ammar: "6285943328676"
+};
 
+const defaultWA = "6285931100080";
+
+const params = new URLSearchParams(window.location.search);
+const ref = params.get("ref");
+const targetWA = affiliates[ref] || defaultWA;
         function checkoutWA() {
             if (cart.length === 0) {
                 alert('Keranjang belanja Anda kosong!');
@@ -1996,8 +2005,10 @@
                 text += `${index + 1}. *${item.name}*\n   • Size: ${item.size}\n   • Jumlah: ${item.qty} pcs\n   • Harga: Rp ${subtotal.toLocaleString('id-ID')}\n\n`;
             });
             text += `*Total Pembayaran: Rp ${total.toLocaleString('id-ID')}*\n\nTerima kasih!`;
-            window.open(`https://wa.me/6285931100080?text=${encodeURIComponent(text)}`, '_blank');
+            window.open(`https://wa.me/${targetWA}?text=${encodeURIComponent(text)}`, '_blank');
         }
+        document.getElementById("whatsapp-float").href =
+    `https://wa.me/${targetWA}?text=${encodeURIComponent("Halo Kicks Station, saya mau bertanya tentang produk.")}`;
     </script>
 </body>
 
