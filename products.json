@@ -1,0 +1,13 @@
+[
+  {
+    "id": 1,
+    "nama": "Nama Produk",
+    "brand": "adidas",
+    "harga": 825000,
+    "tipe": "kasual",
+    "asal": "internasional",
+    "pengguna": "pria",
+    "upload_order": 50,
+    "gambar": "images/e/e (10).jpeg"
+  }
+]
