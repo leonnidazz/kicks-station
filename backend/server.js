@@ -3,23 +3,8 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 
-// =========================================================
-// KONFIGURASI
-// =========================================================
-
 const PORT = process.env.PORT || 3000;
-
-const PUBLIC_BASE_URL =
-    process.env.RENDER_EXTERNAL_URL ||
-    "https://kicks-station.onrender.com";
-
-const ADMIN_PIN = String(process.env.ADMIN_PIN || "").trim();
-
-const SESSION_DURATION = 12 * 60 * 60 * 1000; // 12 jam
-
-// =========================================================
-// FILE & FOLDER
-// =========================================================
+const PUBLIC_BASE_URL = process.env.RENDER_EXTERNAL_URL || "https://kicks-station.onrender.com";
 
 const productsFile = path.join(
     __dirname,
@@ -33,103 +18,159 @@ const imagesFolder = path.join(
     "images"
 );
 
-// Foto upload BARU masuk sini
-const productsImagesFolder = path.join(
-    imagesFolder,
-    "products"
-);
 
 // =========================================================
 // BATAS UPLOAD
 // =========================================================
 
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
-const MAX_IMAGES = 10;
-const MAX_REQUEST_SIZE = 60 * 1024 * 1024;
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024;       // 5 MB / foto
+const MAX_IMAGES = 10;                        // maksimal 10 foto / produk
+const MAX_REQUEST_SIZE = 60 * 1024 * 1024;   // maksimal 60 MB / request
 
-// =========================================================
-// SESSION ADMIN
-// =========================================================
-
-const adminSessions = new Map();
-
-// =========================================================
-// RATE LIMIT LOGIN
-// =========================================================
-
-const loginAttempts = new Map();
-
-const MAX_LOGIN_ATTEMPTS = 5;
-const LOGIN_WINDOW = 15 * 60 * 1000;
 
 // =========================================================
 // PERSIAPAN FOLDER
 // =========================================================
 
-fs.mkdirSync(imagesFolder, {
-    recursive: true
-});
+if (!fs.existsSync(imagesFolder)) {
 
-fs.mkdirSync(productsImagesFolder, {
-    recursive: true
-});
+    fs.mkdirSync(
+        imagesFolder,
+        {
+            recursive: true
+        }
+    );
+
+}
+
+
 
 // =========================================================
-// VALIDASI ENV PIN
+// ADMIN AUTHENTICATION
 // =========================================================
+const ADMIN_PIN = String(process.env.ADMIN_PIN || "").trim();
+const SESSION_DURATION = 12 * 60 * 60 * 1000;
+const adminSessions = new Map();
+const loginAttempts = new Map();
+const LOGIN_WINDOW = 15 * 60 * 1000;
+const MAX_LOGIN_FAILURES = 5;
 
-if (!ADMIN_PIN) {
-    console.warn(
-        "PERINGATAN: ADMIN_PIN belum diset di environment variable."
-    );
-} else if (!/^\d{6}$/.test(ADMIN_PIN)) {
-    console.warn(
-        "PERINGATAN: ADMIN_PIN harus terdiri dari tepat 6 digit."
-    );
+function getClientIP(req) {
+    return String(req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "unknown").split(",")[0].trim();
+}
+function cleanupAdminSessions() {
+    const now = Date.now();
+    for (const [token, session] of adminSessions) if (session.expiresAt <= now) adminSessions.delete(token);
+}
+function canAttemptLogin(ip) {
+    const now = Date.now();
+    const attempts = loginAttempts.get(ip);
+    if (!attempts || now - attempts.windowStart >= LOGIN_WINDOW) { loginAttempts.delete(ip); return true; }
+    return attempts.failures < MAX_LOGIN_FAILURES;
+}
+function recordLoginFailure(ip) {
+    const now = Date.now();
+    const attempts = loginAttempts.get(ip);
+    if (!attempts || now - attempts.windowStart >= LOGIN_WINDOW) loginAttempts.set(ip, { windowStart: now, failures: 1 });
+    else attempts.failures++;
+}
+function getAdminToken(req) {
+    const header = String(req.headers.authorization || "");
+    return header.startsWith("Bearer ") ? (header.slice(7).trim() || null) : null;
+}
+function isAdminAuthenticated(req) {
+    cleanupAdminSessions();
+    const token = getAdminToken(req);
+    const session = token ? adminSessions.get(token) : null;
+    return Boolean(session && session.expiresAt > Date.now());
+}
+function requireAdmin(req, res) {
+    if (!ADMIN_PIN || !isAdminAuthenticated(req)) {
+        sendJSON(res, 401, { success: false, message: !ADMIN_PIN ? "Admin authentication belum dikonfigurasi di server." : "Unauthorized. Silakan login sebagai admin." });
+        return false;
+    }
+    return true;
 }
 
 // =========================================================
-// RESPONSE
+// HELPER RESPONSE
 // =========================================================
 
-function sendJSON(res, statusCode, data) {
-    res.writeHead(statusCode, {
-        "Content-Type": "application/json; charset=utf-8"
-    });
+function sendJSON(
+    res,
+    statusCode,
+    data
+) {
 
-    res.end(JSON.stringify(data));
+    res.writeHead(
+        statusCode,
+        {
+            "Content-Type":
+                "application/json; charset=utf-8"
+        }
+    );
+
+    res.end(
+        JSON.stringify(data)
+    );
+
 }
 
+
 // =========================================================
-// DATABASE
+// BACA DATABASE
 // =========================================================
 
 function readProducts() {
+
     if (!fs.existsSync(productsFile)) {
+
         return [];
+
     }
 
-    const content = fs.readFileSync(
-        productsFile,
-        "utf8"
-    );
+    const content =
+        fs.readFileSync(
+            productsFile,
+            "utf8"
+        );
 
     return JSON.parse(content);
+
 }
 
+
+// =========================================================
+// SIMPAN DATABASE
+// =========================================================
+
 function saveProducts(products) {
+
     fs.writeFileSync(
+
         productsFile,
-        JSON.stringify(products, null, 2),
+
+        JSON.stringify(
+            products,
+            null,
+            2
+        ),
+
         "utf8"
+
     );
+
 }
+
 
 // =========================================================
 // SANITASI NAMA FILE
 // =========================================================
 
-function sanitizeFilename(filename) {
+function sanitizeFilename(
+    filename
+) {
+
     return path
         .basename(filename)
         .replace(
@@ -141,42 +182,56 @@ function sanitizeFilename(filename) {
             " "
         )
         .trim();
+
 }
+
 
 // =========================================================
 // NORMALISASI FOTO
 // =========================================================
 
-function normalizeImages(gambar) {
+function normalizeImages(
+    gambar
+) {
+
     if (!gambar) {
+
         return [];
+
     }
 
+
     if (Array.isArray(gambar)) {
+
         return gambar.filter(
             image =>
                 typeof image === "string" &&
                 image.trim() !== ""
         );
+
     }
 
+
     if (typeof gambar === "string") {
+
         return gambar.trim()
             ? [gambar]
             : [];
+
     }
 
+
     return [];
+
 }
 
+
 // =========================================================
-// PATH FOTO
+// URL FOTO UNTUK CLIENT
 // =========================================================
 
 function toStoredImagePath(imagePath) {
-    if (typeof imagePath !== "string") {
-        return null;
-    }
+    if (typeof imagePath !== "string") return null;
 
     const value = imagePath.trim();
 
@@ -186,10 +241,7 @@ function toStoredImagePath(imagePath) {
 
     try {
         const parsed = new URL(value);
-
-        if (
-            parsed.pathname.startsWith("/images/")
-        ) {
+        if (parsed.pathname.startsWith("/images/")) {
             return parsed.pathname.slice(1);
         }
     } catch {}
@@ -198,32 +250,19 @@ function toStoredImagePath(imagePath) {
 }
 
 function toPublicImageUrl(imagePath) {
-    const storedPath =
-        toStoredImagePath(imagePath);
-
-    if (!storedPath) {
-        return imagePath;
-    }
-
+    const storedPath = toStoredImagePath(imagePath);
+    if (!storedPath) return imagePath;
     return `${PUBLIC_BASE_URL}/${storedPath}`;
 }
 
 function productForClient(product) {
-    const result = {
-        ...product
-    };
-
-    const images =
-        normalizeImages(product.gambar);
+    const result = { ...product };
+    const images = normalizeImages(product.gambar);
 
     if (Array.isArray(product.gambar)) {
-        result.gambar =
-            images.map(toPublicImageUrl);
-    } else if (
-        typeof product.gambar === "string"
-    ) {
-        result.gambar =
-            toPublicImageUrl(product.gambar);
+        result.gambar = images.map(toPublicImageUrl);
+    } else if (typeof product.gambar === "string") {
+        result.gambar = toPublicImageUrl(product.gambar);
     }
 
     return result;
@@ -234,67 +273,40 @@ function productsForClient(products) {
 }
 
 // =========================================================
-// SERVE GAMBAR
+// SERVE FILE GAMBAR
 // =========================================================
 
 function serveImage(req, res) {
-    if (req.method !== "GET") {
-        return false;
-    }
+    if (req.method !== "GET") return false;
 
     let pathname;
-
     try {
-        pathname =
-            new URL(
-                req.url,
-                "http://localhost"
-            ).pathname;
+        pathname = new URL(req.url, "http://localhost").pathname;
     } catch {
         return false;
     }
 
-    if (!pathname.startsWith("/images/")) {
-        return false;
-    }
+    if (!pathname.startsWith("/images/")) return false;
 
     let relativePath;
-
     try {
-        relativePath =
-            decodeURIComponent(
-                pathname.slice("/images/".length)
-            );
+        relativePath = decodeURIComponent(pathname.slice("/images/".length));
     } catch {
         res.writeHead(400);
         res.end("Bad Request");
         return true;
     }
 
-    const resolvedFolder =
-        path.resolve(imagesFolder);
+    const resolvedFolder = path.resolve(imagesFolder);
+    const filePath = path.resolve(imagesFolder, relativePath);
 
-    const filePath =
-        path.resolve(
-            imagesFolder,
-            relativePath
-        );
-
-    // Proteksi directory traversal
-    if (
-        !filePath.startsWith(
-            resolvedFolder + path.sep
-        )
-    ) {
+    if (!filePath.startsWith(resolvedFolder + path.sep)) {
         res.writeHead(403);
         res.end("Forbidden");
         return true;
     }
 
-    if (
-        !fs.existsSync(filePath) ||
-        !fs.statSync(filePath).isFile()
-    ) {
+    if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
         res.writeHead(404);
         res.end("Image not found");
         return true;
@@ -307,10 +319,7 @@ function serveImage(req, res) {
         ".webp": "image/webp"
     };
 
-    const contentType =
-        contentTypes[
-            path.extname(filePath).toLowerCase()
-        ];
+    const contentType = contentTypes[path.extname(filePath).toLowerCase()];
 
     if (!contentType) {
         res.writeHead(415);
@@ -320,89 +329,95 @@ function serveImage(req, res) {
 
     res.writeHead(200, {
         "Content-Type": contentType,
-        "Cache-Control":
-            "public, max-age=31536000, immutable"
+        "Cache-Control": "public, max-age=31536000, immutable"
     });
 
-    fs.createReadStream(filePath)
-        .pipe(res);
-
+    fs.createReadStream(filePath).pipe(res);
     return true;
 }
 
+
 // =========================================================
-// VALIDASI PATH FOTO
+// VALIDASI PATH FOTO EXISTING
+// =========================================================
+//
+// Hanya mengizinkan foto yang memang berada
+// di folder images.
 // =========================================================
 
-function isValidImagePath(imagePath) {
+function isValidImagePath(
+    imagePath
+) {
+
     if (
         typeof imagePath !== "string"
     ) {
+
         return false;
+
     }
 
-    const storedPath =
-        toStoredImagePath(imagePath);
+    return imagePath.startsWith("images/");
 
-    if (!storedPath) {
-        return false;
-    }
-
-    const resolvedFolder =
-        path.resolve(imagesFolder);
-
-    const relative =
-        storedPath.slice("images/".length);
-
-    const resolvedFile =
-        path.resolve(
-            imagesFolder,
-            relative
-        );
-
-    return (
-        resolvedFile.startsWith(
-            resolvedFolder + path.sep
-        )
-    );
 }
 
+
 // =========================================================
-// SIMPAN SATU FOTO
+// SIMPAN SATU FOTO BARU
 // =========================================================
 
-function saveSingleImage(imageData) {
+function saveSingleImage(
+    imageData
+) {
+
     if (
         !imageData ||
         !imageData.data ||
         !imageData.name
     ) {
+
         throw new Error(
             "Data foto tidak lengkap."
         );
+
     }
+
 
     const cleanName =
         sanitizeFilename(
             imageData.name
         );
 
+
     if (!cleanName) {
+
         throw new Error(
             "Nama file gambar tidak valid."
         );
+
     }
 
+
+    // ---------------------------------------------------------
+    // VALIDASI MIME
+    // ---------------------------------------------------------
+
     const mimeMatch =
-        String(imageData.data).match(
+        String(
+            imageData.data
+        ).match(
             /^data:(image\/(?:jpeg|png|webp));base64,/i
         );
 
+
     if (!mimeMatch) {
+
         throw new Error(
             `Format foto "${cleanName}" harus JPG, PNG, atau WEBP.`
         );
+
     }
+
 
     const base64 =
         imageData.data.replace(
@@ -410,31 +425,46 @@ function saveSingleImage(imageData) {
             ""
         );
 
+
     const buffer =
         Buffer.from(
             base64,
             "base64"
         );
 
-    if (buffer.length === 0) {
+
+    if (
+        buffer.length === 0
+    ) {
+
         throw new Error(
             "File gambar kosong atau rusak."
         );
+
     }
+
 
     if (
         buffer.length >
         MAX_IMAGE_SIZE
     ) {
+
         throw new Error(
             `Ukuran foto "${cleanName}" maksimal 5 MB.`
         );
+
     }
+
+
+    // ---------------------------------------------------------
+    // CEK EXTENSION
+    // ---------------------------------------------------------
 
     const extension =
         path.extname(
             cleanName
         ).toLowerCase();
+
 
     const allowedExtensions = [
         ".jpg",
@@ -443,15 +473,19 @@ function saveSingleImage(imageData) {
         ".webp"
     ];
 
+
     if (
         !allowedExtensions.includes(
             extension
         )
     ) {
+
         throw new Error(
             `Format foto "${cleanName}" harus JPG, JPEG, PNG, atau WEBP.`
         );
+
     }
+
 
     const originalName =
         path.basename(
@@ -459,187 +493,280 @@ function saveSingleImage(imageData) {
             extension
         );
 
+
     let finalName =
         cleanName;
 
+
     let counter = 1;
+
 
     while (
         fs.existsSync(
             path.join(
-                productsImagesFolder,
+                imagesFolder,
                 finalName
             )
         )
     ) {
+
         finalName =
             `${originalName} (${counter})${extension}`;
 
         counter++;
+
     }
+
 
     const destination =
         path.join(
-            productsImagesFolder,
+            imagesFolder,
             finalName
         );
+
 
     fs.writeFileSync(
         destination,
         buffer
     );
 
+
     console.log(
-        "Foto produk disimpan:",
+        "Foto disimpan:",
         finalName
     );
 
-    return `images/products/${finalName}`;
+
+    return `images/${finalName}`;
+
 }
 
+
 // =========================================================
-// SIMPAN BANYAK FOTO
+// SIMPAN BANYAK FOTO BARU
 // =========================================================
 
-function saveImages(images) {
+function saveImages(
+    images
+) {
+
     if (!Array.isArray(images)) {
+
         throw new Error(
             "Format foto harus berupa array."
         );
+
     }
+
 
     if (
         images.length >
         MAX_IMAGES
     ) {
+
         throw new Error(
             `Maksimal ${MAX_IMAGES} foto untuk satu produk.`
         );
+
     }
+
 
     const savedImages = [];
 
+
     try {
+
         for (
             const image of images
         ) {
+
             const imagePath =
-                saveSingleImage(image);
+                saveSingleImage(
+                    image
+                );
+
 
             savedImages.push(
                 imagePath
             );
+
         }
+
 
         return savedImages;
 
     } catch (error) {
+
+        // Jika ada foto gagal disimpan,
+        // hapus foto yang sudah berhasil disimpan.
+
         for (
             const imagePath of savedImages
         ) {
+
             deleteSingleImage(
                 imagePath
             );
+
         }
 
+
         throw error;
+
     }
+
 }
+
 
 // =========================================================
 // HAPUS SATU FOTO
 // =========================================================
 
-function deleteSingleImage(imagePath) {
+function deleteSingleImage(
+    imagePath
+) {
+
     if (
         !imagePath ||
         typeof imagePath !== "string"
     ) {
+
         return;
+
     }
 
-    const storedPath =
-        toStoredImagePath(imagePath);
-
-    if (!storedPath) {
-        return;
-    }
 
     if (
-        !isValidImagePath(storedPath)
+        !imagePath.startsWith(
+            "images/"
+        )
     ) {
+
         return;
+
     }
 
-    const relativePath =
-        storedPath.slice(
-            "images/".length
+
+    const filename =
+        path.basename(
+            imagePath
         );
 
-    const resolvedFolder =
-        path.resolve(imagesFolder);
 
     const filePath =
-        path.resolve(
+        path.join(
             imagesFolder,
-            relativePath
+            filename
         );
 
+
+    // Keamanan tambahan:
+    // pastikan file benar-benar berada
+    // di folder images.
+
+    const resolvedFolder =
+        path.resolve(
+            imagesFolder
+        );
+
+    const resolvedFile =
+        path.resolve(
+            filePath
+        );
+
+
     if (
-        !filePath.startsWith(
+        !resolvedFile.startsWith(
             resolvedFolder + path.sep
         )
     ) {
+
         return;
+
     }
 
+
     if (
-        fs.existsSync(filePath) &&
-        fs.statSync(filePath).isFile()
+        fs.existsSync(
+            filePath
+        )
     ) {
-        fs.unlinkSync(filePath);
+
+        fs.unlinkSync(
+            filePath
+        );
+
 
         console.log(
             "Foto dihapus:",
-            storedPath
+            filename
         );
+
     }
+
 }
+
 
 // =========================================================
 // HAPUS FOTO
 // =========================================================
 
-function deleteImage(imagePath) {
+function deleteImage(
+    imagePath
+) {
+
     const images =
-        normalizeImages(imagePath);
+        normalizeImages(
+            imagePath
+        );
+
 
     for (
         const image of images
     ) {
-        deleteSingleImage(image);
+
+        deleteSingleImage(
+            image
+        );
+
     }
+
 }
 
+
 // =========================================================
-// BACA BODY
+// BACA BODY REQUEST
 // =========================================================
 
-function readBody(req) {
+function readBody(
+    req
+) {
+
     return new Promise(
         (resolve, reject) => {
+
             let body = "";
-            let rejected = false;
+
+            let rejected =
+                false;
+
 
             req.on(
                 "data",
                 chunk => {
-                    if (rejected) {
+
+                    if (
+                        rejected
+                    ) {
+
                         return;
+
                     }
+
 
                     body +=
                         chunk.toString();
+
 
                     if (
                         Buffer.byteLength(
@@ -648,7 +775,10 @@ function readBody(req) {
                         ) >
                         MAX_REQUEST_SIZE
                     ) {
-                        rejected = true;
+
+                        rejected =
+                            true;
+
 
                         reject(
                             new Error(
@@ -656,296 +786,142 @@ function readBody(req) {
                             )
                         );
 
+
                         req.destroy();
+
                     }
+
                 }
             );
+
 
             req.on(
                 "end",
                 () => {
-                    if (rejected) {
+
+                    if (
+                        rejected
+                    ) {
+
                         return;
+
                     }
 
+
                     try {
+
                         resolve(
                             JSON.parse(body)
                         );
+
                     } catch {
+
                         reject(
                             new Error(
                                 "Format data tidak valid."
                             )
                         );
+
                     }
+
                 }
             );
+
 
             req.on(
                 "error",
                 reject
             );
+
         }
     );
+
 }
+
 
 // =========================================================
 // RENOMOR PRODUK
 // =========================================================
 
-function renumberProducts(products) {
+function renumberProducts(
+    products
+) {
+
     products.forEach(
         (
             product,
             index
         ) => {
+
             product.id =
                 index + 1;
 
             product.upload_order =
                 index + 1;
+
         }
     );
+
 }
 
+
 // =========================================================
-// VALIDASI PRODUK
+// VALIDASI DATA PRODUK
 // =========================================================
 
-function validateProductData(data) {
+function validateProductData(
+    data
+) {
+
     if (
         !data.nama ||
         !String(data.nama).trim()
     ) {
+
         throw new Error(
             "Nama produk wajib diisi."
         );
+
     }
+
 
     if (
         !data.brand ||
         !String(data.brand).trim()
     ) {
+
         throw new Error(
             "Brand wajib diisi."
         );
+
     }
+
 
     if (
         !data.harga ||
         Number(data.harga) <= 0
     ) {
+
         throw new Error(
             "Harga tidak valid."
         );
+
     }
+
 
     if (
         !Array.isArray(data.sizes) ||
         data.sizes.length === 0
     ) {
+
         throw new Error(
             "Minimal satu ukuran harus dipilih."
         );
+
     }
+
 }
 
-// =========================================================
-// IP CLIENT
-// =========================================================
-
-function getClientIP(req) {
-    const forwarded =
-        req.headers["x-forwarded-for"];
-
-    if (forwarded) {
-        return String(
-            forwarded
-        )
-            .split(",")[0]
-            .trim();
-    }
-
-    return (
-        req.socket.remoteAddress ||
-        "unknown"
-    );
-}
-
-// =========================================================
-// RATE LIMIT LOGIN
-// =========================================================
-
-function canAttemptLogin(ip) {
-    const now =
-        Date.now();
-
-    const record =
-        loginAttempts.get(ip);
-
-    if (!record) {
-        return true;
-    }
-
-    if (
-        now - record.firstAttempt >
-        LOGIN_WINDOW
-    ) {
-        loginAttempts.delete(ip);
-        return true;
-    }
-
-    return (
-        record.failures <
-        MAX_LOGIN_ATTEMPTS
-    );
-}
-
-function recordFailedLogin(ip) {
-    const now =
-        Date.now();
-
-    const record =
-        loginAttempts.get(ip);
-
-    if (
-        !record ||
-        now - record.firstAttempt >
-        LOGIN_WINDOW
-    ) {
-        loginAttempts.set(
-            ip,
-            {
-                failures: 1,
-                firstAttempt: now
-            }
-        );
-
-        return;
-    }
-
-    record.failures++;
-}
-
-// =========================================================
-// TOKEN ADMIN
-// =========================================================
-
-function createAdminSession() {
-    const token =
-        crypto.randomBytes(32)
-            .toString("hex");
-
-    adminSessions.set(
-        token,
-        {
-            expiresAt:
-                Date.now() +
-                SESSION_DURATION
-        }
-    );
-
-    return token;
-}
-
-function getAdminToken(req) {
-    const authorization =
-        req.headers.authorization;
-
-    if (
-        typeof authorization !==
-        "string"
-    ) {
-        return null;
-    }
-
-    if (
-        !authorization.startsWith(
-            "Bearer "
-        )
-    ) {
-        return null;
-    }
-
-    return authorization
-        .slice(7)
-        .trim();
-}
-
-function isAdminAuthenticated(req) {
-    const token =
-        getAdminToken(req);
-
-    if (!token) {
-        return false;
-    }
-
-    const session =
-        adminSessions.get(token);
-
-    if (!session) {
-        return false;
-    }
-
-    if (
-        Date.now() >
-        session.expiresAt
-    ) {
-        adminSessions.delete(token);
-        return false;
-    }
-
-    return true;
-}
-
-function requireAdmin(req, res) {
-    if (
-        isAdminAuthenticated(req)
-    ) {
-        return true;
-    }
-
-    sendJSON(
-        res,
-        401,
-        {
-            success: false,
-            message:
-                "Akses admin diperlukan."
-        }
-    );
-
-    return false;
-}
-
-// =========================================================
-// BERSIHKAN SESSION KADALUARSA
-// =========================================================
-
-setInterval(
-    () => {
-        const now =
-            Date.now();
-
-        for (
-            const [
-                token,
-                session
-            ] of adminSessions
-        ) {
-            if (
-                now >
-                session.expiresAt
-            ) {
-                adminSessions.delete(
-                    token
-                );
-            }
-        }
-    },
-    60 * 60 * 1000
-);
 
 // =========================================================
 // SERVER
@@ -967,221 +943,46 @@ const server =
                 "*"
             );
 
+
             res.setHeader(
                 "Access-Control-Allow-Methods",
                 "GET, POST, PUT, DELETE, OPTIONS"
             );
+
 
             res.setHeader(
                 "Access-Control-Allow-Headers",
                 "Content-Type, Authorization"
             );
 
+
             // =================================================
-            // GAMBAR
+            // FILE GAMBAR
             // =================================================
 
-            if (
-                serveImage(
-                    req,
-                    res
-                )
-            ) {
+            if (serveImage(req, res)) {
                 return;
             }
+
 
             // =================================================
             // OPTIONS
             // =================================================
 
             if (
-                req.method ===
-                "OPTIONS"
+                req.method === "OPTIONS"
             ) {
-                res.writeHead(204);
-                res.end();
-                return;
-            }
 
-            // =================================================
-            // LOGIN ADMIN
-            // =================================================
-
-            if (
-                req.method === "POST" &&
-                req.url === "/api/admin/login"
-            ) {
-                try {
-                    if (!ADMIN_PIN) {
-                        sendJSON(
-                            res,
-                            500,
-                            {
-                                success: false,
-                                message:
-                                    "ADMIN_PIN belum dikonfigurasi di server."
-                            }
-                        );
-
-                        return;
-                    }
-
-                    const ip =
-                        getClientIP(req);
-
-                    if (
-                        !canAttemptLogin(ip)
-                    ) {
-                        sendJSON(
-                            res,
-                            429,
-                            {
-                                success: false,
-                                message:
-                                    "Terlalu banyak percobaan PIN. Coba lagi nanti."
-                            }
-                        );
-
-                        return;
-                    }
-
-                    const data =
-                        await readBody(req);
-
-                    const pin =
-                        String(
-                            data.pin || ""
-                        ).trim();
-
-                    if (
-                        !/^\d{6}$/.test(pin)
-                    ) {
-                        recordFailedLogin(ip);
-
-                        sendJSON(
-                            res,
-                            401,
-                            {
-                                success: false,
-                                message:
-                                    "PIN harus terdiri dari 6 digit."
-                            }
-                        );
-
-                        return;
-                    }
-
-                    if (
-                        pin !== ADMIN_PIN
-                    ) {
-                        recordFailedLogin(ip);
-
-                        sendJSON(
-                            res,
-                            401,
-                            {
-                                success: false,
-                                message:
-                                    "PIN salah."
-                            }
-                        );
-
-                        return;
-                    }
-
-                    loginAttempts.delete(ip);
-
-                    const token =
-                        createAdminSession();
-
-                    sendJSON(
-                        res,
-                        200,
-                        {
-                            success: true,
-                            token,
-                            expiresIn:
-                                SESSION_DURATION
-                        }
-                    );
-
-                } catch (error) {
-                    sendJSON(
-                        res,
-                        500,
-                        {
-                            success: false,
-                            message:
-                                error.message
-                        }
-                    );
-                }
-
-                return;
-            }
-
-            // =================================================
-            // CEK LOGIN ADMIN
-            // =================================================
-
-            if (
-                req.method === "GET" &&
-                req.url === "/api/admin/check"
-            ) {
-                if (
-                    isAdminAuthenticated(req)
-                ) {
-                    sendJSON(
-                        res,
-                        200,
-                        {
-                            success: true,
-                            authenticated: true
-                        }
-                    );
-                } else {
-                    sendJSON(
-                        res,
-                        401,
-                        {
-                            success: false,
-                            authenticated: false
-                        }
-                    );
-                }
-
-                return;
-            }
-
-            // =================================================
-            // LOGOUT ADMIN
-            // =================================================
-
-            if (
-                req.method === "POST" &&
-                req.url === "/api/admin/logout"
-            ) {
-                const token =
-                    getAdminToken(req);
-
-                if (token) {
-                    adminSessions.delete(
-                        token
-                    );
-                }
-
-                sendJSON(
-                    res,
-                    200,
-                    {
-                        success: true,
-                        message:
-                            "Logout berhasil."
-                    }
+                res.writeHead(
+                    204
                 );
 
+                res.end();
+
                 return;
+
             }
+
 
             // =================================================
             // ROOT
@@ -1191,90 +992,148 @@ const server =
                 req.method === "GET" &&
                 req.url === "/"
             ) {
+
                 sendJSON(
                     res,
                     200,
                     {
-                        status: "online",
+
+                        status:
+                            "online",
+
                         message:
                             "Kicks Station Backend berhasil berjalan!"
+
                     }
                 );
 
+                return;
+
+            }
+
+
+            // =========================================================
+            // ADMIN LOGIN / CHECK / LOGOUT
+            // =========================================================
+            if (req.method === "POST" && req.url === "/api/admin/login") {
+                try {
+                    const ip = getClientIP(req);
+                    if (!ADMIN_PIN) { sendJSON(res, 503, { success: false, message: "ADMIN_PIN belum diset di server." }); return; }
+                    if (!canAttemptLogin(ip)) { sendJSON(res, 429, { success: false, message: "Terlalu banyak percobaan login. Coba lagi dalam 15 menit." }); return; }
+                    const data = await readBody(req);
+                    const pin = String(data?.pin || "").trim();
+                    if (!/^\d{6}$/.test(pin) || pin !== ADMIN_PIN) {
+                        recordLoginFailure(ip);
+                        sendJSON(res, 401, { success: false, message: /^\d{6}$/.test(pin) ? "PIN salah." : "PIN harus terdiri dari 6 angka." });
+                        return;
+                    }
+                    loginAttempts.delete(ip);
+                    const token = crypto.randomBytes(32).toString("hex");
+                    const expiresAt = Date.now() + SESSION_DURATION;
+                    adminSessions.set(token, { expiresAt });
+                    sendJSON(res, 200, { success: true, token, expiresAt });
+                } catch (error) { sendJSON(res, 400, { success: false, message: error.message }); }
+                return;
+            }
+            if (req.method === "GET" && req.url === "/api/admin/check") {
+                if (!isAdminAuthenticated(req)) { sendJSON(res, 401, { success: false, message: "Sesi admin tidak valid." }); return; }
+                sendJSON(res, 200, { success: true });
+                return;
+            }
+            if (req.method === "POST" && req.url === "/api/admin/logout") {
+                const token = getAdminToken(req);
+                if (token) adminSessions.delete(token);
+                sendJSON(res, 200, { success: true, message: "Logout berhasil." });
                 return;
             }
 
             // =================================================
             // GET SEMUA PRODUK
-            // PUBLIC
             // =================================================
 
             if (
                 req.method === "GET" &&
                 req.url === "/api/products"
             ) {
+
                 try {
+
                     const products =
                         readProducts();
+
 
                     sendJSON(
                         res,
                         200,
                         {
-                            success: true,
+
+                            success:
+                                true,
+
                             products:
-                                productsForClient(
-                                    products
-                                )
+                                productsForClient(products)
+
                         }
                     );
 
+
                 } catch (error) {
+
                     sendJSON(
                         res,
                         500,
                         {
-                            success: false,
+
+                            success:
+                                false,
+
                             message:
                                 error.message
+
                         }
                     );
+
                 }
 
+
                 return;
+
             }
+
 
             // =================================================
             // POST TAMBAH PRODUK
-            // WAJIB ADMIN
             // =================================================
 
             if (
                 req.method === "POST" &&
                 req.url === "/api/products"
             ) {
-                if (
-                    !requireAdmin(
-                        req,
-                        res
-                    )
-                ) {
-                    return;
-                }
 
                 try {
+
                     const data =
-                        await readBody(req);
+                        await readBody(
+                            req
+                        );
+
 
                     const products =
                         readProducts();
+
 
                     validateProductData(
                         data
                     );
 
+
+                    // -------------------------------------------------
+                    // ID
+                    // -------------------------------------------------
+
                     const maxId =
                         products.reduce(
+
                             (
                                 max,
                                 product
@@ -1285,11 +1144,19 @@ const server =
                                         product.id
                                     ) || 0
                                 ),
+
                             0
+
                         );
+
+
+                    // -------------------------------------------------
+                    // UPLOAD ORDER
+                    // -------------------------------------------------
 
                     const maxOrder =
                         products.reduce(
+
                             (
                                 max,
                                 product
@@ -1300,16 +1167,25 @@ const server =
                                         product.upload_order
                                     ) || 0
                                 ),
+
                             0
+
                         );
 
+
+                    // -------------------------------------------------
+                    // FOTO
+                    // -------------------------------------------------
+
                     let imagePaths = [];
+
 
                     if (
                         Array.isArray(
                             data.gambar
                         )
                     ) {
+
                         imagePaths =
                             saveImages(
                                 data.gambar
@@ -1319,14 +1195,22 @@ const server =
                         data.gambar &&
                         data.gambar.data
                     ) {
+
                         imagePaths = [
                             saveSingleImage(
                                 data.gambar
                             )
                         ];
+
                     }
 
+
+                    // -------------------------------------------------
+                    // PRODUK BARU
+                    // -------------------------------------------------
+
                     const newProduct = {
+
                         id:
                             maxId + 1,
 
@@ -1384,58 +1268,90 @@ const server =
 
                         upload_order:
                             maxOrder + 1
+
                     };
+
 
                     products.push(
                         newProduct
                     );
 
+
                     saveProducts(
                         products
                     );
 
+
                     console.log(
-                        "PRODUK BERHASIL DITAMBAHKAN:",
-                        newProduct.nama
+                        "\n================================="
                     );
+
+
+                    console.log(
+                        "PRODUK BERHASIL DITAMBAHKAN"
+                    );
+
+
+                    console.log(
+                        newProduct
+                    );
+
+
+                    console.log(
+                        "================================="
+                    );
+
 
                     sendJSON(
                         res,
                         201,
                         {
-                            success: true,
+
+                            success:
+                                true,
+
                             message:
                                 "Produk dan semua foto berhasil disimpan.",
+
                             product:
-                                productForClient(
-                                    newProduct
-                                )
+                                productForClient(newProduct)
+
                         }
                     );
 
+
                 } catch (error) {
+
                     console.error(
                         "Gagal tambah produk:",
                         error
                     );
 
+
                     sendJSON(
                         res,
                         500,
                         {
-                            success: false,
+
+                            success:
+                                false,
+
                             message:
                                 error.message
+
                         }
                     );
+
                 }
 
+
                 return;
+
             }
+
 
             // =================================================
             // PUT EDIT PRODUK
-            // WAJIB ADMIN
             // =================================================
 
             if (
@@ -1444,16 +1360,13 @@ const server =
                     "/api/products/"
                 )
             ) {
-                if (
-                    !requireAdmin(
-                        req,
-                        res
-                    )
-                ) {
-                    return;
-                }
 
                 try {
+
+                    // -------------------------------------------------
+                    // AMBIL ID
+                    // -------------------------------------------------
+
                     const id =
                         Number(
                             req.url
@@ -1461,19 +1374,37 @@ const server =
                                 .pop()
                         );
 
+
                     if (
-                        !Number.isInteger(id)
+                        !Number.isInteger(
+                            id
+                        )
                     ) {
+
                         throw new Error(
                             "ID produk tidak valid."
                         );
+
                     }
 
+
+                    // -------------------------------------------------
+                    // BODY
+                    // -------------------------------------------------
+
                     const data =
-                        await readBody(req);
+                        await readBody(
+                            req
+                        );
+
 
                     const products =
                         readProducts();
+
+
+                    // -------------------------------------------------
+                    // CARI PRODUK
+                    // -------------------------------------------------
 
                     const index =
                         products.findIndex(
@@ -1483,135 +1414,180 @@ const server =
                                 ) === id
                         );
 
+
                     if (
                         index === -1
                     ) {
+
                         throw new Error(
                             "Produk tidak ditemukan."
                         );
+
                     }
+
 
                     const oldProduct =
                         products[index];
 
-                    // -----------------------------------------
-                    // VALIDASI
-                    // -----------------------------------------
+
+                    // -------------------------------------------------
+                    // VALIDASI DATA DASAR
+                    // -------------------------------------------------
 
                     if (
                         data.nama !== undefined &&
-                        !String(
-                            data.nama
-                        ).trim()
+                        !String(data.nama).trim()
                     ) {
+
                         throw new Error(
                             "Nama produk wajib diisi."
                         );
+
                     }
+
 
                     if (
                         data.brand !== undefined &&
-                        !String(
-                            data.brand
-                        ).trim()
+                        !String(data.brand).trim()
                     ) {
+
                         throw new Error(
                             "Brand wajib diisi."
                         );
+
                     }
+
 
                     if (
                         data.harga !== undefined &&
                         Number(data.harga) <= 0
                     ) {
+
                         throw new Error(
                             "Harga tidak valid."
                         );
+
                     }
+
 
                     if (
                         data.sizes !== undefined &&
                         (
-                            !Array.isArray(
-                                data.sizes
-                            ) ||
+                            !Array.isArray(data.sizes) ||
                             data.sizes.length === 0
                         )
                     ) {
+
                         throw new Error(
                             "Minimal satu ukuran harus dipilih."
                         );
+
                     }
 
-                    // -----------------------------------------
-                    // FOTO
-                    // -----------------------------------------
+
+                    // =================================================
+                    // SISTEM FOTO EDIT
+                    // =================================================
+                    //
+                    // data.gambar dapat berisi campuran:
+                    //
+                    // "images/foto-lama.jpeg"
+                    //
+                    // dan
+                    //
+                    // {
+                    //    name: "...",
+                    //    data: "data:image/jpeg;base64,..."
+                    // }
+                    //
+                    // Foto lama yang masih ada akan dipertahankan.
+                    // Foto lama yang tidak ada lagi akan dihapus.
+                    // Foto baru akan disimpan.
+                    // =================================================
 
                     const oldImages =
                         normalizeImages(
                             oldProduct.gambar
                         );
 
+
                     let imagePaths =
                         oldImages.slice();
 
-                    let newlySavedImages =
-                        [];
+
+                    let newlySavedImages = [];
+
 
                     if (
                         data.gambar !== undefined
                     ) {
+
                         if (
                             !Array.isArray(
                                 data.gambar
                             )
                         ) {
+
                             throw new Error(
                                 "Format foto edit harus berupa array."
                             );
+
                         }
+
 
                         if (
                             data.gambar.length === 0
                         ) {
+
                             throw new Error(
                                 "Produk harus memiliki minimal satu foto."
                             );
+
                         }
+
 
                         if (
                             data.gambar.length >
                             MAX_IMAGES
                         ) {
+
                             throw new Error(
                                 `Maksimal ${MAX_IMAGES} foto untuk satu produk.`
                             );
+
                         }
 
-                        const keptExistingImages =
-                            [];
 
-                        const newImageObjects =
-                            [];
+                        // -------------------------------------------------
+                        // PISAHKAN:
+                        //
+                        // 1. PATH FOTO LAMA
+                        // 2. FOTO BARU BASE64
+                        // -------------------------------------------------
+
+                        const keptExistingImages = [];
+
+                        const newImageObjects = [];
+
 
                         for (
                             const image of data.gambar
                         ) {
+
+                            // ---------------------------------------------
                             // FOTO LAMA
+                            // ---------------------------------------------
+
                             if (
-                                typeof image ===
-                                "string"
+                                typeof image === "string"
                             ) {
+
                                 const storedImage =
-                                    toStoredImagePath(
-                                        image
-                                    );
+                                    toStoredImagePath(image);
 
                                 if (
                                     !storedImage ||
-                                    !isValidImagePath(
-                                        storedImage
-                                    )
+                                    !isValidImagePath(storedImage)
                                 ) {
                                     throw new Error(
                                         "Path foto tidak valid."
@@ -1619,9 +1595,7 @@ const server =
                                 }
 
                                 if (
-                                    !oldImages.includes(
-                                        storedImage
-                                    )
+                                    !oldImages.includes(storedImage)
                                 ) {
                                     throw new Error(
                                         "Foto lama tidak valid atau bukan milik produk ini."
@@ -1629,72 +1603,107 @@ const server =
                                 }
 
                                 if (
-                                    !keptExistingImages.includes(
-                                        storedImage
-                                    )
+                                    !keptExistingImages.includes(storedImage)
                                 ) {
-                                    keptExistingImages.push(
-                                        storedImage
-                                    );
+                                    keptExistingImages.push(storedImage);
                                 }
 
                                 continue;
                             }
 
+
+                            // ---------------------------------------------
                             // FOTO BARU
+                            // ---------------------------------------------
+
                             if (
                                 image &&
-                                typeof image ===
-                                "object" &&
+                                typeof image === "object" &&
                                 image.data
                             ) {
+
                                 newImageObjects.push(
                                     image
                                 );
 
                                 continue;
+
                             }
+
 
                             throw new Error(
                                 "Format data foto tidak valid."
                             );
+
                         }
+
+
+                        // -------------------------------------------------
+                        // HITUNG TOTAL FOTO
+                        // -------------------------------------------------
 
                         const totalImages =
                             keptExistingImages.length +
                             newImageObjects.length;
 
+
                         if (
                             totalImages === 0
                         ) {
+
                             throw new Error(
                                 "Produk harus memiliki minimal satu foto."
                             );
+
                         }
+
 
                         if (
                             totalImages >
                             MAX_IMAGES
                         ) {
+
                             throw new Error(
                                 `Maksimal ${MAX_IMAGES} foto untuk satu produk.`
                             );
+
                         }
 
+
+                        // -------------------------------------------------
+                        // SIMPAN FOTO BARU
+                        // -------------------------------------------------
+
                         if (
-                            newImageObjects.length >
-                            0
+                            newImageObjects.length > 0
                         ) {
+
                             newlySavedImages =
                                 saveImages(
                                     newImageObjects
                                 );
+
                         }
+
+
+                        // -------------------------------------------------
+                        // GABUNGKAN FOTO
+                        //
+                        // Foto lama tetap mengikuti urutan
+                        // yang dikirim admin.
+                        //
+                        // Foto baru berada setelah foto lama.
+                        // -------------------------------------------------
 
                         imagePaths = [
                             ...keptExistingImages,
                             ...newlySavedImages
                         ];
+
+
+                        // -------------------------------------------------
+                        // HAPUS FOTO LAMA YANG TIDAK DIPERTAHANKAN
+                        // -------------------------------------------------
 
                         const imagesToDelete =
                             oldImages.filter(
@@ -1704,16 +1713,20 @@ const server =
                                     )
                             );
 
+
                         deleteImage(
                             imagesToDelete
                         );
+
                     }
 
-                    // -----------------------------------------
-                    // UPDATE
-                    // -----------------------------------------
+
+                    // =================================================
+                    // UPDATE DATA PRODUK
+                    // =================================================
 
                     products[index] = {
+
                         ...oldProduct,
 
                         nama:
@@ -1785,54 +1798,89 @@ const server =
                                     data.deskripsi
                                 ).trim()
                                 : oldProduct.deskripsi
+
                     };
+
+
+                    // -------------------------------------------------
+                    // SIMPAN DATABASE
+                    // -------------------------------------------------
 
                     saveProducts(
                         products
                     );
 
+
                     console.log(
-                        "PRODUK BERHASIL DIUPDATE:",
-                        products[index].nama
+                        "\n================================="
                     );
+
+
+                    console.log(
+                        "PRODUK BERHASIL DIUPDATE"
+                    );
+
+
+                    console.log(
+                        products[index]
+                    );
+
+
+                    console.log(
+                        "================================="
+                    );
+
 
                     sendJSON(
                         res,
                         200,
                         {
-                            success: true,
+
+                            success:
+                                true,
+
                             message:
                                 "Produk berhasil diperbarui.",
+
                             product:
-                                productForClient(
-                                    products[index]
-                                )
+                                productForClient(products[index])
+
                         }
                     );
 
+
                 } catch (error) {
+
                     console.error(
                         "Gagal edit produk:",
                         error
                     );
 
+
                     sendJSON(
                         res,
                         500,
                         {
-                            success: false,
+
+                            success:
+                                false,
+
                             message:
                                 error.message
+
                         }
                     );
+
                 }
 
+
                 return;
+
             }
+
 
             // =================================================
             // DELETE PRODUK
-            // WAJIB ADMIN
             // =================================================
 
             if (
@@ -1841,16 +1889,9 @@ const server =
                     "/api/products/"
                 )
             ) {
-                if (
-                    !requireAdmin(
-                        req,
-                        res
-                    )
-                ) {
-                    return;
-                }
 
                 try {
+
                     const id =
                         Number(
                             req.url
@@ -1858,16 +1899,23 @@ const server =
                                 .pop()
                         );
 
+
                     if (
-                        !Number.isInteger(id)
+                        !Number.isInteger(
+                            id
+                        )
                     ) {
+
                         throw new Error(
                             "ID produk tidak valid."
                         );
+
                     }
+
 
                     const products =
                         readProducts();
+
 
                     const index =
                         products.findIndex(
@@ -1877,78 +1925,152 @@ const server =
                                 ) === id
                         );
 
+
                     if (
                         index === -1
                     ) {
+
                         throw new Error(
                             "Produk tidak ditemukan."
                         );
+
                     }
+
+
+                    // -------------------------------------------------
+                    // PRODUK YANG DIHAPUS
+                    // -------------------------------------------------
 
                     const deletedProduct =
                         products[index];
 
+
+                    // -------------------------------------------------
+                    // HAPUS SEMUA FOTO
+                    // -------------------------------------------------
+
                     deleteImage(
                         deletedProduct.gambar
                     );
+
+
+                    // -------------------------------------------------
+                    // HAPUS PRODUK
+                    // -------------------------------------------------
 
                     products.splice(
                         index,
                         1
                     );
 
+
+                    // -------------------------------------------------
+                    // RENOMOR
+                    // -------------------------------------------------
+
                     renumberProducts(
                         products
                     );
+
+
+                    // -------------------------------------------------
+                    // SIMPAN
+                    // -------------------------------------------------
 
                     saveProducts(
                         products
                     );
 
+
                     console.log(
-                        "PRODUK BERHASIL DIHAPUS:",
+                        "\n================================="
+                    );
+
+
+                    console.log(
+                        "PRODUK BERHASIL DIHAPUS"
+                    );
+
+
+                    console.log(
+                        "Produk dihapus:",
                         deletedProduct.nama
                     );
+
+
+                    console.log(
+                        "ID sebelumnya:",
+                        deletedProduct.id
+                    );
+
+
+                    console.log(
+                        "Jumlah produk sekarang:",
+                        products.length
+                    );
+
+
+                    console.log(
+                        "ID produk terakhir:",
+                        products.length
+                    );
+
+
+                    console.log(
+                        "================================="
+                    );
+
 
                     sendJSON(
                         res,
                         200,
                         {
-                            success: true,
+
+                            success:
+                                true,
+
                             message:
                                 "Produk berhasil dihapus dan nomor produk otomatis dirapikan.",
 
                             product:
-                                productForClient(
-                                    deletedProduct
-                                ),
+                                productForClient(deletedProduct),
 
                             products:
-                                productsForClient(
-                                    products
-                                )
+                                productsForClient(products)
+
                         }
                     );
 
+
                 } catch (error) {
+
                     console.error(
                         "Gagal hapus produk:",
                         error
                     );
 
+
                     sendJSON(
                         res,
                         500,
                         {
-                            success: false,
+
+                            success:
+                                false,
+
                             message:
                                 error.message
+
                         }
                     );
+
                 }
 
+
                 return;
+
             }
+
 
             // =================================================
             // 404
@@ -1958,13 +2080,19 @@ const server =
                 res,
                 404,
                 {
-                    success: false,
+
+                    success:
+                        false,
+
                     message:
                         "Endpoint tidak ditemukan."
+
                 }
             );
+
         }
     );
+
 
 // =========================================================
 // START SERVER
@@ -1973,40 +2101,35 @@ const server =
 server.listen(
     PORT,
     () => {
+
         console.log(
             "================================="
         );
+
 
         console.log(
             "KICKS STATION BACKEND"
         );
 
+
         console.log(
             "================================="
         );
+
 
         console.log(
             `Server berjalan di http://localhost:${PORT}`
         );
 
+
         console.log(
             `Database: ${productsFile}`
         );
+
 
         console.log(
             `Folder gambar: ${imagesFolder}`
         );
 
-        console.log(
-            `Folder gambar produk baru: ${productsImagesFolder}`
-        );
-
-        console.log(
-            `Admin PIN: ${
-                ADMIN_PIN
-                    ? "TERKONFIGURASI"
-                    : "BELUM DISET"
-            }`
-        );
     }
 );
