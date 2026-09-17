@@ -2,7 +2,8 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
+const PUBLIC_BASE_URL = process.env.RENDER_EXTERNAL_URL || "https://kicks-station.onrender.com";
 
 const productsFile = path.join(
     __dirname,
@@ -173,6 +174,117 @@ function normalizeImages(
 
     return [];
 
+}
+
+
+// =========================================================
+// URL FOTO UNTUK CLIENT
+// =========================================================
+
+function toStoredImagePath(imagePath) {
+    if (typeof imagePath !== "string") return null;
+
+    const value = imagePath.trim();
+
+    if (value.startsWith("images/")) {
+        return value;
+    }
+
+    try {
+        const parsed = new URL(value);
+        if (parsed.pathname.startsWith("/images/")) {
+            return parsed.pathname.slice(1);
+        }
+    } catch {}
+
+    return null;
+}
+
+function toPublicImageUrl(imagePath) {
+    const storedPath = toStoredImagePath(imagePath);
+    if (!storedPath) return imagePath;
+    return `${PUBLIC_BASE_URL}/${storedPath}`;
+}
+
+function productForClient(product) {
+    const result = { ...product };
+    const images = normalizeImages(product.gambar);
+
+    if (Array.isArray(product.gambar)) {
+        result.gambar = images.map(toPublicImageUrl);
+    } else if (typeof product.gambar === "string") {
+        result.gambar = toPublicImageUrl(product.gambar);
+    }
+
+    return result;
+}
+
+function productsForClient(products) {
+    return products.map(productForClient);
+}
+
+// =========================================================
+// SERVE FILE GAMBAR
+// =========================================================
+
+function serveImage(req, res) {
+    if (req.method !== "GET") return false;
+
+    let pathname;
+    try {
+        pathname = new URL(req.url, "http://localhost").pathname;
+    } catch {
+        return false;
+    }
+
+    if (!pathname.startsWith("/images/")) return false;
+
+    let relativePath;
+    try {
+        relativePath = decodeURIComponent(pathname.slice("/images/".length));
+    } catch {
+        res.writeHead(400);
+        res.end("Bad Request");
+        return true;
+    }
+
+    const resolvedFolder = path.resolve(imagesFolder);
+    const filePath = path.resolve(imagesFolder, relativePath);
+
+    if (!filePath.startsWith(resolvedFolder + path.sep)) {
+        res.writeHead(403);
+        res.end("Forbidden");
+        return true;
+    }
+
+    if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
+        res.writeHead(404);
+        res.end("Image not found");
+        return true;
+    }
+
+    const contentTypes = {
+        ".jpg": "image/jpeg",
+        ".jpeg": "image/jpeg",
+        ".png": "image/png",
+        ".webp": "image/webp"
+    };
+
+    const contentType = contentTypes[path.extname(filePath).toLowerCase()];
+
+    if (!contentType) {
+        res.writeHead(415);
+        res.end("Unsupported image type");
+        return true;
+    }
+
+    res.writeHead(200, {
+        "Content-Type": contentType,
+        "Cache-Control": "public, max-age=31536000, immutable"
+    });
+
+    fs.createReadStream(filePath).pipe(res);
+    return true;
 }
 
 
@@ -796,6 +908,15 @@ const server =
 
 
             // =================================================
+            // FILE GAMBAR
+            // =================================================
+
+            if (serveImage(req, res)) {
+                return;
+            }
+
+
+            // =================================================
             // OPTIONS
             // =================================================
 
@@ -866,7 +987,7 @@ const server =
                                 true,
 
                             products:
-                                products
+                                productsForClient(products)
 
                         }
                     );
@@ -1109,7 +1230,7 @@ const server =
                                 "Produk dan semua foto berhasil disimpan.",
 
                             product:
-                                newProduct
+                                productForClient(newProduct)
 
                         }
                     );
@@ -1377,49 +1498,33 @@ const server =
                                 typeof image === "string"
                             ) {
 
-                                if (
-                                    !isValidImagePath(
-                                        image
-                                    )
-                                ) {
+                                const storedImage =
+                                    toStoredImagePath(image);
 
+                                if (
+                                    !storedImage ||
+                                    !isValidImagePath(storedImage)
+                                ) {
                                     throw new Error(
                                         "Path foto tidak valid."
                                     );
-
                                 }
 
-
-                                // Hanya boleh mempertahankan
-                                // foto yang memang milik produk lama.
-
                                 if (
-                                    !oldImages.includes(
-                                        image
-                                    )
+                                    !oldImages.includes(storedImage)
                                 ) {
-
                                     throw new Error(
                                         "Foto lama tidak valid atau bukan milik produk ini."
                                     );
-
                                 }
 
-
                                 if (
-                                    !keptExistingImages.includes(
-                                        image
-                                    )
+                                    !keptExistingImages.includes(storedImage)
                                 ) {
-
-                                    keptExistingImages.push(
-                                        image
-                                    );
-
+                                    keptExistingImages.push(storedImage);
                                 }
 
                                 continue;
-
                             }
 
 
@@ -1654,7 +1759,7 @@ const server =
                                 "Produk berhasil diperbarui.",
 
                             product:
-                                products[index]
+                                productForClient(products[index])
 
                         }
                     );
@@ -1844,10 +1949,10 @@ const server =
                                 "Produk berhasil dihapus dan nomor produk otomatis dirapikan.",
 
                             product:
-                                deletedProduct,
+                                productForClient(deletedProduct),
 
                             products:
-                                products
+                                productsForClient(products)
 
                         }
                     );
