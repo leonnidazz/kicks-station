@@ -221,6 +221,58 @@ textarea:focus {
 
 <body class="bg-gray-100 text-gray-900">
 
+<!-- ADMIN LOGIN SCREEN -->
+<div
+    id="admin-login-screen"
+    class="hidden fixed inset-0 z-[500] bg-gray-100 flex items-center justify-center p-5">
+
+    <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl border p-8">
+        <div class="text-center mb-8">
+            <div class="mx-auto w-16 h-16 rounded-2xl bg-black text-white flex items-center justify-center text-xl font-black mb-5">
+                KS
+            </div>
+            <h2 class="text-2xl font-black tracking-tight">
+                AL KAUTSAR
+            </h2>
+            <p class="text-sm text-gray-500 mt-1">
+                Admin Dashboard
+            </p>
+        </div>
+
+        <form onsubmit="event.preventDefault(); adminLogin();">
+            <label
+                for="admin-pin-input"
+                class="block text-sm font-bold mb-2">
+                PIN Admin
+            </label>
+
+            <input
+                id="admin-pin-input"
+                type="password"
+                inputmode="numeric"
+                maxlength="6"
+                autocomplete="new-password"
+                 name="admin-pin"
+                placeholder="Masukkan 6 digit PIN"
+                class="w-full px-4 py-4 rounded-2xl border border-gray-200 text-center text-2xl tracking-[.5em] font-bold"
+            >
+
+            <p
+                id="admin-login-message"
+                class="text-sm text-red-600 font-semibold mt-3 min-h-[20px]">
+            </p>
+
+            <button
+                id="admin-login-button"
+                type="submit"
+                class="w-full mt-4 bg-black text-white py-4 rounded-2xl font-bold hover:bg-gray-800 transition">
+                Masuk
+            </button>
+        </form>
+    </div>
+</div>
+
+
 <!-- MOBILE HEADER -->
 <header class="lg:hidden sticky top-0 z-50 bg-white border-b px-5 py-4 flex items-center justify-between">
     <div>
@@ -291,14 +343,6 @@ textarea:focus {
             </button>
 
         </nav>
-
-        <div class="px-5 pb-5">
-            <button
-                onclick="adminLogout()"
-                class="w-full px-4 py-3 rounded-xl border border-red-200 text-red-600 font-bold hover:bg-red-50 transition">
-                ↪ Keluar Admin
-            </button>
-        </div>
 
         <div class="mt-auto p-5">
             <div class="rounded-2xl bg-gray-100 p-4">
@@ -1351,67 +1395,6 @@ textarea:focus {
     </div>
 </div>
 
-
-<!-- ADMIN LOGIN -->
-<div
-    id="admin-login-screen"
-    class="hidden fixed inset-0 z-[9999] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-
-    <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl p-8">
-
-        <div class="text-center">
-
-            <div class="mx-auto w-16 h-16 bg-black text-white rounded-2xl flex items-center justify-center text-2xl font-black">
-                KS
-            </div>
-
-            <h2 class="mt-5 text-2xl font-black">
-                Admin Authentication
-            </h2>
-
-            <p class="mt-2 text-sm text-gray-500">
-                Masukkan PIN 6 digit untuk membuka dashboard.
-            </p>
-
-        </div>
-
-        <div class="mt-7">
-
-            <label
-                for="admin-pin-input"
-                class="block text-sm font-bold mb-2">
-                PIN Admin
-            </label>
-
-            <input
-                id="admin-pin-input"
-                type="password"
-                inputmode="numeric"
-                autocomplete="off"
-                maxlength="6"
-                pattern="[0-9]{6}"
-                placeholder="••••••"
-                onkeydown="if(event.key === 'Enter') adminLogin()"
-                class="w-full px-5 py-4 rounded-2xl border border-gray-200 text-center text-2xl tracking-[0.5em] font-black outline-none focus:border-black focus:ring-2 focus:ring-black/10">
-
-            <p
-                id="admin-login-message"
-                class="text-red-500 text-sm text-center font-semibold mt-3 min-h-[20px]">
-            </p>
-
-            <button
-                id="admin-login-button"
-                type="button"
-                onclick="adminLogin()"
-                class="w-full mt-3 bg-black text-white py-4 rounded-2xl font-bold hover:bg-gray-800 transition disabled:opacity-50">
-                Masuk
-            </button>
-
-        </div>
-
-    </div>
-</div>
-
 <!-- TOAST -->
 <div
     id="toast"
@@ -1443,15 +1426,21 @@ const API_URL = "https://kicks-station.onrender.com";
 
 const ADMIN_TOKEN_KEY = "kicksStationAdminToken";
 
+// Jangan simpan PIN. Token hanya berlaku untuk tab/session ini.
+window.addEventListener("pageshow", () => {
+    const input = document.getElementById("admin-pin-input");
+    if (input && !adminToken) input.value = "";
+});
+
 let adminToken =
-    localStorage.getItem(ADMIN_TOKEN_KEY) || "";
+    sessionStorage.getItem(ADMIN_TOKEN_KEY) || "";
 
 
 function clearAdminSession() {
 
     adminToken = "";
 
-    localStorage.removeItem(
+    sessionStorage.removeItem(
         ADMIN_TOKEN_KEY
     );
 }
@@ -1485,6 +1474,7 @@ function showAdminLogin(message = "") {
             );
 
         if (input) {
+            input.value = "";
             input.focus();
         }
 
@@ -1595,7 +1585,7 @@ async function adminLogin() {
         adminToken =
             result.token;
 
-        localStorage.setItem(
+        sessionStorage.setItem(
             ADMIN_TOKEN_KEY,
             adminToken
         );

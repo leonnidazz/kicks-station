@@ -2,52 +2,27 @@ const http = require("http");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
+const { Pool } = require("pg");
 
 const PORT = process.env.PORT || 3000;
-const PUBLIC_BASE_URL = process.env.RENDER_EXTERNAL_URL || "https://kicks-station.onrender.com";
+const PUBLIC_BASE_URL =
+    process.env.RENDER_EXTERNAL_URL || "https://kicks-station.onrender.com";
 
-const productsFile = path.join(
-    __dirname,
-    "..",
-    "products.json"
-);
+const SUPABASE_URL = String(process.env.SUPABASE_URL || "").replace(/\/+$/, "");
+const SUPABASE_SERVICE_ROLE_KEY = String(
+    process.env.SUPABASE_SERVICE_ROLE_KEY || ""
+).trim();
+const SUPABASE_BUCKET = "product-images";
 
-const imagesFolder = path.join(
-    __dirname,
-    "..",
-    "images"
-);
+const DATABASE_URL = String(process.env.DATABASE_URL || "").trim();
 
+const productsFile = path.join(__dirname, "..", "products.json");
+const imagesFolder = path.join(__dirname, "..", "images");
 
-// =========================================================
-// BATAS UPLOAD
-// =========================================================
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+const MAX_IMAGES = 10;
+const MAX_REQUEST_SIZE = 60 * 1024 * 1024;
 
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024;       // 5 MB / foto
-const MAX_IMAGES = 10;                        // maksimal 10 foto / produk
-const MAX_REQUEST_SIZE = 60 * 1024 * 1024;   // maksimal 60 MB / request
-
-
-// =========================================================
-// PERSIAPAN FOLDER
-// =========================================================
-
-if (!fs.existsSync(imagesFolder)) {
-
-    fs.mkdirSync(
-        imagesFolder,
-        {
-            recursive: true
-        }
-    );
-
-}
-
-
-
-// =========================================================
-// ADMIN AUTHENTICATION
-// =========================================================
 const ADMIN_PIN = String(process.env.ADMIN_PIN || "").trim();
 const SESSION_DURATION = 12 * 60 * 60 * 1000;
 const adminSessions = new Map();
@@ -55,216 +30,153 @@ const loginAttempts = new Map();
 const LOGIN_WINDOW = 15 * 60 * 1000;
 const MAX_LOGIN_FAILURES = 5;
 
-function getClientIP(req) {
-    return String(req.headers["x-forwarded-for"] || req.socket?.remoteAddress || "unknown").split(",")[0].trim();
+let pool = null;
+let databaseReady = false;
+let migrationPromise = null;
+
+if (!DATABASE_URL) {
+    console.error("DATABASE_URL belum diset.");
+} else {
+    pool = new Pool({
+        connectionString: DATABASE_URL,
+        ssl: { rejectUnauthorized: false },
+        max: 5,
+        idleTimeoutMillis: 30000,
+        connectionTimeoutMillis: 10000,
+    });
 }
+
+function getClientIP(req) {
+    return String(
+        req.headers["x-forwarded-for"] ||
+        req.socket?.remoteAddress ||
+        "unknown"
+    )
+        .split(",")[0]
+        .trim();
+}
+
 function cleanupAdminSessions() {
     const now = Date.now();
-    for (const [token, session] of adminSessions) if (session.expiresAt <= now) adminSessions.delete(token);
+    for (const [token, session] of adminSessions) {
+        if (session.expiresAt <= now) adminSessions.delete(token);
+    }
 }
+
 function canAttemptLogin(ip) {
     const now = Date.now();
     const attempts = loginAttempts.get(ip);
-    if (!attempts || now - attempts.windowStart >= LOGIN_WINDOW) { loginAttempts.delete(ip); return true; }
+    if (!attempts || now - attempts.windowStart >= LOGIN_WINDOW) {
+        loginAttempts.delete(ip);
+        return true;
+    }
     return attempts.failures < MAX_LOGIN_FAILURES;
 }
+
 function recordLoginFailure(ip) {
     const now = Date.now();
     const attempts = loginAttempts.get(ip);
-    if (!attempts || now - attempts.windowStart >= LOGIN_WINDOW) loginAttempts.set(ip, { windowStart: now, failures: 1 });
-    else attempts.failures++;
+    if (!attempts || now - attempts.windowStart >= LOGIN_WINDOW) {
+        loginAttempts.set(ip, { windowStart: now, failures: 1 });
+    } else {
+        attempts.failures++;
+    }
 }
+
 function getAdminToken(req) {
     const header = String(req.headers.authorization || "");
-    return header.startsWith("Bearer ") ? (header.slice(7).trim() || null) : null;
+    return header.startsWith("Bearer ")
+        ? header.slice(7).trim() || null
+        : null;
 }
+
 function isAdminAuthenticated(req) {
     cleanupAdminSessions();
     const token = getAdminToken(req);
     const session = token ? adminSessions.get(token) : null;
     return Boolean(session && session.expiresAt > Date.now());
 }
+
 function requireAdmin(req, res) {
     if (!ADMIN_PIN || !isAdminAuthenticated(req)) {
-        sendJSON(res, 401, { success: false, message: !ADMIN_PIN ? "Admin authentication belum dikonfigurasi di server." : "Unauthorized. Silakan login sebagai admin." });
+        sendJSON(res, 401, {
+            success: false,
+            message: !ADMIN_PIN
+                ? "Admin authentication belum dikonfigurasi di server."
+                : "Unauthorized. Silakan login sebagai admin.",
+        });
         return false;
     }
     return true;
 }
 
-// =========================================================
-// HELPER RESPONSE
-// =========================================================
-
-function sendJSON(
-    res,
-    statusCode,
-    data
-) {
-
-    res.writeHead(
-        statusCode,
-        {
-            "Content-Type":
-                "application/json; charset=utf-8"
-        }
-    );
-
-    res.end(
-        JSON.stringify(data)
-    );
-
+function sendJSON(res, statusCode, data) {
+    res.writeHead(statusCode, {
+        "Content-Type": "application/json; charset=utf-8",
+    });
+    res.end(JSON.stringify(data));
 }
 
-
-// =========================================================
-// BACA DATABASE
-// =========================================================
-
-function readProducts() {
-
-    if (!fs.existsSync(productsFile)) {
-
-        return [];
-
-    }
-
-    const content =
-        fs.readFileSync(
-            productsFile,
-            "utf8"
-        );
-
-    return JSON.parse(content);
-
-}
-
-
-// =========================================================
-// SIMPAN DATABASE
-// =========================================================
-
-function saveProducts(products) {
-
-    fs.writeFileSync(
-
-        productsFile,
-
-        JSON.stringify(
-            products,
-            null,
-            2
-        ),
-
-        "utf8"
-
-    );
-
-}
-
-
-// =========================================================
-// SANITASI NAMA FILE
-// =========================================================
-
-function sanitizeFilename(
-    filename
-) {
-
-    return path
-        .basename(filename)
-        .replace(
-            /[<>:"/\\|?*\x00-\x1F]/g,
-            "_"
-        )
-        .replace(
-            /\s+/g,
-            " "
-        )
-        .trim();
-
-}
-
-
-// =========================================================
-// NORMALISASI FOTO
-// =========================================================
-
-function normalizeImages(
-    gambar
-) {
-
-    if (!gambar) {
-
-        return [];
-
-    }
-
+function normalizeImages(gambar) {
+    if (!gambar) return [];
 
     if (Array.isArray(gambar)) {
-
         return gambar.filter(
-            image =>
-                typeof image === "string" &&
-                image.trim() !== ""
+            (image) => typeof image === "string" && image.trim() !== ""
         );
-
     }
-
 
     if (typeof gambar === "string") {
-
-        return gambar.trim()
-            ? [gambar]
-            : [];
-
+        return gambar.trim() ? [gambar.trim()] : [];
     }
 
-
     return [];
-
 }
 
-
-// =========================================================
-// URL FOTO UNTUK CLIENT
-// =========================================================
-
-function toStoredImagePath(imagePath) {
+function toStoragePath(imagePath) {
     if (typeof imagePath !== "string") return null;
 
     const value = imagePath.trim();
+    if (!value) return null;
 
-    if (value.startsWith("images/")) {
-        return value;
+    // Format internal storage yang kita simpan.
+    if (value.startsWith("product-images/")) {
+        return value.slice("product-images/".length);
     }
 
-    try {
-        const parsed = new URL(value);
-        if (parsed.pathname.startsWith("/images/")) {
-            return parsed.pathname.slice(1);
-        }
-    } catch {}
+    // URL Supabase Storage public.
+    if (SUPABASE_URL) {
+        try {
+            const parsed = new URL(value);
+            const prefix = `/storage/v1/object/public/${SUPABASE_BUCKET}/`;
+            if (parsed.origin === SUPABASE_URL && parsed.pathname.startsWith(prefix)) {
+                return decodeURIComponent(parsed.pathname.slice(prefix.length));
+            }
+        } catch {}
+    }
 
     return null;
 }
 
 function toPublicImageUrl(imagePath) {
-    const storedPath = toStoredImagePath(imagePath);
-    if (!storedPath) return imagePath;
-    return `${PUBLIC_BASE_URL}/${storedPath}`;
+    if (typeof imagePath !== "string") return imagePath;
+
+    const storagePath = toStoragePath(imagePath);
+    if (storagePath && SUPABASE_URL) {
+        return `${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_BUCKET}/${storagePath
+            .split("/")
+            .map(encodeURIComponent)
+            .join("/")}`;
+    }
+
+    return imagePath;
 }
 
 function productForClient(product) {
     const result = { ...product };
     const images = normalizeImages(product.gambar);
 
-    if (Array.isArray(product.gambar)) {
-        result.gambar = images.map(toPublicImageUrl);
-    } else if (typeof product.gambar === "string") {
-        result.gambar = toPublicImageUrl(product.gambar);
-    }
-
+    result.gambar = images.map(toPublicImageUrl);
     return result;
 }
 
@@ -272,1864 +184,1006 @@ function productsForClient(products) {
     return products.map(productForClient);
 }
 
-// =========================================================
-// SERVE FILE GAMBAR
-// =========================================================
-
-function serveImage(req, res) {
-    if (req.method !== "GET") return false;
-
-    let pathname;
-    try {
-        pathname = new URL(req.url, "http://localhost").pathname;
-    } catch {
-        return false;
-    }
-
-    if (!pathname.startsWith("/images/")) return false;
-
-    let relativePath;
-    try {
-        relativePath = decodeURIComponent(pathname.slice("/images/".length));
-    } catch {
-        res.writeHead(400);
-        res.end("Bad Request");
-        return true;
-    }
-
-    const resolvedFolder = path.resolve(imagesFolder);
-    const filePath = path.resolve(imagesFolder, relativePath);
-
-    if (!filePath.startsWith(resolvedFolder + path.sep)) {
-        res.writeHead(403);
-        res.end("Forbidden");
-        return true;
-    }
-
-    if (!fs.existsSync(filePath) || !fs.statSync(filePath).isFile()) {
-        res.writeHead(404);
-        res.end("Image not found");
-        return true;
-    }
-
-    const contentTypes = {
-        ".jpg": "image/jpeg",
-        ".jpeg": "image/jpeg",
-        ".png": "image/png",
-        ".webp": "image/webp"
-    };
-
-    const contentType = contentTypes[path.extname(filePath).toLowerCase()];
-
-    if (!contentType) {
-        res.writeHead(415);
-        res.end("Unsupported image type");
-        return true;
-    }
-
-    res.writeHead(200, {
-        "Content-Type": contentType,
-        "Cache-Control": "public, max-age=31536000, immutable"
-    });
-
-    fs.createReadStream(filePath).pipe(res);
-    return true;
+function sanitizeFilename(filename) {
+    return path
+        .basename(String(filename || "image"))
+        .replace(/[<>:"/\\|?*\x00-\x1F]/g, "_")
+        .replace(/\s+/g, " ")
+        .trim();
 }
 
-
-// =========================================================
-// VALIDASI PATH FOTO EXISTING
-// =========================================================
-//
-// Hanya mengizinkan foto yang memang berada
-// di folder images.
-// =========================================================
-
-function isValidImagePath(
-    imagePath
-) {
-
-    if (
-        typeof imagePath !== "string"
-    ) {
-
-        return false;
-
+function validateImageData(imageData) {
+    if (!imageData || !imageData.data) {
+        throw new Error("Data foto tidak lengkap.");
     }
 
-    return imagePath.startsWith("images/");
-
-}
-
-
-// =========================================================
-// SIMPAN SATU FOTO BARU
-// =========================================================
-
-function saveSingleImage(
-    imageData
-) {
-
-    if (
-        !imageData ||
-        !imageData.data ||
-        !imageData.name
-    ) {
-
-        throw new Error(
-            "Data foto tidak lengkap."
-        );
-
-    }
-
-
-    const cleanName =
-        sanitizeFilename(
-            imageData.name
-        );
-
-
+    const cleanName = sanitizeFilename(imageData.name || "image");
     if (!cleanName) {
-
-        throw new Error(
-            "Nama file gambar tidak valid."
-        );
-
+        throw new Error("Nama file gambar tidak valid.");
     }
 
-
-    // ---------------------------------------------------------
-    // VALIDASI MIME
-    // ---------------------------------------------------------
-
-    const mimeMatch =
-        String(
-            imageData.data
-        ).match(
-            /^data:(image\/(?:jpeg|png|webp));base64,/i
-        );
-
+    const mimeMatch = String(imageData.data).match(
+        /^data:(image\/(?:jpeg|png|webp));base64,/i
+    );
 
     if (!mimeMatch) {
-
         throw new Error(
             `Format foto "${cleanName}" harus JPG, PNG, atau WEBP.`
         );
-
     }
 
+    const base64 = imageData.data.replace(
+        /^data:image\/(?:jpeg|png|webp);base64,/i,
+        ""
+    );
 
-    const base64 =
-        imageData.data.replace(
-            /^data:image\/(?:jpeg|png|webp);base64,/i,
-            ""
-        );
+    const buffer = Buffer.from(base64, "base64");
 
-
-    const buffer =
-        Buffer.from(
-            base64,
-            "base64"
-        );
-
-
-    if (
-        buffer.length === 0
-    ) {
-
-        throw new Error(
-            "File gambar kosong atau rusak."
-        );
-
+    if (!buffer.length) {
+        throw new Error("File gambar kosong atau rusak.");
     }
 
-
-    if (
-        buffer.length >
-        MAX_IMAGE_SIZE
-    ) {
-
-        throw new Error(
-            `Ukuran foto "${cleanName}" maksimal 5 MB.`
-        );
-
+    if (buffer.length > MAX_IMAGE_SIZE) {
+        throw new Error(`Ukuran foto "${cleanName}" maksimal 5 MB.`);
     }
 
+    const extension = path.extname(cleanName).toLowerCase();
+    const allowedExtensions = [".jpg", ".jpeg", ".png", ".webp"];
 
-    // ---------------------------------------------------------
-    // CEK EXTENSION
-    // ---------------------------------------------------------
-
-    const extension =
-        path.extname(
-            cleanName
-        ).toLowerCase();
-
-
-    const allowedExtensions = [
-        ".jpg",
-        ".jpeg",
-        ".png",
-        ".webp"
-    ];
-
-
-    if (
-        !allowedExtensions.includes(
-            extension
-        )
-    ) {
-
+    if (!allowedExtensions.includes(extension)) {
         throw new Error(
             `Format foto "${cleanName}" harus JPG, JPEG, PNG, atau WEBP.`
         );
-
     }
 
+    const mime =
+        extension === ".png"
+            ? "image/png"
+            : extension === ".webp"
+              ? "image/webp"
+              : "image/jpeg";
 
-    const originalName =
-        path.basename(
-            cleanName,
-            extension
-        );
+    return { cleanName, extension, mime, buffer };
+}
 
-
-    let finalName =
-        cleanName;
-
-
-    let counter = 1;
-
-
-    while (
-        fs.existsSync(
-            path.join(
-                imagesFolder,
-                finalName
-            )
-        )
-    ) {
-
-        finalName =
-            `${originalName} (${counter})${extension}`;
-
-        counter++;
-
+function validateProductData(data) {
+    if (!data.nama || !String(data.nama).trim()) {
+        throw new Error("Nama produk wajib diisi.");
     }
 
+    if (!data.brand || !String(data.brand).trim()) {
+        throw new Error("Brand wajib diisi.");
+    }
 
-    const destination =
-        path.join(
-            imagesFolder,
-            finalName
+    if (!data.harga || Number(data.harga) <= 0) {
+        throw new Error("Harga tidak valid.");
+    }
+
+    if (!Array.isArray(data.sizes) || data.sizes.length === 0) {
+        throw new Error("Minimal satu ukuran harus dipilih.");
+    }
+}
+
+function readBody(req) {
+    return new Promise((resolve, reject) => {
+        let body = "";
+        let rejected = false;
+
+        req.on("data", (chunk) => {
+            if (rejected) return;
+
+            body += chunk.toString();
+
+            if (Buffer.byteLength(body, "utf8") > MAX_REQUEST_SIZE) {
+                rejected = true;
+                reject(
+                    new Error(
+                        "Total ukuran upload terlalu besar. Maksimal 60 MB."
+                    )
+                );
+                req.destroy();
+            }
+        });
+
+        req.on("end", () => {
+            if (rejected) return;
+
+            try {
+                resolve(JSON.parse(body));
+            } catch {
+                reject(new Error("Format data tidak valid."));
+            }
+        });
+
+        req.on("error", reject);
+    });
+}
+
+function legacyImageFilePath(imagePath) {
+    if (typeof imagePath !== "string") return null;
+
+    const value = imagePath.trim();
+    if (!value.startsWith("images/")) return null;
+
+    const filename = path.basename(value);
+    const resolvedFolder = path.resolve(imagesFolder);
+    const resolvedFile = path.resolve(imagesFolder, filename);
+
+    if (!resolvedFile.startsWith(resolvedFolder + path.sep)) return null;
+    return resolvedFile;
+}
+
+async function supabaseStorageRequest(endpoint, options = {}) {
+    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+        throw new Error(
+            "SUPABASE_URL dan SUPABASE_SERVICE_ROLE_KEY belum dikonfigurasi."
         );
+    }
 
+    const headers = {
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+        ...(options.headers || {}),
+    };
 
-    fs.writeFileSync(
-        destination,
-        buffer
+    const response = await fetch(`${SUPABASE_URL}${endpoint}`, {
+        ...options,
+        headers,
+    });
+
+    const text = await response.text();
+
+    if (!response.ok) {
+        let message = text;
+        try {
+            const parsed = JSON.parse(text);
+            message = parsed.message || parsed.error || text;
+        } catch {}
+        throw new Error(`Supabase Storage: ${message}`);
+    }
+
+    return text ? JSON.parse(text) : null;
+}
+
+async function uploadBufferToStorage(storagePath, buffer, mime) {
+    const encodedPath = storagePath
+        .split("/")
+        .map(encodeURIComponent)
+        .join("/");
+
+    await supabaseStorageRequest(
+        `/storage/v1/object/${SUPABASE_BUCKET}/${encodedPath}`,
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": mime,
+                "x-upsert": "true",
+            },
+            body: buffer,
+        }
     );
 
+    return storagePath;
+}
+
+async function deleteStorageImages(imagePaths) {
+    const names = normalizeImages(imagePaths)
+        .map(toStoragePath)
+        .filter(Boolean);
+
+    if (!names.length) return;
+
+    await supabaseStorageRequest("/storage/v1/object/remove", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(
+            names.map((name) => ({
+                bucket_id: SUPABASE_BUCKET,
+                name,
+            }))
+        ),
+    });
+}
+
+async function uploadImageObject(imageData, prefix = "products") {
+    const validated = validateImageData(imageData);
+
+    const baseName = path.basename(
+        validated.cleanName,
+        validated.extension
+    );
+
+    const safeBaseName =
+        baseName
+            .replace(/[^a-zA-Z0-9._-]+/g, "-")
+            .replace(/-+/g, "-")
+            .replace(/^-|-$/g, "") || "image";
+
+    const finalName = `${prefix}/${Date.now()}-${crypto.randomBytes(5).toString("hex")}-${safeBaseName}${validated.extension}`;
+
+    await uploadBufferToStorage(
+        finalName,
+        validated.buffer,
+        validated.mime
+    );
+
+    return finalName;
+}
+
+async function migrateLegacyImage(imagePath) {
+    const storagePath = toStoragePath(imagePath);
+    if (storagePath) return storagePath;
+
+    const filePath = legacyImageFilePath(imagePath);
+    if (!filePath || !fs.existsSync(filePath)) return null;
+
+    const extension = path.extname(filePath).toLowerCase();
+    const mime =
+        extension === ".png"
+            ? "image/png"
+            : extension === ".webp"
+              ? "image/webp"
+              : "image/jpeg";
+
+    const buffer = fs.readFileSync(filePath);
+    if (buffer.length > MAX_IMAGE_SIZE) {
+        console.warn("Foto legacy terlalu besar, dilewati:", imagePath);
+        return null;
+    }
+
+    const cleanName = sanitizeFilename(path.basename(filePath));
+    const finalName = `products/legacy-${crypto.randomBytes(5).toString("hex")}-${cleanName}`;
+
+    await uploadBufferToStorage(finalName, buffer, mime);
+    return finalName;
+}
+
+async function ensureDatabase() {
+    if (!pool) {
+        throw new Error("DATABASE_URL belum diset di Render.");
+    }
+
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS products (
+            id INTEGER PRIMARY KEY,
+            nama TEXT NOT NULL,
+            brand TEXT NOT NULL,
+            harga NUMERIC NOT NULL,
+            harga_coret NUMERIC DEFAULT 0,
+            tipe TEXT DEFAULT 'kasual',
+            asal TEXT DEFAULT 'internasional',
+            pengguna TEXT DEFAULT 'unisex',
+            stok INTEGER DEFAULT 0,
+            sizes JSONB NOT NULL DEFAULT '[]'::jsonb,
+            gambar JSONB NOT NULL DEFAULT '[]'::jsonb,
+            deskripsi TEXT DEFAULT '',
+            upload_order INTEGER NOT NULL
+        )
+    `);
+
+    databaseReady = true;
+}
+
+async function getProducts() {
+    await ensureDatabase();
+
+    const result = await pool.query(`
+        SELECT
+            id,
+            nama,
+            brand,
+            harga,
+            harga_coret,
+            tipe,
+            asal,
+            pengguna,
+            stok,
+            sizes,
+            gambar,
+            deskripsi,
+            upload_order
+        FROM products
+        ORDER BY upload_order ASC, id ASC
+    `);
+
+    return result.rows.map((row) => ({
+        ...row,
+        harga: Number(row.harga),
+        harga_coret: Number(row.harga_coret || 0),
+        stok: Number(row.stok || 0),
+        sizes: Array.isArray(row.sizes) ? row.sizes : [],
+        gambar: normalizeImages(row.gambar),
+        upload_order: Number(row.upload_order),
+    }));
+}
+
+async function insertProduct(product) {
+    await pool.query(
+        `
+        INSERT INTO products
+        (id, nama, brand, harga, harga_coret, tipe, asal, pengguna, stok, sizes, gambar, deskripsi, upload_order)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb,$11::jsonb,$12,$13)
+        `,
+        [
+            product.id,
+            product.nama,
+            product.brand,
+            product.harga,
+            product.harga_coret,
+            product.tipe,
+            product.asal,
+            product.pengguna,
+            product.stok,
+            JSON.stringify(product.sizes),
+            JSON.stringify(product.gambar),
+            product.deskripsi,
+            product.upload_order,
+        ]
+    );
+}
+
+async function updateProductRow(product) {
+    await pool.query(
+        `
+        UPDATE products SET
+            nama=$2,
+            brand=$3,
+            harga=$4,
+            harga_coret=$5,
+            tipe=$6,
+            asal=$7,
+            pengguna=$8,
+            stok=$9,
+            sizes=$10::jsonb,
+            gambar=$11::jsonb,
+            deskripsi=$12,
+            upload_order=$13
+        WHERE id=$1
+        `,
+        [
+            product.id,
+            product.nama,
+            product.brand,
+            product.harga,
+            product.harga_coret,
+            product.tipe,
+            product.asal,
+            product.pengguna,
+            product.stok,
+            JSON.stringify(product.sizes),
+            JSON.stringify(product.gambar),
+            product.deskripsi,
+            product.upload_order,
+        ]
+    );
+}
+
+async function deleteProductRow(id) {
+    await pool.query("DELETE FROM products WHERE id=$1", [id]);
+}
+
+async function migrateProductsFromJSONIfNeeded() {
+    await ensureDatabase();
+
+    const countResult = await pool.query(
+        "SELECT COUNT(*)::int AS count FROM products"
+    );
+    const count = Number(countResult.rows[0].count);
+
+    if (count > 0) {
+        console.log(`Supabase sudah berisi ${count} produk. Migrasi dilewati.`);
+        return;
+    }
+
+    if (!fs.existsSync(productsFile)) {
+        console.log("products.json tidak ditemukan. Database dimulai kosong.");
+        return;
+    }
+
+    let legacyProducts;
+    try {
+        legacyProducts = JSON.parse(fs.readFileSync(productsFile, "utf8"));
+    } catch (error) {
+        console.error("Gagal membaca products.json:", error);
+        return;
+    }
+
+    if (!Array.isArray(legacyProducts) || !legacyProducts.length) {
+        console.log("products.json kosong. Database dimulai kosong.");
+        return;
+    }
 
     console.log(
-        "Foto disimpan:",
-        finalName
+        `Memulai migrasi ${legacyProducts.length} produk lama ke Supabase...`
     );
 
+    for (let index = 0; index < legacyProducts.length; index++) {
+        const old = legacyProducts[index];
 
-    return `images/${finalName}`;
+        const oldImages = normalizeImages(old.gambar);
+        const migratedImages = [];
 
+        for (const image of oldImages) {
+            try {
+                const migrated = await migrateLegacyImage(image);
+                if (migrated) {
+                    migratedImages.push(migrated);
+                } else {
+                    migratedImages.push(image);
+                }
+            } catch (error) {
+                console.error("Gagal migrasi foto:", image, error.message);
+                migratedImages.push(image);
+            }
+        }
+
+        const product = {
+            id: Number(old.id) || index + 1,
+            nama: String(old.nama || "").trim(),
+            brand: String(old.brand || "").trim(),
+            harga: Number(old.harga) || 0,
+            harga_coret: Number(old.harga_coret) || 0,
+            tipe: old.tipe || "kasual",
+            asal: old.asal || "internasional",
+            pengguna: old.pengguna || "unisex",
+            stok: Number(old.stok) || 0,
+            sizes: Array.isArray(old.sizes)
+                ? old.sizes.map(String)
+                : [],
+            gambar: migratedImages,
+            deskripsi: String(old.deskripsi || "").trim(),
+            upload_order: Number(old.upload_order) || index + 1,
+        };
+
+        if (!product.nama || !product.brand || product.harga <= 0) {
+            console.warn("Produk legacy tidak valid, dilewati:", old);
+            continue;
+        }
+
+        await insertProduct(product);
+    }
+
+    console.log("Migrasi produk lama selesai.");
 }
 
+async function initializeDatabase() {
+    if (migrationPromise) return migrationPromise;
 
-// =========================================================
-// SIMPAN BANYAK FOTO BARU
-// =========================================================
+    migrationPromise = (async () => {
+        await migrateProductsFromJSONIfNeeded();
+        databaseReady = true;
+        console.log("Database Supabase siap digunakan.");
+    })().catch((error) => {
+        databaseReady = false;
+        console.error("Gagal menyiapkan database:", error);
+        throw error;
+    });
 
-function saveImages(
-    images
-) {
+    return migrationPromise;
+}
 
-    if (!Array.isArray(images)) {
+function renumberProducts(products) {
+    products.forEach((product, index) => {
+        product.id = index + 1;
+        product.upload_order = index + 1;
+    });
+}
 
-        throw new Error(
-            "Format foto harus berupa array."
-        );
-
-    }
-
-
-    if (
-        images.length >
-        MAX_IMAGES
-    ) {
-
-        throw new Error(
-            `Maksimal ${MAX_IMAGES} foto untuk satu produk.`
-        );
-
-    }
-
-
-    const savedImages = [];
-
+async function renumberDatabaseProducts(products) {
+    // Renumbering dilakukan dalam transaction agar tidak bentrok dengan
+    // primary key ketika ID 1,2,3,... berubah.
+    const client = await pool.connect();
 
     try {
+        await client.query("BEGIN");
 
-        for (
-            const image of images
-        ) {
-
-            const imagePath =
-                saveSingleImage(
-                    image
-                );
-
-
-            savedImages.push(
-                imagePath
+        for (const product of products) {
+            await client.query(
+                "UPDATE products SET id=$2, upload_order=$3 WHERE id=$1",
+                [product._oldId, 1000000000 + product._oldId, product.upload_order]
             );
-
         }
 
+        for (const product of products) {
+            await client.query(
+                "UPDATE products SET id=$2, upload_order=$3 WHERE id=$1",
+                [1000000000 + product._oldId, product.id, product.upload_order]
+            );
+        }
 
-        return savedImages;
-
+        await client.query("COMMIT");
     } catch (error) {
-
-        // Jika ada foto gagal disimpan,
-        // hapus foto yang sudah berhasil disimpan.
-
-        for (
-            const imagePath of savedImages
-        ) {
-
-            deleteSingleImage(
-                imagePath
-            );
-
-        }
-
-
+        await client.query("ROLLBACK");
         throw error;
-
+    } finally {
+        client.release();
     }
-
 }
 
-
-// =========================================================
-// HAPUS SATU FOTO
-// =========================================================
-
-function deleteSingleImage(
-    imagePath
-) {
-
-    if (
-        !imagePath ||
-        typeof imagePath !== "string"
-    ) {
-
-        return;
-
+function extractProductId(req) {
+    const pathname = new URL(req.url, "http://localhost").pathname;
+    const id = Number(pathname.split("/").pop());
+    if (!Number.isInteger(id)) {
+        throw new Error("ID produk tidak valid.");
     }
-
-
-    if (
-        !imagePath.startsWith(
-            "images/"
-        )
-    ) {
-
-        return;
-
-    }
-
-
-    const filename =
-        path.basename(
-            imagePath
-        );
-
-
-    const filePath =
-        path.join(
-            imagesFolder,
-            filename
-        );
-
-
-    // Keamanan tambahan:
-    // pastikan file benar-benar berada
-    // di folder images.
-
-    const resolvedFolder =
-        path.resolve(
-            imagesFolder
-        );
-
-    const resolvedFile =
-        path.resolve(
-            filePath
-        );
-
-
-    if (
-        !resolvedFile.startsWith(
-            resolvedFolder + path.sep
-        )
-    ) {
-
-        return;
-
-    }
-
-
-    if (
-        fs.existsSync(
-            filePath
-        )
-    ) {
-
-        fs.unlinkSync(
-            filePath
-        );
-
-
-        console.log(
-            "Foto dihapus:",
-            filename
-        );
-
-    }
-
+    return id;
 }
 
-
-// =========================================================
-// HAPUS FOTO
-// =========================================================
-
-function deleteImage(
-    imagePath
-) {
-
-    const images =
-        normalizeImages(
-            imagePath
-        );
-
-
-    for (
-        const image of images
-    ) {
-
-        deleteSingleImage(
-            image
-        );
-
-    }
-
-}
-
-
-// =========================================================
-// BACA BODY REQUEST
-// =========================================================
-
-function readBody(
-    req
-) {
-
-    return new Promise(
-        (resolve, reject) => {
-
-            let body = "";
-
-            let rejected =
-                false;
-
-
-            req.on(
-                "data",
-                chunk => {
-
-                    if (
-                        rejected
-                    ) {
-
-                        return;
-
-                    }
-
-
-                    body +=
-                        chunk.toString();
-
-
-                    if (
-                        Buffer.byteLength(
-                            body,
-                            "utf8"
-                        ) >
-                        MAX_REQUEST_SIZE
-                    ) {
-
-                        rejected =
-                            true;
-
-
-                        reject(
-                            new Error(
-                                "Total ukuran upload terlalu besar. Maksimal 60 MB."
-                            )
-                        );
-
-
-                        req.destroy();
-
-                    }
-
-                }
-            );
-
-
-            req.on(
-                "end",
-                () => {
-
-                    if (
-                        rejected
-                    ) {
-
-                        return;
-
-                    }
-
-
-                    try {
-
-                        resolve(
-                            JSON.parse(body)
-                        );
-
-                    } catch {
-
-                        reject(
-                            new Error(
-                                "Format data tidak valid."
-                            )
-                        );
-
-                    }
-
-                }
-            );
-
-
-            req.on(
-                "error",
-                reject
-            );
-
-        }
+const server = http.createServer(async (req, res) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader(
+        "Access-Control-Allow-Methods",
+        "GET, POST, PUT, DELETE, OPTIONS"
+    );
+    res.setHeader(
+        "Access-Control-Allow-Headers",
+        "Content-Type, Authorization"
     );
 
-}
+    if (req.method === "OPTIONS") {
+        res.writeHead(204);
+        res.end();
+        return;
+    }
 
-
-// =========================================================
-// RENOMOR PRODUK
-// =========================================================
-
-function renumberProducts(
-    products
-) {
-
-    products.forEach(
-        (
-            product,
-            index
-        ) => {
-
-            product.id =
-                index + 1;
-
-            product.upload_order =
-                index + 1;
-
+    try {
+        if (req.method === "GET" && req.url === "/") {
+            sendJSON(res, 200, {
+                status: "online",
+                message: "Kicks Station Backend berhasil berjalan!",
+                database: databaseReady ? "supabase" : "not-ready",
+            });
+            return;
         }
-    );
 
-}
+        if (req.method === "POST" && req.url === "/api/admin/login") {
+            const ip = getClientIP(req);
 
-
-// =========================================================
-// VALIDASI DATA PRODUK
-// =========================================================
-
-function validateProductData(
-    data
-) {
-
-    if (
-        !data.nama ||
-        !String(data.nama).trim()
-    ) {
-
-        throw new Error(
-            "Nama produk wajib diisi."
-        );
-
-    }
-
-
-    if (
-        !data.brand ||
-        !String(data.brand).trim()
-    ) {
-
-        throw new Error(
-            "Brand wajib diisi."
-        );
-
-    }
-
-
-    if (
-        !data.harga ||
-        Number(data.harga) <= 0
-    ) {
-
-        throw new Error(
-            "Harga tidak valid."
-        );
-
-    }
-
-
-    if (
-        !Array.isArray(data.sizes) ||
-        data.sizes.length === 0
-    ) {
-
-        throw new Error(
-            "Minimal satu ukuran harus dipilih."
-        );
-
-    }
-
-}
-
-
-// =========================================================
-// SERVER
-// =========================================================
-
-const server =
-    http.createServer(
-        async (
-            req,
-            res
-        ) => {
-
-            // =================================================
-            // CORS
-            // =================================================
-
-            res.setHeader(
-                "Access-Control-Allow-Origin",
-                "*"
-            );
-
-
-            res.setHeader(
-                "Access-Control-Allow-Methods",
-                "GET, POST, PUT, DELETE, OPTIONS"
-            );
-
-
-            res.setHeader(
-                "Access-Control-Allow-Headers",
-                "Content-Type, Authorization"
-            );
-
-
-            // =================================================
-            // FILE GAMBAR
-            // =================================================
-
-            if (serveImage(req, res)) {
+            if (!ADMIN_PIN) {
+                sendJSON(res, 503, {
+                    success: false,
+                    message: "ADMIN_PIN belum diset di server.",
+                });
                 return;
             }
 
-
-            // =================================================
-            // OPTIONS
-            // =================================================
-
-            if (
-                req.method === "OPTIONS"
-            ) {
-
-                res.writeHead(
-                    204
-                );
-
-                res.end();
-
-                return;
-
-            }
-
-
-            // =================================================
-            // ROOT
-            // =================================================
-
-            if (
-                req.method === "GET" &&
-                req.url === "/"
-            ) {
-
-                sendJSON(
-                    res,
-                    200,
-                    {
-
-                        status:
-                            "online",
-
-                        message:
-                            "Kicks Station Backend berhasil berjalan!"
-
-                    }
-                );
-
-                return;
-
-            }
-
-
-            // =========================================================
-            // ADMIN LOGIN / CHECK / LOGOUT
-            // =========================================================
-            if (req.method === "POST" && req.url === "/api/admin/login") {
-                try {
-                    const ip = getClientIP(req);
-                    if (!ADMIN_PIN) { sendJSON(res, 503, { success: false, message: "ADMIN_PIN belum diset di server." }); return; }
-                    if (!canAttemptLogin(ip)) { sendJSON(res, 429, { success: false, message: "Terlalu banyak percobaan login. Coba lagi dalam 15 menit." }); return; }
-                    const data = await readBody(req);
-                    const pin = String(data?.pin || "").trim();
-                    if (!/^\d{6}$/.test(pin) || pin !== ADMIN_PIN) {
-                        recordLoginFailure(ip);
-                        sendJSON(res, 401, { success: false, message: /^\d{6}$/.test(pin) ? "PIN salah." : "PIN harus terdiri dari 6 angka." });
-                        return;
-                    }
-                    loginAttempts.delete(ip);
-                    const token = crypto.randomBytes(32).toString("hex");
-                    const expiresAt = Date.now() + SESSION_DURATION;
-                    adminSessions.set(token, { expiresAt });
-                    sendJSON(res, 200, { success: true, token, expiresAt });
-                } catch (error) { sendJSON(res, 400, { success: false, message: error.message }); }
-                return;
-            }
-            if (req.method === "GET" && req.url === "/api/admin/check") {
-                if (!isAdminAuthenticated(req)) { sendJSON(res, 401, { success: false, message: "Sesi admin tidak valid." }); return; }
-                sendJSON(res, 200, { success: true });
-                return;
-            }
-            if (req.method === "POST" && req.url === "/api/admin/logout") {
-                const token = getAdminToken(req);
-                if (token) adminSessions.delete(token);
-                sendJSON(res, 200, { success: true, message: "Logout berhasil." });
-                return;
-            }
-
-            // =================================================
-            // GET SEMUA PRODUK
-            // =================================================
-
-            if (
-                req.method === "GET" &&
-                req.url === "/api/products"
-            ) {
-
-                try {
-
-                    const products =
-                        readProducts();
-
-
-                    sendJSON(
-                        res,
-                        200,
-                        {
-
-                            success:
-                                true,
-
-                            products:
-                                productsForClient(products)
-
-                        }
-                    );
-
-
-                } catch (error) {
-
-                    sendJSON(
-                        res,
-                        500,
-                        {
-
-                            success:
-                                false,
-
-                            message:
-                                error.message
-
-                        }
-                    );
-
-                }
-
-
-                return;
-
-            }
-
-
-            // =================================================
-            // POST TAMBAH PRODUK
-            // =================================================
-
-            if (
-                req.method === "POST" &&
-                req.url === "/api/products"
-            ) {
-
-                try {
-
-                    const data =
-                        await readBody(
-                            req
-                        );
-
-
-                    const products =
-                        readProducts();
-
-
-                    validateProductData(
-                        data
-                    );
-
-
-                    // -------------------------------------------------
-                    // ID
-                    // -------------------------------------------------
-
-                    const maxId =
-                        products.reduce(
-
-                            (
-                                max,
-                                product
-                            ) =>
-                                Math.max(
-                                    max,
-                                    Number(
-                                        product.id
-                                    ) || 0
-                                ),
-
-                            0
-
-                        );
-
-
-                    // -------------------------------------------------
-                    // UPLOAD ORDER
-                    // -------------------------------------------------
-
-                    const maxOrder =
-                        products.reduce(
-
-                            (
-                                max,
-                                product
-                            ) =>
-                                Math.max(
-                                    max,
-                                    Number(
-                                        product.upload_order
-                                    ) || 0
-                                ),
-
-                            0
-
-                        );
-
-
-                    // -------------------------------------------------
-                    // FOTO
-                    // -------------------------------------------------
-
-                    let imagePaths = [];
-
-
-                    if (
-                        Array.isArray(
-                            data.gambar
-                        )
-                    ) {
-
-                        imagePaths =
-                            saveImages(
-                                data.gambar
-                            );
-
-                    } else if (
-                        data.gambar &&
-                        data.gambar.data
-                    ) {
-
-                        imagePaths = [
-                            saveSingleImage(
-                                data.gambar
-                            )
-                        ];
-
-                    }
-
-
-                    // -------------------------------------------------
-                    // PRODUK BARU
-                    // -------------------------------------------------
-
-                    const newProduct = {
-
-                        id:
-                            maxId + 1,
-
-                        nama:
-                            String(
-                                data.nama
-                            ).trim(),
-
-                        brand:
-                            String(
-                                data.brand
-                            ).trim(),
-
-                        harga:
-                            Number(
-                                data.harga
-                            ),
-
-                        harga_coret:
-                            Number(
-                                data.harga_coret
-                            ) || 0,
-
-                        tipe:
-                            data.tipe ||
-                            "kasual",
-
-                        asal:
-                            data.asal ||
-                            "internasional",
-
-                        pengguna:
-                            data.pengguna ||
-                            "unisex",
-
-                        stok:
-                            Number(
-                                data.stok
-                            ) || 0,
-
-                        sizes:
-                            data.sizes.map(
-                                size =>
-                                    String(size)
-                            ),
-
-                        gambar:
-                            imagePaths,
-
-                        deskripsi:
-                            String(
-                                data.deskripsi ||
-                                ""
-                            ).trim(),
-
-                        upload_order:
-                            maxOrder + 1
-
-                    };
-
-
-                    products.push(
-                        newProduct
-                    );
-
-
-                    saveProducts(
-                        products
-                    );
-
-
-                    console.log(
-                        "\n================================="
-                    );
-
-
-                    console.log(
-                        "PRODUK BERHASIL DITAMBAHKAN"
-                    );
-
-
-                    console.log(
-                        newProduct
-                    );
-
-
-                    console.log(
-                        "================================="
-                    );
-
-
-                    sendJSON(
-                        res,
-                        201,
-                        {
-
-                            success:
-                                true,
-
-                            message:
-                                "Produk dan semua foto berhasil disimpan.",
-
-                            product:
-                                productForClient(newProduct)
-
-                        }
-                    );
-
-
-                } catch (error) {
-
-                    console.error(
-                        "Gagal tambah produk:",
-                        error
-                    );
-
-
-                    sendJSON(
-                        res,
-                        500,
-                        {
-
-                            success:
-                                false,
-
-                            message:
-                                error.message
-
-                        }
-                    );
-
-                }
-
-
-                return;
-
-            }
-
-
-            // =================================================
-            // PUT EDIT PRODUK
-            // =================================================
-
-            if (
-                req.method === "PUT" &&
-                req.url.startsWith(
-                    "/api/products/"
-                )
-            ) {
-
-                try {
-
-                    // -------------------------------------------------
-                    // AMBIL ID
-                    // -------------------------------------------------
-
-                    const id =
-                        Number(
-                            req.url
-                                .split("/")
-                                .pop()
-                        );
-
-
-                    if (
-                        !Number.isInteger(
-                            id
-                        )
-                    ) {
-
-                        throw new Error(
-                            "ID produk tidak valid."
-                        );
-
-                    }
-
-
-                    // -------------------------------------------------
-                    // BODY
-                    // -------------------------------------------------
-
-                    const data =
-                        await readBody(
-                            req
-                        );
-
-
-                    const products =
-                        readProducts();
-
-
-                    // -------------------------------------------------
-                    // CARI PRODUK
-                    // -------------------------------------------------
-
-                    const index =
-                        products.findIndex(
-                            product =>
-                                Number(
-                                    product.id
-                                ) === id
-                        );
-
-
-                    if (
-                        index === -1
-                    ) {
-
-                        throw new Error(
-                            "Produk tidak ditemukan."
-                        );
-
-                    }
-
-
-                    const oldProduct =
-                        products[index];
-
-
-                    // -------------------------------------------------
-                    // VALIDASI DATA DASAR
-                    // -------------------------------------------------
-
-                    if (
-                        data.nama !== undefined &&
-                        !String(data.nama).trim()
-                    ) {
-
-                        throw new Error(
-                            "Nama produk wajib diisi."
-                        );
-
-                    }
-
-
-                    if (
-                        data.brand !== undefined &&
-                        !String(data.brand).trim()
-                    ) {
-
-                        throw new Error(
-                            "Brand wajib diisi."
-                        );
-
-                    }
-
-
-                    if (
-                        data.harga !== undefined &&
-                        Number(data.harga) <= 0
-                    ) {
-
-                        throw new Error(
-                            "Harga tidak valid."
-                        );
-
-                    }
-
-
-                    if (
-                        data.sizes !== undefined &&
-                        (
-                            !Array.isArray(data.sizes) ||
-                            data.sizes.length === 0
-                        )
-                    ) {
-
-                        throw new Error(
-                            "Minimal satu ukuran harus dipilih."
-                        );
-
-                    }
-
-
-                    // =================================================
-                    // SISTEM FOTO EDIT
-                    // =================================================
-                    //
-                    // data.gambar dapat berisi campuran:
-                    //
-                    // "images/foto-lama.jpeg"
-                    //
-                    // dan
-                    //
-                    // {
-                    //    name: "...",
-                    //    data: "data:image/jpeg;base64,..."
-                    // }
-                    //
-                    // Foto lama yang masih ada akan dipertahankan.
-                    // Foto lama yang tidak ada lagi akan dihapus.
-                    // Foto baru akan disimpan.
-                    // =================================================
-
-                    const oldImages =
-                        normalizeImages(
-                            oldProduct.gambar
-                        );
-
-
-                    let imagePaths =
-                        oldImages.slice();
-
-
-                    let newlySavedImages = [];
-
-
-                    if (
-                        data.gambar !== undefined
-                    ) {
-
-                        if (
-                            !Array.isArray(
-                                data.gambar
-                            )
-                        ) {
-
-                            throw new Error(
-                                "Format foto edit harus berupa array."
-                            );
-
-                        }
-
-
-                        if (
-                            data.gambar.length === 0
-                        ) {
-
-                            throw new Error(
-                                "Produk harus memiliki minimal satu foto."
-                            );
-
-                        }
-
-
-                        if (
-                            data.gambar.length >
-                            MAX_IMAGES
-                        ) {
-
-                            throw new Error(
-                                `Maksimal ${MAX_IMAGES} foto untuk satu produk.`
-                            );
-
-                        }
-
-
-                        // -------------------------------------------------
-                        // PISAHKAN:
-                        //
-                        // 1. PATH FOTO LAMA
-                        // 2. FOTO BARU BASE64
-                        // -------------------------------------------------
-
-                        const keptExistingImages = [];
-
-                        const newImageObjects = [];
-
-
-                        for (
-                            const image of data.gambar
-                        ) {
-
-                            // ---------------------------------------------
-                            // FOTO LAMA
-                            // ---------------------------------------------
-
-                            if (
-                                typeof image === "string"
-                            ) {
-
-                                const storedImage =
-                                    toStoredImagePath(image);
-
-                                if (
-                                    !storedImage ||
-                                    !isValidImagePath(storedImage)
-                                ) {
-                                    throw new Error(
-                                        "Path foto tidak valid."
-                                    );
-                                }
-
-                                if (
-                                    !oldImages.includes(storedImage)
-                                ) {
-                                    throw new Error(
-                                        "Foto lama tidak valid atau bukan milik produk ini."
-                                    );
-                                }
-
-                                if (
-                                    !keptExistingImages.includes(storedImage)
-                                ) {
-                                    keptExistingImages.push(storedImage);
-                                }
-
-                                continue;
-                            }
-
-
-                            // ---------------------------------------------
-                            // FOTO BARU
-                            // ---------------------------------------------
-
-                            if (
-                                image &&
-                                typeof image === "object" &&
-                                image.data
-                            ) {
-
-                                newImageObjects.push(
-                                    image
-                                );
-
-                                continue;
-
-                            }
-
-
-                            throw new Error(
-                                "Format data foto tidak valid."
-                            );
-
-                        }
-
-
-                        // -------------------------------------------------
-                        // HITUNG TOTAL FOTO
-                        // -------------------------------------------------
-
-                        const totalImages =
-                            keptExistingImages.length +
-                            newImageObjects.length;
-
-
-                        if (
-                            totalImages === 0
-                        ) {
-
-                            throw new Error(
-                                "Produk harus memiliki minimal satu foto."
-                            );
-
-                        }
-
-
-                        if (
-                            totalImages >
-                            MAX_IMAGES
-                        ) {
-
-                            throw new Error(
-                                `Maksimal ${MAX_IMAGES} foto untuk satu produk.`
-                            );
-
-                        }
-
-
-                        // -------------------------------------------------
-                        // SIMPAN FOTO BARU
-                        // -------------------------------------------------
-
-                        if (
-                            newImageObjects.length > 0
-                        ) {
-
-                            newlySavedImages =
-                                saveImages(
-                                    newImageObjects
-                                );
-
-                        }
-
-
-                        // -------------------------------------------------
-                        // GABUNGKAN FOTO
-                        //
-                        // Foto lama tetap mengikuti urutan
-                        // yang dikirim admin.
-                        //
-                        // Foto baru berada setelah foto lama.
-                        // -------------------------------------------------
-
-                        imagePaths = [
-                            ...keptExistingImages,
-                            ...newlySavedImages
-                        ];
-
-
-                        // -------------------------------------------------
-                        // HAPUS FOTO LAMA YANG TIDAK DIPERTAHANKAN
-                        // -------------------------------------------------
-
-                        const imagesToDelete =
-                            oldImages.filter(
-                                image =>
-                                    !keptExistingImages.includes(
-                                        image
-                                    )
-                            );
-
-
-                        deleteImage(
-                            imagesToDelete
-                        );
-
-                    }
-
-
-                    // =================================================
-                    // UPDATE DATA PRODUK
-                    // =================================================
-
-                    products[index] = {
-
-                        ...oldProduct,
-
-                        nama:
-                            data.nama !== undefined
-                                ? String(
-                                    data.nama
-                                ).trim()
-                                : oldProduct.nama,
-
-                        brand:
-                            data.brand !== undefined
-                                ? String(
-                                    data.brand
-                                ).trim()
-                                : oldProduct.brand,
-
-                        harga:
-                            data.harga !== undefined
-                                ? Number(
-                                    data.harga
-                                )
-                                : oldProduct.harga,
-
-                        harga_coret:
-                            data.harga_coret !== undefined
-                                ? Number(
-                                    data.harga_coret
-                                ) || 0
-                                : oldProduct.harga_coret,
-
-                        tipe:
-                            data.tipe !== undefined
-                                ? data.tipe
-                                : oldProduct.tipe,
-
-                        asal:
-                            data.asal !== undefined
-                                ? data.asal
-                                : oldProduct.asal,
-
-                        pengguna:
-                            data.pengguna !== undefined
-                                ? data.pengguna
-                                : oldProduct.pengguna,
-
-                        stok:
-                            data.stok !== undefined
-                                ? Number(
-                                    data.stok
-                                ) || 0
-                                : oldProduct.stok,
-
-                        sizes:
-                            Array.isArray(
-                                data.sizes
-                            )
-                                ? data.sizes.map(
-                                    size =>
-                                        String(size)
-                                )
-                                : oldProduct.sizes,
-
-                        gambar:
-                            imagePaths,
-
-                        deskripsi:
-                            data.deskripsi !== undefined
-                                ? String(
-                                    data.deskripsi
-                                ).trim()
-                                : oldProduct.deskripsi
-
-                    };
-
-
-                    // -------------------------------------------------
-                    // SIMPAN DATABASE
-                    // -------------------------------------------------
-
-                    saveProducts(
-                        products
-                    );
-
-
-                    console.log(
-                        "\n================================="
-                    );
-
-
-                    console.log(
-                        "PRODUK BERHASIL DIUPDATE"
-                    );
-
-
-                    console.log(
-                        products[index]
-                    );
-
-
-                    console.log(
-                        "================================="
-                    );
-
-
-                    sendJSON(
-                        res,
-                        200,
-                        {
-
-                            success:
-                                true,
-
-                            message:
-                                "Produk berhasil diperbarui.",
-
-                            product:
-                                productForClient(products[index])
-
-                        }
-                    );
-
-
-                } catch (error) {
-
-                    console.error(
-                        "Gagal edit produk:",
-                        error
-                    );
-
-
-                    sendJSON(
-                        res,
-                        500,
-                        {
-
-                            success:
-                                false,
-
-                            message:
-                                error.message
-
-                        }
-                    );
-
-                }
-
-
-                return;
-
-            }
-
-
-            // =================================================
-            // DELETE PRODUK
-            // =================================================
-
-            if (
-                req.method === "DELETE" &&
-                req.url.startsWith(
-                    "/api/products/"
-                )
-            ) {
-
-                try {
-
-                    const id =
-                        Number(
-                            req.url
-                                .split("/")
-                                .pop()
-                        );
-
-
-                    if (
-                        !Number.isInteger(
-                            id
-                        )
-                    ) {
-
-                        throw new Error(
-                            "ID produk tidak valid."
-                        );
-
-                    }
-
-
-                    const products =
-                        readProducts();
-
-
-                    const index =
-                        products.findIndex(
-                            product =>
-                                Number(
-                                    product.id
-                                ) === id
-                        );
-
-
-                    if (
-                        index === -1
-                    ) {
-
-                        throw new Error(
-                            "Produk tidak ditemukan."
-                        );
-
-                    }
-
-
-                    // -------------------------------------------------
-                    // PRODUK YANG DIHAPUS
-                    // -------------------------------------------------
-
-                    const deletedProduct =
-                        products[index];
-
-
-                    // -------------------------------------------------
-                    // HAPUS SEMUA FOTO
-                    // -------------------------------------------------
-
-                    deleteImage(
-                        deletedProduct.gambar
-                    );
-
-
-                    // -------------------------------------------------
-                    // HAPUS PRODUK
-                    // -------------------------------------------------
-
-                    products.splice(
-                        index,
-                        1
-                    );
-
-
-                    // -------------------------------------------------
-                    // RENOMOR
-                    // -------------------------------------------------
-
-                    renumberProducts(
-                        products
-                    );
-
-
-                    // -------------------------------------------------
-                    // SIMPAN
-                    // -------------------------------------------------
-
-                    saveProducts(
-                        products
-                    );
-
-
-                    console.log(
-                        "\n================================="
-                    );
-
-
-                    console.log(
-                        "PRODUK BERHASIL DIHAPUS"
-                    );
-
-
-                    console.log(
-                        "Produk dihapus:",
-                        deletedProduct.nama
-                    );
-
-
-                    console.log(
-                        "ID sebelumnya:",
-                        deletedProduct.id
-                    );
-
-
-                    console.log(
-                        "Jumlah produk sekarang:",
-                        products.length
-                    );
-
-
-                    console.log(
-                        "ID produk terakhir:",
-                        products.length
-                    );
-
-
-                    console.log(
-                        "================================="
-                    );
-
-
-                    sendJSON(
-                        res,
-                        200,
-                        {
-
-                            success:
-                                true,
-
-                            message:
-                                "Produk berhasil dihapus dan nomor produk otomatis dirapikan.",
-
-                            product:
-                                productForClient(deletedProduct),
-
-                            products:
-                                productsForClient(products)
-
-                        }
-                    );
-
-
-                } catch (error) {
-
-                    console.error(
-                        "Gagal hapus produk:",
-                        error
-                    );
-
-
-                    sendJSON(
-                        res,
-                        500,
-                        {
-
-                            success:
-                                false,
-
-                            message:
-                                error.message
-
-                        }
-                    );
-
-                }
-
-
-                return;
-
-            }
-
-
-            // =================================================
-            // 404
-            // =================================================
-
-            sendJSON(
-                res,
-                404,
-                {
-
-                    success:
-                        false,
-
+            if (!canAttemptLogin(ip)) {
+                sendJSON(res, 429, {
+                    success: false,
                     message:
-                        "Endpoint tidak ditemukan."
+                        "Terlalu banyak percobaan login. Coba lagi dalam 15 menit.",
+                });
+                return;
+            }
 
-                }
+            const data = await readBody(req);
+            const pin = String(data?.pin || "").trim();
+
+            if (!/^\d{6}$/.test(pin) || pin !== ADMIN_PIN) {
+                recordLoginFailure(ip);
+                sendJSON(res, 401, {
+                    success: false,
+                    message: /^\d{6}$/.test(pin)
+                        ? "PIN salah."
+                        : "PIN harus terdiri dari 6 angka.",
+                });
+                return;
+            }
+
+            loginAttempts.delete(ip);
+
+            const token = crypto.randomBytes(32).toString("hex");
+            const expiresAt = Date.now() + SESSION_DURATION;
+
+            adminSessions.set(token, { expiresAt });
+
+            sendJSON(res, 200, {
+                success: true,
+                token,
+                expiresAt,
+            });
+            return;
+        }
+
+        if (req.method === "GET" && req.url === "/api/admin/check") {
+            if (!isAdminAuthenticated(req)) {
+                sendJSON(res, 401, {
+                    success: false,
+                    message: "Sesi admin tidak valid.",
+                });
+                return;
+            }
+
+            sendJSON(res, 200, { success: true });
+            return;
+        }
+
+        if (req.method === "POST" && req.url === "/api/admin/logout") {
+            const token = getAdminToken(req);
+            if (token) adminSessions.delete(token);
+
+            sendJSON(res, 200, {
+                success: true,
+                message: "Logout berhasil.",
+            });
+            return;
+        }
+
+        if (req.method === "GET" && req.url === "/api/products") {
+            const products = await getProducts();
+
+            sendJSON(res, 200, {
+                success: true,
+                products: productsForClient(products),
+            });
+            return;
+        }
+
+        if (req.method === "POST" && req.url === "/api/products") {
+            if (!requireAdmin(req, res)) return;
+
+            await initializeDatabase();
+
+            const data = await readBody(req);
+            validateProductData(data);
+
+            const products = await getProducts();
+
+            const maxId = products.reduce(
+                (max, product) => Math.max(max, Number(product.id) || 0),
+                0
             );
 
+            const maxOrder = products.reduce(
+                (max, product) =>
+                    Math.max(Number(max), Number(product.upload_order) || 0),
+                0
+            );
+
+            let imagePaths = [];
+
+            if (Array.isArray(data.gambar)) {
+                if (data.gambar.length > MAX_IMAGES) {
+                    throw new Error(
+                        `Maksimal ${MAX_IMAGES} foto untuk satu produk.`
+                    );
+                }
+
+                for (const image of data.gambar) {
+                    imagePaths.push(
+                        await uploadImageObject(image, `products/${maxId + 1}`)
+                    );
+                }
+            } else if (data.gambar?.data) {
+                imagePaths.push(
+                    await uploadImageObject(data.gambar, `products/${maxId + 1}`)
+                );
+            }
+
+            if (!imagePaths.length) {
+                throw new Error("Produk harus memiliki minimal satu foto.");
+            }
+
+            const newProduct = {
+                id: maxId + 1,
+                nama: String(data.nama).trim(),
+                brand: String(data.brand).trim(),
+                harga: Number(data.harga),
+                harga_coret: Number(data.harga_coret) || 0,
+                tipe: data.tipe || "kasual",
+                asal: data.asal || "internasional",
+                pengguna: data.pengguna || "unisex",
+                stok: Number(data.stok) || 0,
+                sizes: data.sizes.map((size) => String(size)),
+                gambar: imagePaths,
+                deskripsi: String(data.deskripsi || "").trim(),
+                upload_order: maxOrder + 1,
+            };
+
+            try {
+                await insertProduct(newProduct);
+            } catch (error) {
+                await deleteStorageImages(imagePaths).catch(() => {});
+                throw error;
+            }
+
+            sendJSON(res, 201, {
+                success: true,
+                message: "Produk dan semua foto berhasil disimpan.",
+                product: productForClient(newProduct),
+            });
+            return;
         }
-    );
 
+        if (
+            req.method === "PUT" &&
+            new URL(req.url, "http://localhost").pathname.startsWith(
+                "/api/products/"
+            )
+        ) {
+            if (!requireAdmin(req, res)) return;
 
-// =========================================================
-// START SERVER
-// =========================================================
+            await initializeDatabase();
 
-server.listen(
-    PORT,
-    () => {
+            const id = extractProductId(req);
+            const data = await readBody(req);
+            const products = await getProducts();
 
-        console.log(
-            "================================="
-        );
+            const index = products.findIndex(
+                (product) => Number(product.id) === id
+            );
 
+            if (index === -1) {
+                throw new Error("Produk tidak ditemukan.");
+            }
 
-        console.log(
-            "KICKS STATION BACKEND"
-        );
+            const oldProduct = products[index];
 
+            if (
+                data.nama !== undefined &&
+                !String(data.nama).trim()
+            ) {
+                throw new Error("Nama produk wajib diisi.");
+            }
 
-        console.log(
-            "================================="
-        );
+            if (
+                data.brand !== undefined &&
+                !String(data.brand).trim()
+            ) {
+                throw new Error("Brand wajib diisi.");
+            }
 
+            if (
+                data.harga !== undefined &&
+                Number(data.harga) <= 0
+            ) {
+                throw new Error("Harga tidak valid.");
+            }
 
-        console.log(
-            `Server berjalan di http://localhost:${PORT}`
-        );
+            if (
+                data.sizes !== undefined &&
+                (!Array.isArray(data.sizes) || data.sizes.length === 0)
+            ) {
+                throw new Error("Minimal satu ukuran harus dipilih.");
+            }
 
+            const oldImages = normalizeImages(oldProduct.gambar);
+            let imagePaths = oldImages.slice();
+            let newlySavedImages = [];
 
-        console.log(
-            `Database: ${productsFile}`
-        );
+            if (data.gambar !== undefined) {
+                if (!Array.isArray(data.gambar)) {
+                    throw new Error("Format foto edit harus berupa array.");
+                }
 
+                if (data.gambar.length === 0) {
+                    throw new Error("Produk harus memiliki minimal satu foto.");
+                }
 
-        console.log(
-            `Folder gambar: ${imagesFolder}`
-        );
+                if (data.gambar.length > MAX_IMAGES) {
+                    throw new Error(
+                        `Maksimal ${MAX_IMAGES} foto untuk satu produk.`
+                    );
+                }
 
+                const keptExistingImages = [];
+                const newImageObjects = [];
+
+                for (const image of data.gambar) {
+                    if (typeof image === "string") {
+                        const storagePath = toStoragePath(image);
+
+                        if (!storagePath) {
+                            throw new Error("Path foto tidak valid.");
+                        }
+
+                        const belongsToProduct = oldImages.some(
+                            (oldImage) =>
+                                toStoragePath(oldImage) === storagePath
+                        );
+
+                        if (!belongsToProduct) {
+                            throw new Error(
+                                "Foto lama tidak valid atau bukan milik produk ini."
+                            );
+                        }
+
+                        if (!keptExistingImages.includes(storagePath)) {
+                            keptExistingImages.push(storagePath);
+                        }
+
+                        continue;
+                    }
+
+                    if (
+                        image &&
+                        typeof image === "object" &&
+                        image.data
+                    ) {
+                        newImageObjects.push(image);
+                        continue;
+                    }
+
+                    throw new Error("Format data foto tidak valid.");
+                }
+
+                if (
+                    keptExistingImages.length + newImageObjects.length === 0
+                ) {
+                    throw new Error("Produk harus memiliki minimal satu foto.");
+                }
+
+                if (
+                    keptExistingImages.length + newImageObjects.length >
+                    MAX_IMAGES
+                ) {
+                    throw new Error(
+                        `Maksimal ${MAX_IMAGES} foto untuk satu produk.`
+                    );
+                }
+
+                for (const image of newImageObjects) {
+                    newlySavedImages.push(
+                        await uploadImageObject(image, `products/${id}`)
+                    );
+                }
+
+                imagePaths = [
+                    ...keptExistingImages,
+                    ...newlySavedImages,
+                ];
+
+                const imagesToDelete = oldImages.filter((oldImage) => {
+                    const oldStorage = toStoragePath(oldImage);
+                    return (
+                        oldStorage &&
+                        !keptExistingImages.includes(oldStorage)
+                    );
+                });
+
+                if (imagesToDelete.length) {
+                    await deleteStorageImages(imagesToDelete);
+                }
+            }
+
+            const updatedProduct = {
+                ...oldProduct,
+                id,
+                nama:
+                    data.nama !== undefined
+                        ? String(data.nama).trim()
+                        : oldProduct.nama,
+                brand:
+                    data.brand !== undefined
+                        ? String(data.brand).trim()
+                        : oldProduct.brand,
+                harga:
+                    data.harga !== undefined
+                        ? Number(data.harga)
+                        : oldProduct.harga,
+                harga_coret:
+                    data.harga_coret !== undefined
+                        ? Number(data.harga_coret) || 0
+                        : oldProduct.harga_coret,
+                tipe:
+                    data.tipe !== undefined
+                        ? data.tipe
+                        : oldProduct.tipe,
+                asal:
+                    data.asal !== undefined
+                        ? data.asal
+                        : oldProduct.asal,
+                pengguna:
+                    data.pengguna !== undefined
+                        ? data.pengguna
+                        : oldProduct.pengguna,
+                stok:
+                    data.stok !== undefined
+                        ? Number(data.stok) || 0
+                        : oldProduct.stok,
+                sizes:
+                    Array.isArray(data.sizes)
+                        ? data.sizes.map(String)
+                        : oldProduct.sizes,
+                gambar: imagePaths,
+                deskripsi:
+                    data.deskripsi !== undefined
+                        ? String(data.deskripsi).trim()
+                        : oldProduct.deskripsi,
+            };
+
+            try {
+                await updateProductRow(updatedProduct);
+            } catch (error) {
+                if (newlySavedImages.length) {
+                    await deleteStorageImages(newlySavedImages).catch(() => {});
+                }
+                throw error;
+            }
+
+            sendJSON(res, 200, {
+                success: true,
+                message: "Produk berhasil diperbarui.",
+                product: productForClient(updatedProduct),
+            });
+            return;
+        }
+
+        if (
+            req.method === "DELETE" &&
+            new URL(req.url, "http://localhost").pathname.startsWith(
+                "/api/products/"
+            )
+        ) {
+            if (!requireAdmin(req, res)) return;
+
+            await initializeDatabase();
+
+            const id = extractProductId(req);
+            const products = await getProducts();
+
+            const index = products.findIndex(
+                (product) => Number(product.id) === id
+            );
+
+            if (index === -1) {
+                throw new Error("Produk tidak ditemukan.");
+            }
+
+            const deletedProduct = products[index];
+
+            await deleteStorageImages(deletedProduct.gambar);
+            await deleteProductRow(id);
+
+            // Pertahankan perilaku lama: ID dirapikan menjadi 1..N.
+            const remaining = products
+                .filter((_, productIndex) => productIndex !== index)
+                .map((product, productIndex) => ({
+                    ...product,
+                    _oldId: product.id,
+                    id: productIndex + 1,
+                    upload_order: productIndex + 1,
+                }));
+
+            await renumberDatabaseProducts(remaining);
+
+            sendJSON(res, 200, {
+                success: true,
+                message:
+                    "Produk berhasil dihapus dan nomor produk otomatis dirapikan.",
+                product: productForClient(deletedProduct),
+                products: productsForClient(remaining),
+            });
+            return;
+        }
+
+        sendJSON(res, 404, {
+            success: false,
+            message: "Endpoint tidak ditemukan.",
+        });
+    } catch (error) {
+        console.error("API error:", error);
+
+        sendJSON(res, 500, {
+            success: false,
+            message: error.message || "Terjadi kesalahan pada server.",
+        });
     }
-);
+});
+
+initializeDatabase().catch(() => {
+    console.error(
+        "Server tetap dijalankan, tetapi database belum siap. Render akan dapat mencoba lagi."
+    );
+});
+
+server.listen(PORT, () => {
+    console.log("=================================");
+    console.log("KICKS STATION BACKEND");
+    console.log("=================================");
+    console.log(`Server berjalan di http://localhost:${PORT}`);
+    console.log("Database: Supabase PostgreSQL");
+    console.log(`Storage: Supabase bucket "${SUPABASE_BUCKET}"`);
+});
