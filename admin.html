@@ -292,6 +292,14 @@ textarea:focus {
 
         </nav>
 
+        <div class="px-5 pb-5">
+            <button
+                onclick="adminLogout()"
+                class="w-full px-4 py-3 rounded-xl border border-red-200 text-red-600 font-bold hover:bg-red-50 transition">
+                ↪ Keluar Admin
+            </button>
+        </div>
+
         <div class="mt-auto p-5">
             <div class="rounded-2xl bg-gray-100 p-4">
 
@@ -1343,6 +1351,67 @@ textarea:focus {
     </div>
 </div>
 
+
+<!-- ADMIN LOGIN -->
+<div
+    id="admin-login-screen"
+    class="hidden fixed inset-0 z-[9999] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+
+    <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl p-8">
+
+        <div class="text-center">
+
+            <div class="mx-auto w-16 h-16 bg-black text-white rounded-2xl flex items-center justify-center text-2xl font-black">
+                KS
+            </div>
+
+            <h2 class="mt-5 text-2xl font-black">
+                Admin Authentication
+            </h2>
+
+            <p class="mt-2 text-sm text-gray-500">
+                Masukkan PIN 6 digit untuk membuka dashboard.
+            </p>
+
+        </div>
+
+        <div class="mt-7">
+
+            <label
+                for="admin-pin-input"
+                class="block text-sm font-bold mb-2">
+                PIN Admin
+            </label>
+
+            <input
+                id="admin-pin-input"
+                type="password"
+                inputmode="numeric"
+                autocomplete="off"
+                maxlength="6"
+                pattern="[0-9]{6}"
+                placeholder="••••••"
+                onkeydown="if(event.key === 'Enter') adminLogin()"
+                class="w-full px-5 py-4 rounded-2xl border border-gray-200 text-center text-2xl tracking-[0.5em] font-black outline-none focus:border-black focus:ring-2 focus:ring-black/10">
+
+            <p
+                id="admin-login-message"
+                class="text-red-500 text-sm text-center font-semibold mt-3 min-h-[20px]">
+            </p>
+
+            <button
+                id="admin-login-button"
+                type="button"
+                onclick="adminLogin()"
+                class="w-full mt-3 bg-black text-white py-4 rounded-2xl font-bold hover:bg-gray-800 transition disabled:opacity-50">
+                Masuk
+            </button>
+
+        </div>
+
+    </div>
+</div>
+
 <!-- TOAST -->
 <div
     id="toast"
@@ -1363,10 +1432,322 @@ textarea:focus {
 
     </div>
 </div>
-
 <script>
 
 const API_URL = "https://kicks-station.onrender.com";
+
+
+// =========================================================
+// ADMIN AUTHENTICATION
+// =========================================================
+
+const ADMIN_TOKEN_KEY = "kicksStationAdminToken";
+
+let adminToken =
+    localStorage.getItem(ADMIN_TOKEN_KEY) || "";
+
+
+function clearAdminSession() {
+
+    adminToken = "";
+
+    localStorage.removeItem(
+        ADMIN_TOKEN_KEY
+    );
+}
+
+
+function showAdminLogin(message = "") {
+
+    const loginScreen =
+        document.getElementById(
+            "admin-login-screen"
+        );
+
+    if (loginScreen) {
+        loginScreen.classList.remove("hidden");
+    }
+
+    const messageEl =
+        document.getElementById(
+            "admin-login-message"
+        );
+
+    if (messageEl) {
+        messageEl.textContent = message;
+    }
+
+    setTimeout(() => {
+
+        const input =
+            document.getElementById(
+                "admin-pin-input"
+            );
+
+        if (input) {
+            input.focus();
+        }
+
+    }, 100);
+}
+
+
+function hideAdminLogin() {
+
+    const loginScreen =
+        document.getElementById(
+            "admin-login-screen"
+        );
+
+    if (loginScreen) {
+        loginScreen.classList.add("hidden");
+    }
+
+    const messageEl =
+        document.getElementById(
+            "admin-login-message"
+        );
+
+    if (messageEl) {
+        messageEl.textContent = "";
+    }
+}
+
+
+async function adminLogin() {
+
+    const input =
+        document.getElementById(
+            "admin-pin-input"
+        );
+
+    const button =
+        document.getElementById(
+            "admin-login-button"
+        );
+
+    const messageEl =
+        document.getElementById(
+            "admin-login-message"
+        );
+
+    if (!input || !button || !messageEl) {
+        return;
+    }
+
+    const pin =
+        input.value.trim();
+
+    if (!/^\d{6}$/.test(pin)) {
+
+        messageEl.textContent =
+            "PIN harus terdiri dari 6 angka.";
+
+        input.focus();
+
+        return;
+    }
+
+    button.disabled = true;
+    button.textContent = "Memeriksa...";
+    messageEl.textContent = "";
+
+    try {
+
+        const response =
+            await fetch(
+                `${API_URL}/api/admin/login`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify({
+                            pin
+                        })
+                }
+            );
+
+        let result = {};
+
+        try {
+            result =
+                await response.json();
+        } catch {
+            result = {};
+        }
+
+        if (
+            !response.ok ||
+            !result.success
+        ) {
+
+            throw new Error(
+                result.message ||
+                "PIN salah."
+            );
+        }
+
+        adminToken =
+            result.token;
+
+        localStorage.setItem(
+            ADMIN_TOKEN_KEY,
+            adminToken
+        );
+
+        input.value = "";
+
+        hideAdminLogin();
+
+        showToast(
+            "Login admin berhasil.",
+            "success"
+        );
+
+        await loadProducts();
+
+    } catch (error) {
+
+        console.error(error);
+
+        messageEl.textContent =
+            error.message ||
+            "Login gagal.";
+
+    } finally {
+
+        button.disabled = false;
+        button.textContent = "Masuk";
+    }
+}
+
+
+async function checkAdminAuth() {
+
+    if (!adminToken) {
+
+        showAdminLogin();
+
+        return false;
+    }
+
+    try {
+
+        const response =
+            await fetch(
+                `${API_URL}/api/admin/check`,
+                {
+                    method: "GET",
+
+                    headers: {
+                        "Authorization":
+                            `Bearer ${adminToken}`
+                    }
+                }
+            );
+
+        if (!response.ok) {
+            throw new Error(
+                "Sesi tidak valid."
+            );
+        }
+
+        hideAdminLogin();
+
+        return true;
+
+    } catch (error) {
+
+        console.error(error);
+
+        clearAdminSession();
+
+        showAdminLogin(
+            "Sesi login berakhir. Silakan login kembali."
+        );
+
+        return false;
+    }
+}
+
+
+async function authFetch(
+    url,
+    options = {}
+) {
+
+    const headers =
+        new Headers(
+            options.headers || {}
+        );
+
+    if (adminToken) {
+
+        headers.set(
+            "Authorization",
+            `Bearer ${adminToken}`
+        );
+    }
+
+    const response =
+        await fetch(
+            url,
+            {
+                ...options,
+                headers
+            }
+        );
+
+    if (response.status === 401) {
+
+        clearAdminSession();
+
+        showAdminLogin(
+            "Sesi login berakhir. Silakan login kembali."
+        );
+    }
+
+    return response;
+}
+
+
+async function adminLogout() {
+
+    try {
+
+        if (adminToken) {
+
+            await fetch(
+                `${API_URL}/api/admin/logout`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Authorization":
+                            `Bearer ${adminToken}`
+                    }
+                }
+            );
+        }
+
+    } catch (error) {
+
+        console.error(error);
+
+    } finally {
+
+        clearAdminSession();
+
+        showAdminLogin(
+            "Anda telah keluar dari akun admin."
+        );
+    }
+}
 
 
 // =========================================================
@@ -1376,13 +1757,22 @@ const API_URL = "https://kicks-station.onrender.com";
 function toggleSidebar() {
 
     const sidebar =
-        document.getElementById("sidebar");
+        document.getElementById(
+            "sidebar"
+        );
 
     const overlay =
-        document.getElementById("sidebar-overlay");
+        document.getElementById(
+            "sidebar-overlay"
+        );
 
-    sidebar.classList.toggle("-translate-x-full");
-    overlay.classList.toggle("hidden");
+    sidebar.classList.toggle(
+        "-translate-x-full"
+    );
+
+    overlay.classList.toggle(
+        "hidden"
+    );
 }
 
 
@@ -1393,56 +1783,106 @@ function toggleSidebar() {
 function showPage(page) {
 
     const tambah =
-        document.getElementById("page-tambah");
+        document.getElementById(
+            "page-tambah"
+        );
 
     const semua =
-        document.getElementById("page-semua");
+        document.getElementById(
+            "page-semua"
+        );
 
     const menuTambah =
-        document.getElementById("menu-tambah");
+        document.getElementById(
+            "menu-tambah"
+        );
 
     const menuSemua =
-        document.getElementById("menu-semua");
+        document.getElementById(
+            "menu-semua"
+        );
 
     if (page === "tambah") {
 
-        tambah.classList.remove("hidden");
-        semua.classList.add("hidden");
+        tambah.classList.remove(
+            "hidden"
+        );
 
-        menuTambah.classList.add("active");
-        menuTambah.classList.remove("text-gray-600");
+        semua.classList.add(
+            "hidden"
+        );
 
-        menuSemua.classList.remove("active");
-        menuSemua.classList.add("text-gray-600");
+        menuTambah.classList.add(
+            "active"
+        );
 
-        document.getElementById("top-title").textContent =
+        menuTambah.classList.remove(
+            "text-gray-600"
+        );
+
+        menuSemua.classList.remove(
+            "active"
+        );
+
+        menuSemua.classList.add(
+            "text-gray-600"
+        );
+
+        document.getElementById(
+            "top-title"
+        ).textContent =
             "Tambah Produk";
     }
 
+
     if (page === "semua") {
 
-        tambah.classList.add("hidden");
-        semua.classList.remove("hidden");
+        tambah.classList.add(
+            "hidden"
+        );
 
-        menuSemua.classList.add("active");
-        menuSemua.classList.remove("text-gray-600");
+        semua.classList.remove(
+            "hidden"
+        );
 
-        menuTambah.classList.remove("active");
-        menuTambah.classList.add("text-gray-600");
+        menuSemua.classList.add(
+            "active"
+        );
 
-        document.getElementById("top-title").textContent =
+        menuSemua.classList.remove(
+            "text-gray-600"
+        );
+
+        menuTambah.classList.remove(
+            "active"
+        );
+
+        menuTambah.classList.add(
+            "text-gray-600"
+        );
+
+        document.getElementById(
+            "top-title"
+        ).textContent =
             "Semua Produk";
 
         loadProducts();
     }
 
+
     if (window.innerWidth < 1024) {
 
-        document.getElementById("sidebar")
-            .classList.add("-translate-x-full");
+        document.getElementById(
+            "sidebar"
+        ).classList.add(
+            "-translate-x-full"
+        );
 
-        document.getElementById("sidebar-overlay")
-            .classList.add("hidden");
+        document.getElementById(
+            "sidebar-overlay"
+        ).classList.add(
+            "hidden"
+        );
     }
 }
 
@@ -1466,27 +1906,38 @@ const sizes = [
     "46"
 ];
 
-const selectedSizes = new Set();
+
+const selectedSizes =
+    new Set();
+
 
 function renderSizes() {
 
     const container =
-        document.getElementById("size-container");
+        document.getElementById(
+            "size-container"
+        );
 
     container.innerHTML = "";
 
     sizes.forEach(size => {
 
         const button =
-            document.createElement("button");
+            document.createElement(
+                "button"
+            );
 
         button.type = "button";
-        button.textContent = size;
+
+        button.textContent =
+            size;
 
         button.className =
             "size-button border border-gray-200 rounded-xl py-3 text-sm font-bold hover:border-black transition";
 
-        if (selectedSizes.has(size)) {
+        if (
+            selectedSizes.has(size)
+        ) {
 
             button.classList.add(
                 "bg-black",
@@ -1495,19 +1946,36 @@ function renderSizes() {
             );
         }
 
-        button.addEventListener("click", () => {
+        button.addEventListener(
+            "click",
+            () => {
 
-            if (selectedSizes.has(size)) {
-                selectedSizes.delete(size);
-            } else {
-                selectedSizes.add(size);
+                if (
+                    selectedSizes.has(
+                        size
+                    )
+                ) {
+
+                    selectedSizes.delete(
+                        size
+                    );
+
+                } else {
+
+                    selectedSizes.add(
+                        size
+                    );
+                }
+
+                renderSizes();
+
+                updatePreview();
             }
+        );
 
-            renderSizes();
-            updatePreview();
-        });
-
-        container.appendChild(button);
+        container.appendChild(
+            button
+        );
     });
 }
 
@@ -1517,72 +1985,108 @@ function renderSizes() {
 // =========================================================
 
 const dropZone =
-    document.getElementById("drop-zone");
+    document.getElementById(
+        "drop-zone"
+    );
+
 
 const imageInput =
-    document.getElementById("gambar");
+    document.getElementById(
+        "gambar"
+    );
+
 
 let selectedImageFiles = [];
 
 let previewMainIndex = 0;
 
-dropZone.addEventListener("click", function(event) {
 
-    if (
-        event.target.tagName === "BUTTON" ||
-        event.target.closest("button")
-    ) {
-        return;
+dropZone.addEventListener(
+    "click",
+    function(event) {
+
+        if (
+            event.target.tagName ===
+                "BUTTON" ||
+            event.target.closest(
+                "button"
+            )
+        ) {
+            return;
+        }
+
+        imageInput.click();
     }
-
-    imageInput.click();
-});
+);
 
 
-imageInput.addEventListener("change", function() {
+imageInput.addEventListener(
+    "change",
+    function() {
 
-    const files =
-        Array.from(this.files);
+        const files =
+            Array.from(
+                this.files
+            );
 
-    if (files.length > 0) {
+        if (files.length > 0) {
+            addImageFiles(files);
+        }
+
+        this.value = "";
+    }
+);
+
+
+dropZone.addEventListener(
+    "dragover",
+    function(event) {
+
+        event.preventDefault();
+
+        dropZone.classList.add(
+            "drop-active"
+        );
+    }
+);
+
+
+dropZone.addEventListener(
+    "dragleave",
+    function() {
+
+        dropZone.classList.remove(
+            "drop-active"
+        );
+    }
+);
+
+
+dropZone.addEventListener(
+    "drop",
+    function(event) {
+
+        event.preventDefault();
+
+        dropZone.classList.remove(
+            "drop-active"
+        );
+
+        const files =
+            Array.from(
+                event.dataTransfer.files
+            );
+
         addImageFiles(files);
     }
-
-    this.value = "";
-});
-
-
-dropZone.addEventListener("dragover", function(event) {
-
-    event.preventDefault();
-
-    dropZone.classList.add("drop-active");
-});
-
-
-dropZone.addEventListener("dragleave", function() {
-
-    dropZone.classList.remove("drop-active");
-});
-
-
-dropZone.addEventListener("drop", function(event) {
-
-    event.preventDefault();
-
-    dropZone.classList.remove("drop-active");
-
-    const files =
-        Array.from(event.dataTransfer.files);
-
-    addImageFiles(files);
-});
+);
 
 
 function addImageFiles(files) {
 
     const remaining =
-        10 - selectedImageFiles.length;
+        10 -
+        selectedImageFiles.length;
 
     if (remaining <= 0) {
 
@@ -1596,9 +2100,15 @@ function addImageFiles(files) {
 
     const validFiles = [];
 
-    for (const file of files) {
+    for (
+        const file of files
+    ) {
 
-        if (!file.type.startsWith("image/")) {
+        if (
+            !file.type.startsWith(
+                "image/"
+            )
+        ) {
 
             showToast(
                 `${file.name} bukan file gambar.`,
@@ -1608,7 +2118,10 @@ function addImageFiles(files) {
             continue;
         }
 
-        if (file.size > 5 * 1024 * 1024) {
+        if (
+            file.size >
+            5 * 1024 * 1024
+        ) {
 
             showToast(
                 `${file.name} melebihi batas 5 MB.`,
@@ -1621,9 +2134,14 @@ function addImageFiles(files) {
         validFiles.push(file);
     }
 
-    if (validFiles.length > remaining) {
+    if (
+        validFiles.length >
+        remaining
+    ) {
 
-        validFiles.splice(remaining);
+        validFiles.splice(
+            remaining
+        );
 
         showToast(
             "Sebagian foto tidak ditambahkan karena batas maksimal 10 foto.",
@@ -1631,7 +2149,9 @@ function addImageFiles(files) {
         );
     }
 
-    selectedImageFiles.push(...validFiles);
+    selectedImageFiles.push(
+        ...validFiles
+    );
 
     renderImagePreviews();
 }
@@ -1664,26 +2184,42 @@ function renderImagePreviews() {
     count.textContent =
         `${selectedImageFiles.length} / 10 foto`;
 
-    if (selectedImageFiles.length === 0) {
+    if (
+        selectedImageFiles.length ===
+        0
+    ) {
 
-        wrapper.classList.add("hidden");
-        placeholder.classList.remove("hidden");
+        wrapper.classList.add(
+            "hidden"
+        );
+
+        placeholder.classList.remove(
+            "hidden"
+        );
 
         document.getElementById(
             "card-preview-image"
-        ).classList.add("hidden");
+        ).classList.add(
+            "hidden"
+        );
 
         document.getElementById(
             "card-preview-placeholder"
-        ).classList.remove("hidden");
+        ).classList.remove(
+            "hidden"
+        );
 
         document.getElementById(
             "preview-thumbnail-container"
-        ).classList.add("hidden");
+        ).classList.add(
+            "hidden"
+        );
 
         document.getElementById(
             "main-photo-label"
-        ).classList.add("hidden");
+        ).classList.add(
+            "hidden"
+        );
 
         previewMainIndex = 0;
 
@@ -1694,55 +2230,77 @@ function renderImagePreviews() {
         previewMainIndex >=
         selectedImageFiles.length
     ) {
+
         previewMainIndex =
-            selectedImageFiles.length - 1;
+            selectedImageFiles.length -
+            1;
     }
 
-    wrapper.classList.remove("hidden");
-    placeholder.classList.add("hidden");
+    wrapper.classList.remove(
+        "hidden"
+    );
 
-    selectedImageFiles.forEach((file, index) => {
+    placeholder.classList.add(
+        "hidden"
+    );
 
-        const url =
-            URL.createObjectURL(file);
+    selectedImageFiles.forEach(
+        (
+            file,
+            index
+        ) => {
 
-        const item =
-            document.createElement("div");
+            const url =
+                URL.createObjectURL(
+                    file
+                );
 
-        item.className =
-            "photo-thumb bg-gray-100 rounded-xl overflow-hidden aspect-square";
+            const item =
+                document.createElement(
+                    "div"
+                );
 
-        item.innerHTML = `
+            item.className =
+                "photo-thumb bg-gray-100 rounded-xl overflow-hidden aspect-square";
 
-            <img
-                src="${url}"
-                class="w-full h-full object-cover"
-                alt="Foto ${index + 1}">
+            item.innerHTML = `
 
-            <button
-                type="button"
-                onclick="removeSelectedImage(${index}, event)"
-                class="w-7 h-7 rounded-full bg-black/80 text-white text-xs flex items-center justify-center hover:bg-red-600">
+                <img
+                    src="${url}"
+                    class="w-full h-full object-cover"
+                    alt="Foto ${index + 1}">
 
-                ×
+                <button
+                    type="button"
+                    onclick="removeSelectedImage(${index}, event)"
+                    class="w-7 h-7 rounded-full bg-black/80 text-white text-xs flex items-center justify-center hover:bg-red-600">
 
-            </button>
+                    ×
 
-            <button
-                type="button"
-                onclick="setPreviewMain(${index}, event)"
-                class="absolute bottom-2 left-2 bg-white/90 text-black text-[10px] px-2 py-1 rounded-lg font-bold">
+                </button>
 
-                ${index === 0 ? "UTAMA" : "JADIKAN UTAMA"}
+                <button
+                    type="button"
+                    onclick="setPreviewMain(${index}, event)"
+                    class="absolute bottom-2 left-2 bg-white/90 text-black text-[10px] px-2 py-1 rounded-lg font-bold">
 
-            </button>
+                    ${
+                        index === 0
+                            ? "UTAMA"
+                            : "JADIKAN UTAMA"
+                    }
 
-        `;
+                </button>
+            `;
 
-        grid.appendChild(item);
-    });
+            grid.appendChild(
+                item
+            );
+        }
+    );
 
     renderAddPreviewGallery();
+
     updatePreview();
 }
 
@@ -1756,45 +2314,71 @@ function renderAddPreviewGallery() {
 
     container.innerHTML = "";
 
-    if (selectedImageFiles.length === 0) {
+    if (
+        selectedImageFiles.length ===
+        0
+    ) {
 
-        container.classList.add("hidden");
+        container.classList.add(
+            "hidden"
+        );
 
         return;
     }
 
-    container.classList.remove("hidden");
+    container.classList.remove(
+        "hidden"
+    );
 
-    selectedImageFiles.forEach((file, index) => {
+    selectedImageFiles.forEach(
+        (
+            file,
+            index
+        ) => {
 
-        const url =
-            URL.createObjectURL(file);
+            const url =
+                URL.createObjectURL(
+                    file
+                );
 
-        const thumb =
-            document.createElement("div");
+            const thumb =
+                document.createElement(
+                    "div"
+                );
 
-        thumb.className =
-            "preview-thumbnail" +
-            (index === previewMainIndex
-                ? " active"
-                : "");
+            thumb.className =
+                "preview-thumbnail" +
+                (
+                    index ===
+                    previewMainIndex
+                        ? " active"
+                        : ""
+                );
 
-        thumb.innerHTML = `
-            <img
-                src="${url}"
-                alt="Thumbnail ${index + 1}">
-        `;
+            thumb.innerHTML = `
+                <img
+                    src="${url}"
+                    alt="Thumbnail ${index + 1}">
+            `;
 
-        thumb.addEventListener("click", () => {
+            thumb.addEventListener(
+                "click",
+                () => {
 
-            previewMainIndex = index;
+                    previewMainIndex =
+                        index;
 
-            renderAddPreviewGallery();
-            updateMainAddPreview();
-        });
+                    renderAddPreviewGallery();
 
-        container.appendChild(thumb);
-    });
+                    updateMainAddPreview();
+                }
+            );
+
+            container.appendChild(
+                thumb
+            );
+        }
+    );
 
     updateMainAddPreview();
 }
@@ -1817,38 +2401,68 @@ function updateMainAddPreview() {
             "main-photo-label"
         );
 
-    if (selectedImageFiles.length === 0) {
+    if (
+        selectedImageFiles.length ===
+        0
+    ) {
 
-        mainImage.classList.add("hidden");
-        placeholder.classList.remove("hidden");
-        label.classList.add("hidden");
+        mainImage.classList.add(
+            "hidden"
+        );
+
+        placeholder.classList.remove(
+            "hidden"
+        );
+
+        label.classList.add(
+            "hidden"
+        );
 
         return;
     }
 
     const file =
-        selectedImageFiles[previewMainIndex];
+        selectedImageFiles[
+            previewMainIndex
+        ];
 
     if (!file) {
         return;
     }
 
     const url =
-        URL.createObjectURL(file);
+        URL.createObjectURL(
+            file
+        );
 
-    mainImage.src = url;
-    mainImage.classList.remove("hidden");
+    mainImage.src =
+        url;
 
-    placeholder.classList.add("hidden");
+    mainImage.classList.remove(
+        "hidden"
+    );
 
-    label.classList.remove("hidden");
+    placeholder.classList.add(
+        "hidden"
+    );
+
+    label.classList.remove(
+        "hidden"
+    );
 
     label.textContent =
-        `Foto utama ${previewMainIndex + 1} dari ${selectedImageFiles.length}`;
+        `Foto utama ${
+            previewMainIndex + 1
+        } dari ${
+            selectedImageFiles.length
+        }`;
 }
 
 
-function setPreviewMain(index, event) {
+function setPreviewMain(
+    index,
+    event
+) {
 
     if (event) {
         event.stopPropagation();
@@ -1856,7 +2470,8 @@ function setPreviewMain(index, event) {
 
     if (
         index < 0 ||
-        index >= selectedImageFiles.length
+        index >=
+            selectedImageFiles.length
     ) {
         return;
     }
@@ -1864,9 +2479,14 @@ function setPreviewMain(index, event) {
     if (index !== 0) {
 
         const selected =
-            selectedImageFiles.splice(index, 1)[0];
+            selectedImageFiles.splice(
+                index,
+                1
+            )[0];
 
-        selectedImageFiles.unshift(selected);
+        selectedImageFiles.unshift(
+            selected
+        );
     }
 
     previewMainIndex = 0;
@@ -1875,22 +2495,30 @@ function setPreviewMain(index, event) {
 }
 
 
-function removeSelectedImage(index, event) {
+function removeSelectedImage(
+    index,
+    event
+) {
 
     if (event) {
         event.stopPropagation();
     }
 
-    selectedImageFiles.splice(index, 1);
+    selectedImageFiles.splice(
+        index,
+        1
+    );
 
     if (
         previewMainIndex >=
         selectedImageFiles.length
     ) {
+
         previewMainIndex =
             Math.max(
                 0,
-                selectedImageFiles.length - 1
+                selectedImageFiles.length -
+                    1
             );
     }
 
@@ -1936,21 +2564,26 @@ const fields = [
     "deskripsi"
 ];
 
-fields.forEach(id => {
 
-    const element =
-        document.getElementById(id);
+fields.forEach(
+    id => {
 
-    element.addEventListener(
-        "input",
-        updatePreview
-    );
+        const element =
+            document.getElementById(
+                id
+            );
 
-    element.addEventListener(
-        "change",
-        updatePreview
-    );
-});
+        element.addEventListener(
+            "input",
+            updatePreview
+        );
+
+        element.addEventListener(
+            "change",
+            updatePreview
+        );
+    }
+);
 
 
 function formatRupiah(number) {
@@ -1960,54 +2593,93 @@ function formatRupiah(number) {
     }
 
     return "Rp" +
-        Number(number).toLocaleString("id-ID");
+        Number(number)
+            .toLocaleString("id-ID");
 }
 
 
 function updatePreview() {
 
     const nama =
-        document.getElementById("nama").value;
+        document.getElementById(
+            "nama"
+        ).value;
 
     const brand =
-        document.getElementById("brand").value;
+        document.getElementById(
+            "brand"
+        ).value;
 
     const harga =
-        document.getElementById("harga").value;
+        document.getElementById(
+            "harga"
+        ).value;
 
     const hargaCoret =
-        document.getElementById("harga_coret").value;
+        document.getElementById(
+            "harga_coret"
+        ).value;
 
     const tipe =
-        document.getElementById("tipe").value;
+        document.getElementById(
+            "tipe"
+        ).value;
 
     const pengguna =
-        document.getElementById("pengguna").value;
+        document.getElementById(
+            "pengguna"
+        ).value;
 
-    document.getElementById("preview-name").textContent =
-        nama || "Nama Produk";
+    document.getElementById(
+        "preview-name"
+    ).textContent =
+        nama ||
+        "Nama Produk";
 
-    document.getElementById("preview-brand").textContent =
-        brand || "BRAND";
+    document.getElementById(
+        "preview-brand"
+    ).textContent =
+        brand ||
+        "BRAND";
 
-    document.getElementById("preview-price").textContent =
-        formatRupiah(harga);
+    document.getElementById(
+        "preview-price"
+    ).textContent =
+        formatRupiah(
+            harga
+        );
 
-    document.getElementById("preview-old-price").textContent =
+    document.getElementById(
+        "preview-old-price"
+    ).textContent =
         hargaCoret
-            ? formatRupiah(hargaCoret)
+            ? formatRupiah(
+                hargaCoret
+            )
             : "";
 
-    document.getElementById("preview-type").textContent =
-        capitalize(tipe);
+    document.getElementById(
+        "preview-type"
+    ).textContent =
+        capitalize(
+            tipe
+        );
 
-    document.getElementById("preview-user").textContent =
-        capitalize(pengguna);
+    document.getElementById(
+        "preview-user"
+    ).textContent =
+        capitalize(
+            pengguna
+        );
 
     const sizeContainer =
-        document.getElementById("preview-sizes");
+        document.getElementById(
+            "preview-sizes"
+        );
 
-    if (selectedSizes.size === 0) {
+    if (
+        selectedSizes.size === 0
+    ) {
 
         sizeContainer.innerHTML = `
             <span class="text-xs text-gray-400">
@@ -2017,22 +2689,39 @@ function updatePreview() {
 
     } else {
 
-        sizeContainer.innerHTML = "";
+        sizeContainer.innerHTML =
+            "";
 
-        [...selectedSizes]
-            .sort((a, b) => Number(a) - Number(b))
-            .forEach(size => {
+        [
+            ...selectedSizes
+        ]
+            .sort(
+                (
+                    a,
+                    b
+                ) =>
+                    Number(a) -
+                    Number(b)
+            )
+            .forEach(
+                size => {
 
-                const span =
-                    document.createElement("span");
+                    const span =
+                        document.createElement(
+                            "span"
+                        );
 
-                span.className =
-                    "px-2.5 py-1.5 bg-gray-100 rounded-lg text-xs font-bold";
+                    span.className =
+                        "px-2.5 py-1.5 bg-gray-100 rounded-lg text-xs font-bold";
 
-                span.textContent = size;
+                    span.textContent =
+                        size;
 
-                sizeContainer.appendChild(span);
-            });
+                    sizeContainer.appendChild(
+                        span
+                    );
+                }
+            );
     }
 
     updateMainAddPreview();
@@ -2046,13 +2735,19 @@ function updatePreview() {
 function validateForm() {
 
     const nama =
-        document.getElementById("nama").value.trim();
+        document.getElementById(
+            "nama"
+        ).value.trim();
 
     const brand =
-        document.getElementById("brand").value.trim();
+        document.getElementById(
+            "brand"
+        ).value.trim();
 
     const harga =
-        document.getElementById("harga").value;
+        document.getElementById(
+            "harga"
+        ).value;
 
     if (!nama) {
 
@@ -2061,7 +2756,9 @@ function validateForm() {
             "error"
         );
 
-        document.getElementById("nama").focus();
+        document.getElementById(
+            "nama"
+        ).focus();
 
         return false;
     }
@@ -2073,24 +2770,33 @@ function validateForm() {
             "error"
         );
 
-        document.getElementById("brand").focus();
+        document.getElementById(
+            "brand"
+        ).focus();
 
         return false;
     }
 
-    if (!harga || Number(harga) <= 0) {
+    if (
+        !harga ||
+        Number(harga) <= 0
+    ) {
 
         showToast(
             "Harga produk belum benar.",
             "error"
         );
 
-        document.getElementById("harga").focus();
+        document.getElementById(
+            "harga"
+        ).focus();
 
         return false;
     }
 
-    if (selectedSizes.size === 0) {
+    if (
+        selectedSizes.size === 0
+    ) {
 
         showToast(
             "Pilih minimal satu ukuran.",
@@ -2100,7 +2806,9 @@ function validateForm() {
         return false;
     }
 
-    if (selectedImageFiles.length === 0) {
+    if (
+        selectedImageFiles.length === 0
+    ) {
 
         showToast(
             "Pilih minimal satu foto produk.",
@@ -2120,39 +2828,63 @@ function validateForm() {
 
 function fileToBase64(file) {
 
-    return new Promise((resolve, reject) => {
+    return new Promise(
+        (
+            resolve,
+            reject
+        ) => {
 
-        const reader = new FileReader();
+            const reader =
+                new FileReader();
 
-        reader.onload = () => {
-            resolve({
-                name: file.name,
-                data: reader.result
-            });
-        };
+            reader.onload =
+                () => {
 
-        reader.onerror = () => {
-            reject(
-                new Error(
-                    `Gagal membaca file "${file.name}".`
-                )
+                    resolve({
+                        name:
+                            file.name,
+
+                        data:
+                            reader.result
+                    });
+                };
+
+            reader.onerror =
+                () => {
+
+                    reject(
+                        new Error(
+                            `Gagal membaca file "${file.name}".`
+                        )
+                    );
+                };
+
+            reader.readAsDataURL(
+                file
             );
-        };
-
-        reader.readAsDataURL(file);
-    });
+        }
+    );
 }
 
 
-async function filesToBase64(files) {
+async function filesToBase64(
+    files
+) {
 
     const results = [];
 
-    for (const file of files) {
+    for (
+        const file of files
+    ) {
 
-        const imageData = await fileToBase64(file);
+        const imageData =
+            await fileToBase64(
+                file
+            );
 
-        results.push(imageData);
+        results.push(
+            imageData
+        );
     }
 
     return results;
@@ -2169,8 +2901,19 @@ async function saveProduct() {
         return;
     }
 
+    if (!adminToken) {
+
+        showAdminLogin(
+            "Silakan login sebagai admin terlebih dahulu."
+        );
+
+        return;
+    }
+
     const button =
-        document.getElementById("btn-tambah");
+        document.getElementById(
+            "btn-tambah"
+        );
 
     const originalText =
         button.textContent;
@@ -2178,7 +2921,9 @@ async function saveProduct() {
     try {
 
         button.disabled = true;
-        button.textContent = "Menyimpan...";
+
+        button.textContent =
+            "Menyimpan...";
 
         const gambar =
             await filesToBase64(
@@ -2188,59 +2933,74 @@ async function saveProduct() {
         const productData = {
 
             nama:
-                document.getElementById("nama")
-                    .value.trim(),
+                document.getElementById(
+                    "nama"
+                ).value.trim(),
 
             brand:
-                document.getElementById("brand")
-                    .value.trim(),
+                document.getElementById(
+                    "brand"
+                ).value.trim(),
 
             harga:
                 Number(
-                    document.getElementById("harga")
-                        .value
+                    document.getElementById(
+                        "harga"
+                    ).value
                 ),
 
             harga_coret:
                 Number(
-                    document.getElementById("harga_coret")
-                        .value
+                    document.getElementById(
+                        "harga_coret"
+                    ).value
                 ) || 0,
 
             tipe:
-                document.getElementById("tipe")
-                    .value,
+                document.getElementById(
+                    "tipe"
+                ).value,
 
             asal:
-                document.getElementById("asal")
-                    .value,
+                document.getElementById(
+                    "asal"
+                ).value,
 
             pengguna:
-                document.getElementById("pengguna")
-                    .value,
+                document.getElementById(
+                    "pengguna"
+                ).value,
 
             stok:
                 Number(
-                    document.getElementById("stok")
-                        .value
+                    document.getElementById(
+                        "stok"
+                    ).value
                 ) || 0,
 
             sizes:
-                [...selectedSizes]
-                    .sort(
-                        (a, b) =>
-                            Number(a) - Number(b)
-                    ),
+                [
+                    ...selectedSizes
+                ].sort(
+                    (
+                        a,
+                        b
+                    ) =>
+                        Number(a) -
+                        Number(b)
+                ),
 
             deskripsi:
-                document.getElementById("deskripsi")
-                    .value.trim(),
+                document.getElementById(
+                    "deskripsi"
+                ).value.trim(),
 
             gambar
         };
 
+
         const response =
-            await fetch(
+            await authFetch(
                 `${API_URL}/api/products`,
                 {
                     method: "POST",
@@ -2257,10 +3017,15 @@ async function saveProduct() {
                 }
             );
 
+
         const result =
             await response.json();
 
-        if (!response.ok || !result.success) {
+
+        if (
+            !response.ok ||
+            !result.success
+        ) {
 
             throw new Error(
                 result.message ||
@@ -2268,6 +3033,7 @@ async function saveProduct() {
                 "Gagal menyimpan produk."
             );
         }
+
 
         showToast(
             "Produk berhasil ditambahkan!",
@@ -2291,7 +3057,9 @@ async function saveProduct() {
     } finally {
 
         button.disabled = false;
-        button.textContent = originalText;
+
+        button.textContent =
+            originalText;
     }
 }
 
@@ -2302,18 +3070,47 @@ async function saveProduct() {
 
 function clearForm() {
 
-    document.getElementById("nama").value = "";
-    document.getElementById("brand").value = "";
-    document.getElementById("harga").value = "";
-    document.getElementById("harga_coret").value = "";
-    document.getElementById("stok").value = "";
-    document.getElementById("deskripsi").value = "";
+    document.getElementById(
+        "nama"
+    ).value = "";
 
-    document.getElementById("tipe").value = "kasual";
-    document.getElementById("asal").value = "internasional";
-    document.getElementById("pengguna").value = "pria";
+    document.getElementById(
+        "brand"
+    ).value = "";
+
+    document.getElementById(
+        "harga"
+    ).value = "";
+
+    document.getElementById(
+        "harga_coret"
+    ).value = "";
+
+    document.getElementById(
+        "stok"
+    ).value = "";
+
+    document.getElementById(
+        "deskripsi"
+    ).value = "";
+
+    document.getElementById(
+        "tipe"
+    ).value =
+        "kasual";
+
+    document.getElementById(
+        "asal"
+    ).value =
+        "internasional";
+
+    document.getElementById(
+        "pengguna"
+    ).value =
+        "pria";
 
     selectedSizes.clear();
+
     selectedImageFiles = [];
 
     imageInput.value = "";
@@ -2321,7 +3118,9 @@ function clearForm() {
     previewMainIndex = 0;
 
     renderSizes();
+
     renderImagePreviews();
+
     updatePreview();
 }
 
@@ -2360,7 +3159,9 @@ let allProducts = [];
 async function loadProducts() {
 
     const list =
-        document.getElementById("product-list");
+        document.getElementById(
+            "product-list"
+        );
 
     try {
 
@@ -2372,7 +3173,10 @@ async function loadProducts() {
         const result =
             await response.json();
 
-        if (!response.ok || !result.success) {
+        if (
+            !response.ok ||
+            !result.success
+        ) {
 
             throw new Error(
                 result.message ||
@@ -2384,6 +3188,7 @@ async function loadProducts() {
             result.products || [];
 
         updateStats();
+
         renderProducts();
 
     } catch (error) {
@@ -2404,7 +3209,7 @@ async function loadProducts() {
                 </p>
 
                 <p class="text-sm text-gray-500 mt-2">
-                    Pastikan backend berjalan di localhost:3000
+                    Pastikan backend berjalan di Render.
                 </p>
 
                 <button
@@ -2418,7 +3223,9 @@ async function loadProducts() {
             </div>
         `;
 
-        document.getElementById("product-count").textContent =
+        document.getElementById(
+            "product-count"
+        ).textContent =
             "Data gagal dimuat.";
     }
 }
@@ -2441,25 +3248,39 @@ function updateStats() {
 
     const stock =
         allProducts.reduce(
-            (total, product) =>
+            (
+                total,
+                product
+            ) =>
                 total +
-                (Number(product.stok) || 0),
+                (
+                    Number(
+                        product.stok
+                    ) || 0
+                ),
             0
         );
 
     const lokal =
         allProducts.filter(
             product =>
-                product.asal === "lokal"
+                product.asal ===
+                "lokal"
         ).length;
 
-    document.getElementById("stat-total").textContent =
+    document.getElementById(
+        "stat-total"
+    ).textContent =
         total;
 
-    document.getElementById("stat-stock").textContent =
+    document.getElementById(
+        "stat-stock"
+    ).textContent =
         stock;
 
-    document.getElementById("stat-lokal").textContent =
+    document.getElementById(
+        "stat-lokal"
+    ).textContent =
         lokal;
 }
 
@@ -2468,25 +3289,40 @@ function updateStats() {
 // PRODUCT IMAGE HELPER
 // =========================================================
 
-function getProductImages(product) {
+function getProductImages(
+    product
+) {
 
-    if (!product || !product.gambar) {
+    if (
+        !product ||
+        !product.gambar
+    ) {
         return [];
     }
 
-    if (Array.isArray(product.gambar)) {
+    if (
+        Array.isArray(
+            product.gambar
+        )
+    ) {
 
         return product.gambar.filter(
             image =>
-                typeof image === "string" &&
+                typeof image ===
+                    "string" &&
                 image.trim() !== ""
         );
     }
 
-    if (typeof product.gambar === "string") {
+    if (
+        typeof product.gambar ===
+        "string"
+    ) {
 
         return product.gambar.trim()
-            ? [product.gambar.trim()]
+            ? [
+                product.gambar.trim()
+            ]
             : [];
     }
 
@@ -2508,52 +3344,69 @@ const productGalleryIndexes = {};
 function renderProducts() {
 
     const list =
-        document.getElementById("product-list");
+        document.getElementById(
+            "product-list"
+        );
 
     const search =
         (
-            document.getElementById("product-search")
-                .value ||
+            document.getElementById(
+                "product-search"
+            ).value ||
             ""
         )
-        .toLowerCase()
-        .trim();
+            .toLowerCase()
+            .trim();
 
     const filter =
-        document.getElementById("product-filter")
-            .value;
+        document.getElementById(
+            "product-filter"
+        ).value;
 
     const filtered =
-        allProducts.filter(product => {
+        allProducts.filter(
+            product => {
 
-            const name =
-                String(
-                    product.nama || ""
-                ).toLowerCase();
+                const name =
+                    String(
+                        product.nama ||
+                        ""
+                    ).toLowerCase();
 
-            const brand =
-                String(
-                    product.brand || ""
-                ).toLowerCase();
+                const brand =
+                    String(
+                        product.brand ||
+                        ""
+                    ).toLowerCase();
 
-            const searchMatch =
-                name.includes(search) ||
-                brand.includes(search);
+                const searchMatch =
+                    name.includes(
+                        search
+                    ) ||
+                    brand.includes(
+                        search
+                    );
 
-            const filterMatch =
-                filter === "semua" ||
-                product.tipe === filter;
+                const filterMatch =
+                    filter === "semua" ||
+                    product.tipe ===
+                        filter;
 
-            return (
-                searchMatch &&
-                filterMatch
-            );
-        });
+                return (
+                    searchMatch &&
+                    filterMatch
+                );
+            }
+        );
 
-    document.getElementById("product-count").textContent =
+    document.getElementById(
+        "product-count"
+    ).textContent =
         `${filtered.length} produk ditampilkan dari ${allProducts.length} produk`;
 
-    if (filtered.length === 0) {
+    if (
+        filtered.length === 0
+    ) {
 
         list.innerHTML = `
 
@@ -2580,52 +3433,82 @@ function renderProducts() {
 
     list.innerHTML = "";
 
-    filtered.forEach(product => {
+    filtered.forEach(
+        product => {
 
-        list.appendChild(
-            createProductCard(product)
-        );
-    });
+            list.appendChild(
+                createProductCard(
+                    product
+                )
+            );
+        }
+    );
 }
 
 
 // =========================================================
-// PRODUCT CARD - MULTI IMAGE
+// PRODUCT CARD
 // =========================================================
 
-function createProductCard(product) {
+function createProductCard(
+    product
+) {
 
     const card =
-        document.createElement("article");
+        document.createElement(
+            "article"
+        );
 
     card.className =
         "bg-white border rounded-3xl overflow-hidden fade-in";
 
     const images =
-        getProductImages(product);
+        getProductImages(
+            product
+        );
 
     if (
-        productGalleryIndexes[product.id] === undefined
+        productGalleryIndexes[
+            product.id
+        ] === undefined
     ) {
-        productGalleryIndexes[product.id] = 0;
+
+        productGalleryIndexes[
+            product.id
+        ] = 0;
     }
 
     let currentIndex =
-        productGalleryIndexes[product.id];
+        productGalleryIndexes[
+            product.id
+        ];
 
-    if (currentIndex >= images.length) {
+    if (
+        currentIndex >=
+        images.length
+    ) {
+
         currentIndex = 0;
-        productGalleryIndexes[product.id] = 0;
+
+        productGalleryIndexes[
+            product.id
+        ] = 0;
     }
 
     const image =
         images.length > 0
-            ? images[currentIndex]
+            ? images[
+                currentIndex
+            ]
             : "";
 
     const sizesText =
-        Array.isArray(product.sizes)
-            ? product.sizes.join(", ")
+        Array.isArray(
+            product.sizes
+        )
+            ? product.sizes.join(
+                ", "
+            )
             : "-";
 
     card.innerHTML = `
@@ -2697,15 +3580,27 @@ function createProductCard(product) {
 
                             <div class="gallery-dots">
 
-                                ${images.map((_, index) => `
+                                ${images
+                                    .map(
+                                        (
+                                            _,
+                                            index
+                                        ) => `
+
                                     <span
                                         class="gallery-dot ${
-                                            index === currentIndex
+                                            index ===
+                                            currentIndex
                                                 ? "active"
                                                 : ""
                                         }">
                                     </span>
-                                `).join("")}
+
+                                `
+                                    )
+                                    .join(
+                                        ""
+                                    )}
 
                             </div>
 
@@ -2729,12 +3624,19 @@ function createProductCard(product) {
                     ? `
                         <div class="card-thumbnails scrollbar-hide">
 
-                            ${images.map((imagePath, index) => `
+                            ${images
+                                .map(
+                                    (
+                                        imagePath,
+                                        index
+                                    ) => `
+
                                 <button
                                     type="button"
                                     onclick="setProductImage(${Number(product.id)}, ${index})"
                                     class="card-thumbnail ${
-                                        index === currentIndex
+                                        index ===
+                                        currentIndex
                                             ? "active"
                                             : ""
                                     }">
@@ -2744,7 +3646,12 @@ function createProductCard(product) {
                                         alt="Foto ${index + 1}">
 
                                 </button>
-                            `).join("")}
+
+                            `
+                                )
+                                .join(
+                                    ""
+                                )}
 
                         </div>
                     `
@@ -2756,24 +3663,34 @@ function createProductCard(product) {
         <div class="p-5">
 
             <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">
-                ${escapeHTML(product.brand || "BRAND")}
+                ${escapeHTML(
+                    product.brand ||
+                        "BRAND"
+                )}
             </p>
 
             <h3 class="font-black text-lg mt-1 line-clamp-2">
-                ${escapeHTML(product.nama || "Tanpa nama")}
+                ${escapeHTML(
+                    product.nama ||
+                        "Tanpa nama"
+                )}
             </h3>
 
             <div class="flex items-center gap-2 mt-3 flex-wrap">
 
                 <span class="font-black">
-                    ${formatRupiah(product.harga)}
+                    ${formatRupiah(
+                        product.harga
+                    )}
                 </span>
 
                 ${
                     product.harga_coret
                         ? `
                             <span class="text-sm text-gray-400 line-through">
-                                ${formatRupiah(product.harga_coret)}
+                                ${formatRupiah(
+                                    product.harga_coret
+                                )}
                             </span>
                         `
                         : ""
@@ -2786,21 +3703,29 @@ function createProductCard(product) {
                 <span
                     class="px-2.5 py-1.5 bg-gray-100 rounded-lg text-xs font-semibold">
 
-                    ${capitalize(product.tipe)}
+                    ${capitalize(
+                        product.tipe
+                    )}
 
                 </span>
 
                 <span
                     class="px-2.5 py-1.5 bg-gray-100 rounded-lg text-xs font-semibold">
 
-                    ${capitalize(product.pengguna)}
+                    ${capitalize(
+                        product.pengguna
+                    )}
 
                 </span>
 
                 <span
                     class="px-2.5 py-1.5 bg-gray-100 rounded-lg text-xs font-semibold">
 
-                    Stok ${Number(product.stok) || 0}
+                    Stok ${
+                        Number(
+                            product.stok
+                        ) || 0
+                    }
 
                 </span>
 
@@ -2813,7 +3738,9 @@ function createProductCard(product) {
                 </p>
 
                 <p class="text-sm font-semibold">
-                    ${escapeHTML(sizesText)}
+                    ${escapeHTML(
+                        sizesText
+                    )}
                 </p>
 
             </div>
@@ -2845,7 +3772,10 @@ function createProductCard(product) {
 }
 
 
-function changeProductImage(id, direction) {
+function changeProductImage(
+    id,
+    direction
+) {
 
     const product =
         allProducts.find(
@@ -2859,33 +3789,47 @@ function changeProductImage(id, direction) {
     }
 
     const images =
-        getProductImages(product);
+        getProductImages(
+            product
+        );
 
-    if (images.length <= 1) {
+    if (
+        images.length <= 1
+    ) {
         return;
     }
 
     let current =
-        productGalleryIndexes[id] || 0;
+        productGalleryIndexes[
+            id
+        ] || 0;
 
     current += direction;
 
     if (current < 0) {
-        current = images.length - 1;
+        current =
+            images.length - 1;
     }
 
-    if (current >= images.length) {
+    if (
+        current >=
+        images.length
+    ) {
         current = 0;
     }
 
-    productGalleryIndexes[id] =
-        current;
+    productGalleryIndexes[
+        id
+    ] = current;
 
     renderProducts();
 }
 
 
-function setProductImage(id, index) {
+function setProductImage(
+    id,
+    index
+) {
 
     const product =
         allProducts.find(
@@ -2899,7 +3843,9 @@ function setProductImage(id, index) {
     }
 
     const images =
-        getProductImages(product);
+        getProductImages(
+            product
+        );
 
     if (
         index < 0 ||
@@ -2908,8 +3854,9 @@ function setProductImage(id, index) {
         return;
     }
 
-    productGalleryIndexes[id] =
-        index;
+    productGalleryIndexes[
+        id
+    ] = index;
 
     renderProducts();
 }
@@ -2921,12 +3868,29 @@ function setProductImage(id, index) {
 
 function escapeHTML(value) {
 
-    return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+    return String(
+        value ?? ""
+    )
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
 }
 
 
@@ -2937,10 +3901,14 @@ function escapeHTML(value) {
 function capitalize(value) {
 
     const text =
-        String(value || "");
+        String(
+            value || ""
+        );
 
-    return text.charAt(0).toUpperCase() +
-        text.slice(1);
+    return (
+        text.charAt(0).toUpperCase() +
+        text.slice(1)
+    );
 }
 
 
@@ -2970,7 +3938,8 @@ document.getElementById(
 
 let editingProduct = null;
 
-const editSelectedSizes = new Set();
+const editSelectedSizes =
+    new Set();
 
 let editExistingImages = [];
 
@@ -2990,39 +3959,65 @@ function renderEditSizes() {
 
     container.innerHTML = "";
 
-    sizes.forEach(size => {
+    sizes.forEach(
+        size => {
 
-        const button =
-            document.createElement("button");
+            const button =
+                document.createElement(
+                    "button"
+                );
 
-        button.type = "button";
-        button.textContent = size;
+            button.type = "button";
 
-        button.className =
-            "border border-gray-200 rounded-xl py-3 text-sm font-bold hover:border-black transition";
+            button.textContent =
+                size;
 
-        if (editSelectedSizes.has(size)) {
+            button.className =
+                "border border-gray-200 rounded-xl py-3 text-sm font-bold hover:border-black transition";
 
-            button.classList.add(
-                "bg-black",
-                "text-white",
-                "border-black"
-            );
-        }
+            if (
+                editSelectedSizes.has(
+                    size
+                )
+            ) {
 
-        button.addEventListener("click", () => {
-
-            if (editSelectedSizes.has(size)) {
-                editSelectedSizes.delete(size);
-            } else {
-                editSelectedSizes.add(size);
+                button.classList.add(
+                    "bg-black",
+                    "text-white",
+                    "border-black"
+                );
             }
 
-            renderEditSizes();
-        });
+            button.addEventListener(
+                "click",
+                () => {
 
-        container.appendChild(button);
-    });
+                    if (
+                        editSelectedSizes.has(
+                            size
+                        )
+                    ) {
+
+                        editSelectedSizes.delete(
+                            size
+                        );
+
+                    } else {
+
+                        editSelectedSizes.add(
+                            size
+                        );
+                    }
+
+                    renderEditSizes();
+                }
+            );
+
+            container.appendChild(
+                button
+            );
+        }
+    );
 }
 
 
@@ -3066,99 +4061,128 @@ function renderEditPhotos() {
                 </p>
 
             </div>
-
         `;
 
         return;
     }
 
-    editExistingImages.forEach((image, index) => {
+    editExistingImages.forEach(
+        (
+            image,
+            index
+        ) => {
 
-        const item =
-            document.createElement("div");
+            const item =
+                document.createElement(
+                    "div"
+                );
 
-        item.className =
-            "photo-thumb bg-gray-100 rounded-xl overflow-hidden aspect-square";
+            item.className =
+                "photo-thumb bg-gray-100 rounded-xl overflow-hidden aspect-square";
 
-        item.innerHTML = `
+            item.innerHTML = `
 
-            <img
-                src="${escapeHTML(image)}"
-                class="w-full h-full object-cover"
-                alt="Foto produk ${index + 1}"
-                onerror="this.style.display='none';">
+                <img
+                    src="${escapeHTML(image)}"
+                    class="w-full h-full object-cover"
+                    alt="Foto produk ${index + 1}"
+                    onerror="this.style.display='none';">
 
-            <button
-                type="button"
-                onclick="removeExistingEditImage(${index}, event)"
-                class="w-7 h-7 rounded-full bg-black/80 text-white text-xs flex items-center justify-center hover:bg-red-600">
+                <button
+                    type="button"
+                    onclick="removeExistingEditImage(${index}, event)"
+                    class="w-7 h-7 rounded-full bg-black/80 text-white text-xs flex items-center justify-center hover:bg-red-600">
 
-                ×
+                    ×
 
-            </button>
+                </button>
 
-            <button
-                type="button"
-                onclick="makeExistingEditImageMain(${index}, event)"
-                class="absolute bottom-2 left-2 bg-white/90 text-black text-[10px] px-2 py-1 rounded-lg font-bold">
+                <button
+                    type="button"
+                    onclick="makeExistingEditImageMain(${index}, event)"
+                    class="absolute bottom-2 left-2 bg-white/90 text-black text-[10px] px-2 py-1 rounded-lg font-bold">
 
-                ${index === 0 ? "UTAMA" : "JADIKAN UTAMA"}
+                    ${
+                        index === 0
+                            ? "UTAMA"
+                            : "JADIKAN UTAMA"
+                    }
 
-            </button>
+                </button>
+            `;
 
-        `;
+            grid.appendChild(
+                item
+            );
+        }
+    );
 
-        grid.appendChild(item);
-    });
 
+    editNewImageFiles.forEach(
+        (
+            file,
+            index
+        ) => {
 
-    editNewImageFiles.forEach((file, index) => {
+            const url =
+                URL.createObjectURL(
+                    file
+                );
 
-        const url =
-            URL.createObjectURL(file);
+            const item =
+                document.createElement(
+                    "div"
+                );
 
-        const item =
-            document.createElement("div");
+            item.className =
+                "photo-thumb bg-gray-100 rounded-xl overflow-hidden aspect-square";
 
-        item.className =
-            "photo-thumb bg-gray-100 rounded-xl overflow-hidden aspect-square";
+            const totalIndex =
+                editExistingImages.length +
+                index;
 
-        const totalIndex =
-            editExistingImages.length + index;
+            item.innerHTML = `
 
-        item.innerHTML = `
+                <img
+                    src="${url}"
+                    class="w-full h-full object-cover"
+                    alt="Foto baru ${index + 1}">
 
-            <img
-                src="${url}"
-                class="w-full h-full object-cover"
-                alt="Foto baru ${index + 1}">
+                <button
+                    type="button"
+                    onclick="removeNewEditImage(${index}, event)"
+                    class="w-7 h-7 rounded-full bg-black/80 text-white text-xs flex items-center justify-center hover:bg-red-600">
 
-            <button
-                type="button"
-                onclick="removeNewEditImage(${index}, event)"
-                class="w-7 h-7 rounded-full bg-black/80 text-white text-xs flex items-center justify-center hover:bg-red-600">
+                    ×
 
-                ×
+                </button>
 
-            </button>
+                <button
+                    type="button"
+                    onclick="makeNewEditImageMain(${index}, event)"
+                    class="absolute bottom-2 left-2 bg-white/90 text-black text-[10px] px-2 py-1 rounded-lg font-bold">
 
-            <button
-                type="button"
-                onclick="makeNewEditImageMain(${index}, event)"
-                class="absolute bottom-2 left-2 bg-white/90 text-black text-[10px] px-2 py-1 rounded-lg font-bold">
+                    ${
+                        totalIndex === 0
+                            ? "UTAMA"
+                            : "JADIKAN UTAMA"
+                    }
 
-                ${totalIndex === 0 ? "UTAMA" : "JADIKAN UTAMA"}
+                </button>
+            `;
 
-            </button>
-
-        `;
-
-        grid.appendChild(item);
-    });
+            grid.appendChild(
+                item
+            );
+        }
+    );
 }
 
 
-function makeExistingEditImageMain(index, event) {
+function makeExistingEditImageMain(
+    index,
+    event
+) {
 
     if (event) {
         event.stopPropagation();
@@ -3166,21 +4190,30 @@ function makeExistingEditImageMain(index, event) {
 
     if (
         index < 0 ||
-        index >= editExistingImages.length
+        index >=
+            editExistingImages.length
     ) {
         return;
     }
 
     const image =
-        editExistingImages.splice(index, 1)[0];
+        editExistingImages.splice(
+            index,
+            1
+        )[0];
 
-    editExistingImages.unshift(image);
+    editExistingImages.unshift(
+        image
+    );
 
     renderEditPhotos();
 }
 
 
-function makeNewEditImageMain(index, event) {
+function makeNewEditImageMain(
+    index,
+    event
+) {
 
     if (event) {
         event.stopPropagation();
@@ -3188,39 +4221,57 @@ function makeNewEditImageMain(index, event) {
 
     if (
         index < 0 ||
-        index >= editNewImageFiles.length
+        index >=
+            editNewImageFiles.length
     ) {
         return;
     }
 
     const file =
-        editNewImageFiles.splice(index, 1)[0];
+        editNewImageFiles.splice(
+            index,
+            1
+        )[0];
 
-    editNewImageFiles.unshift(file);
-
-    renderEditPhotos();
-}
-
-
-function removeExistingEditImage(index, event) {
-
-    if (event) {
-        event.stopPropagation();
-    }
-
-    editExistingImages.splice(index, 1);
+    editNewImageFiles.unshift(
+        file
+    );
 
     renderEditPhotos();
 }
 
 
-function removeNewEditImage(index, event) {
+function removeExistingEditImage(
+    index,
+    event
+) {
 
     if (event) {
         event.stopPropagation();
     }
 
-    editNewImageFiles.splice(index, 1);
+    editExistingImages.splice(
+        index,
+        1
+    );
+
+    renderEditPhotos();
+}
+
+
+function removeNewEditImage(
+    index,
+    event
+) {
+
+    if (event) {
+        event.stopPropagation();
+    }
+
+    editNewImageFiles.splice(
+        index,
+        1
+    );
 
     renderEditPhotos();
 }
@@ -3237,16 +4288,21 @@ document.getElementById(
     function() {
 
         const files =
-            Array.from(this.files);
+            Array.from(
+                this.files
+            );
 
         const currentTotal =
             editExistingImages.length +
             editNewImageFiles.length;
 
         const remaining =
-            10 - currentTotal;
+            10 -
+            currentTotal;
 
-        if (remaining <= 0) {
+        if (
+            remaining <= 0
+        ) {
 
             showToast(
                 "Maksimal 10 foto per produk.",
@@ -3260,9 +4316,15 @@ document.getElementById(
 
         const validFiles = [];
 
-        for (const file of files) {
+        for (
+            const file of files
+        ) {
 
-            if (!file.type.startsWith("image/")) {
+            if (
+                !file.type.startsWith(
+                    "image/"
+                )
+            ) {
 
                 showToast(
                     `${file.name} bukan file gambar.`,
@@ -3272,7 +4334,10 @@ document.getElementById(
                 continue;
             }
 
-            if (file.size > 5 * 1024 * 1024) {
+            if (
+                file.size >
+                5 * 1024 * 1024
+            ) {
 
                 showToast(
                     `${file.name} melebihi batas 5 MB.`,
@@ -3282,12 +4347,19 @@ document.getElementById(
                 continue;
             }
 
-            validFiles.push(file);
+            validFiles.push(
+                file
+            );
         }
 
-        if (validFiles.length > remaining) {
+        if (
+            validFiles.length >
+            remaining
+        ) {
 
-            validFiles.splice(remaining);
+            validFiles.splice(
+                remaining
+            );
 
             showToast(
                 "Sebagian foto tidak ditambahkan karena batas maksimal 10 foto.",
@@ -3295,7 +4367,9 @@ document.getElementById(
             );
         }
 
-        editNewImageFiles.push(...validFiles);
+        editNewImageFiles.push(
+            ...validFiles
+        );
 
         this.value = "";
 
@@ -3309,6 +4383,15 @@ document.getElementById(
 // =========================================================
 
 function openEditModal(id) {
+
+    if (!adminToken) {
+
+        showAdminLogin(
+            "Silakan login sebagai admin terlebih dahulu."
+        );
+
+        return;
+    }
 
     const product =
         allProducts.find(
@@ -3327,7 +4410,8 @@ function openEditModal(id) {
         return;
     }
 
-    editingProduct = product;
+    editingProduct =
+        product;
 
     document.getElementById(
         "edit-product-id"
@@ -3347,7 +4431,8 @@ function openEditModal(id) {
     document.getElementById(
         "edit-tipe"
     ).value =
-        product.tipe || "kasual";
+        product.tipe ||
+        "kasual";
 
     document.getElementById(
         "edit-harga"
@@ -3362,12 +4447,14 @@ function openEditModal(id) {
     document.getElementById(
         "edit-asal"
     ).value =
-        product.asal || "internasional";
+        product.asal ||
+        "internasional";
 
     document.getElementById(
         "edit-pengguna"
     ).value =
-        product.pengguna || "unisex";
+        product.pengguna ||
+        "unisex";
 
     document.getElementById(
         "edit-stok"
@@ -3381,22 +4468,31 @@ function openEditModal(id) {
 
     editSelectedSizes.clear();
 
-    if (Array.isArray(product.sizes)) {
+    if (
+        Array.isArray(
+            product.sizes
+        )
+    ) {
 
-        product.sizes.forEach(size => {
+        product.sizes.forEach(
+            size => {
 
-            editSelectedSizes.add(
-                String(size)
-            );
-        });
+                editSelectedSizes.add(
+                    String(size)
+                );
+            }
+        );
     }
 
     editExistingImages =
-        getProductImages(product);
+        getProductImages(
+            product
+        );
 
     editNewImageFiles = [];
 
     renderEditSizes();
+
     renderEditPhotos();
 
     document.getElementById(
@@ -3408,8 +4504,13 @@ function openEditModal(id) {
             "edit-modal"
         );
 
-    modal.classList.remove("hidden");
-    modal.classList.add("flex");
+    modal.classList.remove(
+        "hidden"
+    );
+
+    modal.classList.add(
+        "flex"
+    );
 }
 
 
@@ -3424,11 +4525,19 @@ function closeEditModal() {
             "edit-modal"
         );
 
-    modal.classList.add("hidden");
-    modal.classList.remove("flex");
+    modal.classList.add(
+        "hidden"
+    );
 
-    editingProduct = null;
+    modal.classList.remove(
+        "flex"
+    );
+
+    editingProduct =
+        null;
+
     editExistingImages = [];
+
     editNewImageFiles = [];
 }
 
@@ -3443,6 +4552,15 @@ async function updateProduct() {
         return;
     }
 
+    if (!adminToken) {
+
+        showAdminLogin(
+            "Silakan login sebagai admin terlebih dahulu."
+        );
+
+        return;
+    }
+
     const button =
         document.getElementById(
             "btn-save-edit"
@@ -3454,20 +4572,26 @@ async function updateProduct() {
     try {
 
         button.disabled = true;
-        button.textContent = "Menyimpan...";
+
+        button.textContent =
+            "Menyimpan...";
 
         const totalImages =
             editExistingImages.length +
             editNewImageFiles.length;
 
-        if (totalImages === 0) {
+        if (
+            totalImages === 0
+        ) {
 
             throw new Error(
                 "Produk harus memiliki minimal satu foto."
             );
         }
 
-        if (totalImages > 10) {
+        if (
+            totalImages > 10
+        ) {
 
             throw new Error(
                 "Maksimal 10 foto per produk."
@@ -3523,18 +4647,23 @@ async function updateProduct() {
                 ) || 0,
 
             sizes:
-                [...editSelectedSizes]
-                    .sort(
-                        (a, b) =>
-                            Number(a) -
-                            Number(b)
-                    ),
+                [
+                    ...editSelectedSizes
+                ].sort(
+                    (
+                        a,
+                        b
+                    ) =>
+                        Number(a) -
+                        Number(b)
+                ),
 
             deskripsi:
                 document.getElementById(
                     "edit-deskripsi"
                 ).value.trim()
         };
+
 
         if (
             !data.nama ||
@@ -3547,6 +4676,7 @@ async function updateProduct() {
             );
         }
 
+
         if (
             data.sizes.length === 0
         ) {
@@ -3556,18 +4686,21 @@ async function updateProduct() {
             );
         }
 
+
         const newImages =
             await filesToBase64(
                 editNewImageFiles
             );
+
 
         data.gambar = [
             ...editExistingImages,
             ...newImages
         ];
 
+
         const response =
-            await fetch(
+            await authFetch(
                 `${API_URL}/api/products/${editingProduct.id}`,
                 {
                     method: "PUT",
@@ -3578,12 +4711,16 @@ async function updateProduct() {
                     },
 
                     body:
-                        JSON.stringify(data)
+                        JSON.stringify(
+                            data
+                        )
                 }
             );
 
+
         const result =
             await response.json();
+
 
         if (
             !response.ok ||
@@ -3596,6 +4733,7 @@ async function updateProduct() {
                 "Gagal mengubah produk."
             );
         }
+
 
         closeEditModal();
 
@@ -3619,7 +4757,9 @@ async function updateProduct() {
     } finally {
 
         button.disabled = false;
-        button.textContent = originalText;
+
+        button.textContent =
+            originalText;
     }
 }
 
@@ -3632,6 +4772,15 @@ let deletingProduct = null;
 
 
 function openDeleteModal(id) {
+
+    if (!adminToken) {
+
+        showAdminLogin(
+            "Silakan login sebagai admin terlebih dahulu."
+        );
+
+        return;
+    }
 
     const product =
         allProducts.find(
@@ -3650,7 +4799,8 @@ function openDeleteModal(id) {
         return;
     }
 
-    deletingProduct = product;
+    deletingProduct =
+        product;
 
     document.getElementById(
         "delete-product-name"
@@ -3662,8 +4812,13 @@ function openDeleteModal(id) {
             "delete-modal"
         );
 
-    modal.classList.remove("hidden");
-    modal.classList.add("flex");
+    modal.classList.remove(
+        "hidden"
+    );
+
+    modal.classList.add(
+        "flex"
+    );
 }
 
 
@@ -3678,10 +4833,16 @@ function closeDeleteModal() {
             "delete-modal"
         );
 
-    modal.classList.add("hidden");
-    modal.classList.remove("flex");
+    modal.classList.add(
+        "hidden"
+    );
 
-    deletingProduct = null;
+    modal.classList.remove(
+        "flex"
+    );
+
+    deletingProduct =
+        null;
 }
 
 
@@ -3692,6 +4853,15 @@ function closeDeleteModal() {
 async function confirmDelete() {
 
     if (!deletingProduct) {
+        return;
+    }
+
+    if (!adminToken) {
+
+        showAdminLogin(
+            "Silakan login sebagai admin terlebih dahulu."
+        );
+
         return;
     }
 
@@ -3706,18 +4876,23 @@ async function confirmDelete() {
     try {
 
         button.disabled = true;
-        button.textContent = "Menghapus...";
+
+        button.textContent =
+            "Menghapus...";
+
 
         const response =
-            await fetch(
+            await authFetch(
                 `${API_URL}/api/products/${deletingProduct.id}`,
                 {
                     method: "DELETE"
                 }
             );
 
+
         const result =
             await response.json();
+
 
         if (
             !response.ok ||
@@ -3730,6 +4905,7 @@ async function confirmDelete() {
                 "Gagal menghapus produk."
             );
         }
+
 
         closeDeleteModal();
 
@@ -3753,7 +4929,9 @@ async function confirmDelete() {
     } finally {
 
         button.disabled = false;
-        button.textContent = originalText;
+
+        button.textContent =
+            originalText;
     }
 }
 
@@ -3771,32 +4949,55 @@ function showToast(
 ) {
 
     const toast =
-        document.getElementById("toast");
+        document.getElementById(
+            "toast"
+        );
 
     const box =
-        document.getElementById("toast-box");
+        document.getElementById(
+            "toast-box"
+        );
 
     const icon =
-        document.getElementById("toast-icon");
+        document.getElementById(
+            "toast-icon"
+        );
 
     const text =
-        document.getElementById("toast-message");
+        document.getElementById(
+            "toast-message"
+        );
 
-    text.textContent = message;
+    text.textContent =
+        message;
 
-    if (type === "error") {
+    if (
+        type === "error"
+    ) {
 
-        box.classList.remove("bg-black");
-        box.classList.add("bg-red-600");
+        box.classList.remove(
+            "bg-black"
+        );
 
-        icon.textContent = "!";
+        box.classList.add(
+            "bg-red-600"
+        );
+
+        icon.textContent =
+            "!";
 
     } else {
 
-        box.classList.remove("bg-red-600");
-        box.classList.add("bg-black");
+        box.classList.remove(
+            "bg-red-600"
+        );
 
-        icon.textContent = "✓";
+        box.classList.add(
+            "bg-black"
+        );
+
+        icon.textContent =
+            "✓";
     }
 
     toast.classList.remove(
@@ -3804,17 +5005,22 @@ function showToast(
         "opacity-0"
     );
 
-    clearTimeout(toastTimeout);
+    clearTimeout(
+        toastTimeout
+    );
 
     toastTimeout =
-        setTimeout(() => {
+        setTimeout(
+            () => {
 
-            toast.classList.add(
-                "translate-y-20",
-                "opacity-0"
-            );
+                toast.classList.add(
+                    "translate-y-20",
+                    "opacity-0"
+                );
 
-        }, 3000);
+            },
+            3000
+        );
 }
 
 
@@ -3828,7 +5034,19 @@ renderImagePreviews();
 
 updatePreview();
 
-loadProducts();
+
+checkAdminAuth()
+    .then(
+        authenticated => {
+
+            if (
+                authenticated
+            ) {
+
+                loadProducts();
+            }
+        }
+    );
 
 </script>
 
