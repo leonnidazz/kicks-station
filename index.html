@@ -2628,29 +2628,23 @@
         ===================================================== */
 
        fetch('https://kicks-station.onrender.com/api/products')
-
     .then(response => {
-
         if (!response.ok) {
-
-            throw new Error(
-                `HTTP ${response.status}`
-            );
-
+            throw new Error(`HTTP ${response.status}`);
         }
 
         return response.json();
-
     })
+    .then(result => {
+        if (!result.success || !Array.isArray(result.products)) {
+            throw new Error(
+                result.message || 'Data produk tidak valid.'
+            );
+        }
 
-    .then(products => {
-
-        renderProducts(products);
-
+        renderProducts(result.products);
     })
-
     .catch(error => {
-
         console.error(
             'Gagal memuat produk dari server:',
             error
@@ -2658,7 +2652,6 @@
 
         productLoading.innerHTML =
             'Gagal memuat produk.';
-
     });
 
     </script>
