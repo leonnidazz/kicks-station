@@ -8,7 +8,7 @@
     "tipe": "kasual",
     "asal": "internasional",
     "pengguna": "pria",
-    "upload_order": 50,
+    "upload_order": 1,
     "gambar": "images/e/e (10).jpeg",
     "sizes": [
       "38 2/3",
@@ -32,7 +32,7 @@
     "tipe": "running",
     "asal": "internasional",
     "pengguna": "wanita",
-    "upload_order": 49,
+    "upload_order": 2,
     "gambar": "images/e/e (9).jpeg",
     "sizes": [
       "37 (23cm)"
@@ -47,7 +47,7 @@
     "tipe": "running",
     "asal": "internasional",
     "pengguna": "wanita",
-    "upload_order": 48,
+    "upload_order": 3,
     "gambar": "images/e/e (8).jpeg",
     "sizes": [
       "37",
@@ -64,7 +64,7 @@
     "tipe": "running",
     "asal": "internasional",
     "pengguna": "wanita",
-    "upload_order": 47,
+    "upload_order": 4,
     "gambar": "images/e/e (7).jpeg",
     "sizes": [
       "38",
@@ -80,7 +80,7 @@
     "tipe": "running",
     "asal": "internasional",
     "pengguna": "pria",
-    "upload_order": 46,
+    "upload_order": 5,
     "gambar": "images/e/e (6).jpeg",
     "sizes": [
       "43 1/3 [27.5cm]"
@@ -95,7 +95,7 @@
     "tipe": "running",
     "asal": "lokal",
     "pengguna": "wanita",
-    "upload_order": 45,
+    "upload_order": 6,
     "gambar": "images/e/e (5).jpeg",
     "sizes": [
       "37",
@@ -113,7 +113,7 @@
     "tipe": "kasual",
     "asal": "internasional",
     "pengguna": "pria",
-    "upload_order": 44,
+    "upload_order": 7,
     "gambar": "images/e/e (4).jpeg",
     "sizes": [
       "45 [29.5cm]"
@@ -128,7 +128,7 @@
     "tipe": "running",
     "asal": "internasional",
     "pengguna": "unisex",
-    "upload_order": 43,
+    "upload_order": 8,
     "gambar": "images/e/e (3).jpeg",
     "sizes": [
       "38.5",
@@ -145,7 +145,7 @@
     "tipe": "running",
     "asal": "internasional",
     "pengguna": "pria",
-    "upload_order": 42,
+    "upload_order": 9,
     "gambar": "images/e/e (2).jpeg",
     "sizes": [
       "40.5",
@@ -167,7 +167,7 @@
     "tipe": "kasual",
     "asal": "internasional",
     "pengguna": "wanita",
-    "upload_order": 41,
+    "upload_order": 10,
     "gambar": "images/e/e (1).jpeg",
     "sizes": [
       "37",
@@ -186,7 +186,7 @@
     "tipe": "kasual",
     "asal": "internasional",
     "pengguna": "pria",
-    "upload_order": 40,
+    "upload_order": 11,
     "gambar": "images/d/d (10).jpeg",
     "sizes": [
       "41",
@@ -202,7 +202,7 @@
     "tipe": "kasual",
     "asal": "internasional",
     "pengguna": "pria",
-    "upload_order": 39,
+    "upload_order": 12,
     "gambar": "images/d/d (9).jpeg",
     "sizes": [
       "40",
@@ -221,7 +221,7 @@
     "tipe": "kasual",
     "asal": "internasional",
     "pengguna": "wanita",
-    "upload_order": 38,
+    "upload_order": 13,
     "gambar": "images/d/d (8).jpeg",
     "sizes": [
       "36",
@@ -239,7 +239,7 @@
     "tipe": "running",
     "asal": "internasional",
     "pengguna": "pria",
-    "upload_order": 37,
+    "upload_order": 14,
     "gambar": "images/d/d (7).jpeg",
     "sizes": [
       "39",
@@ -256,7 +256,7 @@
     "tipe": "kasual",
     "asal": "internasional",
     "pengguna": "pria",
-    "upload_order": 36,
+    "upload_order": 15,
     "gambar": "images/d/d (6).jpeg",
     "sizes": [
       "44"
@@ -271,7 +271,7 @@
     "tipe": "running",
     "asal": "internasional",
     "pengguna": "wanita",
-    "upload_order": 35,
+    "upload_order": 16,
     "gambar": "images/d/d (5).jpeg",
     "sizes": [
       "38",
@@ -287,7 +287,7 @@
     "tipe": "kasual",
     "asal": "internasional",
     "pengguna": "pria",
-    "upload_order": 34,
+    "upload_order": 17,
     "gambar": "images/d/d (4).jpeg",
     "sizes": [
       "41",
@@ -303,7 +303,7 @@
     "tipe": "running",
     "asal": "internasional",
     "pengguna": "wanita",
-    "upload_order": 33,
+    "upload_order": 18,
     "gambar": "images/d/d (3).jpeg",
     "sizes": [
       "37",
@@ -321,7 +321,7 @@
     "tipe": "running",
     "asal": "internasional",
     "pengguna": "pria",
-    "upload_order": 32,
+    "upload_order": 19,
     "gambar": "images/d/d (2).jpeg",
     "sizes": [
       "42",
@@ -339,7 +339,7 @@
     "tipe": "kasual",
     "asal": "internasional",
     "pengguna": "wanita",
-    "upload_order": 31,
+    "upload_order": 20,
     "gambar": "images/d/d (1).jpeg",
     "sizes": [
       "38",
@@ -355,7 +355,7 @@
     "tipe": "running",
     "asal": "internasional",
     "pengguna": "pria",
-    "upload_order": 30,
+    "upload_order": 21,
     "gambar": "images/c/c (10).jpeg",
     "sizes": [
       "39",
@@ -374,7 +374,7 @@
     "tipe": "kasual",
     "asal": "internasional",
     "pengguna": "pria",
-    "upload_order": 29,
+    "upload_order": 22,
     "gambar": "images/c/c (9).jpeg",
     "sizes": [
       "42",
@@ -390,7 +390,7 @@
     "tipe": "running",
     "asal": "internasional",
     "pengguna": "pria",
-    "upload_order": 28,
+    "upload_order": 23,
     "gambar": "images/c/c (8).jpeg",
     "sizes": [
       "40",
@@ -412,7 +412,7 @@
     "tipe": "kasual",
     "asal": "internasional",
     "pengguna": "wanita",
-    "upload_order": 27,
+    "upload_order": 24,
     "gambar": "images/c/c (7).jpeg",
     "sizes": [
       "37",
@@ -428,7 +428,7 @@
     "tipe": "running",
     "asal": "internasional",
     "pengguna": "wanita",
-    "upload_order": 26,
+    "upload_order": 25,
     "gambar": "images/c/c (6).jpeg",
     "sizes": [
       "37.5",
@@ -444,7 +444,7 @@
     "tipe": "running",
     "asal": "internasional",
     "pengguna": "pria",
-    "upload_order": 25,
+    "upload_order": 26,
     "gambar": "images/c/c (5).jpeg",
     "sizes": [
       "39",
@@ -461,7 +461,7 @@
     "tipe": "running",
     "asal": "internasional",
     "pengguna": "pria",
-    "upload_order": 24,
+    "upload_order": 27,
     "gambar": "images/c/c (4).jpeg",
     "sizes": [
       "42",
@@ -477,7 +477,7 @@
     "tipe": "running",
     "asal": "internasional",
     "pengguna": "wanita",
-    "upload_order": 23,
+    "upload_order": 28,
     "gambar": "images/c/c (3).jpeg",
     "sizes": [
       "37",
@@ -495,7 +495,7 @@
     "tipe": "running",
     "asal": "internasional",
     "pengguna": "wanita",
-    "upload_order": 22,
+    "upload_order": 29,
     "gambar": "images/c/c (2).jpeg",
     "sizes": [
       "38 (24cm) [6 pcs]"
@@ -510,7 +510,7 @@
     "tipe": "running",
     "asal": "internasional",
     "pengguna": "unisex",
-    "upload_order": 21,
+    "upload_order": 30,
     "gambar": "images/c/c (1).jpeg",
     "sizes": [
       "30",
@@ -529,7 +529,7 @@
     "tipe": "running",
     "asal": "internasional",
     "pengguna": "pria",
-    "upload_order": 20,
+    "upload_order": 31,
     "gambar": "images/b/b (10).jpeg",
     "sizes": [
       "39",
@@ -549,7 +549,7 @@
     "tipe": "running",
     "asal": "internasional",
     "pengguna": "wanita",
-    "upload_order": 19,
+    "upload_order": 32,
     "gambar": "images/b/b (9).jpeg",
     "sizes": [
       "37",
@@ -567,7 +567,7 @@
     "tipe": "kasual",
     "asal": "internasional",
     "pengguna": "pria",
-    "upload_order": 18,
+    "upload_order": 33,
     "gambar": "images/b/b (8).jpeg",
     "sizes": [
       "40",
@@ -585,7 +585,7 @@
     "tipe": "kasual",
     "asal": "internasional",
     "pengguna": "pria",
-    "upload_order": 17,
+    "upload_order": 34,
     "gambar": "images/b/b (7).jpeg",
     "sizes": [
       "42 [27cm]"
@@ -600,7 +600,7 @@
     "tipe": "running",
     "asal": "internasional",
     "pengguna": "wanita",
-    "upload_order": 16,
+    "upload_order": 35,
     "gambar": "images/b/b (6).jpeg",
     "sizes": [
       "37",
@@ -618,7 +618,7 @@
     "tipe": "running",
     "asal": "internasional",
     "pengguna": "unisex",
-    "upload_order": 15,
+    "upload_order": 36,
     "gambar": "images/b/b (5).jpeg",
     "sizes": [
       "38",
@@ -637,7 +637,7 @@
     "tipe": "running",
     "asal": "internasional",
     "pengguna": "unisex",
-    "upload_order": 14,
+    "upload_order": 37,
     "gambar": "images/b/b (4).jpeg",
     "sizes": [
       "39",
@@ -658,7 +658,7 @@
     "tipe": "kasual",
     "asal": "internasional",
     "pengguna": "wanita",
-    "upload_order": 13,
+    "upload_order": 38,
     "gambar": "images/b/b (3).jpeg",
     "sizes": [
       "36",
@@ -677,7 +677,7 @@
     "tipe": "running",
     "asal": "internasional",
     "pengguna": "pria",
-    "upload_order": 12,
+    "upload_order": 39,
     "gambar": "images/b/b (2).jpeg",
     "sizes": [
       "41",
@@ -694,7 +694,7 @@
     "tipe": "running",
     "asal": "internasional",
     "pengguna": "pria",
-    "upload_order": 11,
+    "upload_order": 40,
     "gambar": "images/b/b (1).jpeg",
     "sizes": [
       "41",
@@ -712,7 +712,7 @@
     "tipe": "kasual",
     "asal": "internasional",
     "pengguna": "pria",
-    "upload_order": 10,
+    "upload_order": 41,
     "gambar": "images/a/a (10).jpeg",
     "sizes": [
       "39",
@@ -731,7 +731,7 @@
     "tipe": "kasual",
     "asal": "internasional",
     "pengguna": "wanita",
-    "upload_order": 9,
+    "upload_order": 42,
     "gambar": "images/a/a (9).jpeg",
     "sizes": [
       "38",
@@ -747,7 +747,7 @@
     "tipe": "kasual",
     "asal": "internasional",
     "pengguna": "pria",
-    "upload_order": 8,
+    "upload_order": 43,
     "gambar": "images/a/a (8).jpeg",
     "sizes": [
       "41",
@@ -763,7 +763,7 @@
     "tipe": "running",
     "asal": "internasional",
     "pengguna": "unisex",
-    "upload_order": 7,
+    "upload_order": 44,
     "gambar": "images/a/a (7).jpeg",
     "sizes": [
       "38.5",
@@ -779,7 +779,7 @@
     "tipe": "running",
     "asal": "internasional",
     "pengguna": "pria",
-    "upload_order": 6,
+    "upload_order": 45,
     "gambar": "images/a/a (6).jpeg",
     "sizes": [
       "39 1/3",
@@ -797,7 +797,7 @@
     "tipe": "running",
     "asal": "internasional",
     "pengguna": "wanita",
-    "upload_order": 5,
+    "upload_order": 46,
     "gambar": "images/a/a (5).jpeg",
     "sizes": [
       "38",
@@ -814,7 +814,7 @@
     "tipe": "running",
     "asal": "internasional",
     "pengguna": "pria",
-    "upload_order": 4,
+    "upload_order": 47,
     "gambar": "images/a/a (4).jpeg",
     "sizes": [
       "40 2/3",
@@ -833,7 +833,7 @@
     "tipe": "running",
     "asal": "internasional",
     "pengguna": "pria",
-    "upload_order": 3,
+    "upload_order": 48,
     "gambar": "images/a/a (3).jpeg",
     "sizes": [
       "42.5"
@@ -848,7 +848,7 @@
     "tipe": "kasual",
     "asal": "internasional",
     "pengguna": "pria",
-    "upload_order": 2,
+    "upload_order": 49,
     "gambar": "images/a/a (2).jpeg",
     "sizes": [
       "40",
@@ -866,11 +866,31 @@
     "tipe": "kasual",
     "asal": "internasional",
     "pengguna": "wanita",
-    "upload_order": 1,
+    "upload_order": 50,
     "gambar": "images/a/a (1).jpeg",
     "sizes": [
       "36",
       "38.5"
     ]
+  },
+  {
+    "id": 51,
+    "nama": "YAZID MUHAMMAD AL KAUTSAR",
+    "brand": "Adidas",
+    "harga": 1,
+    "harga_coret": 2,
+    "tipe": "kasual",
+    "asal": "internasional",
+    "pengguna": "pria",
+    "stok": 1,
+    "sizes": [
+      "46"
+    ],
+    "gambar": [
+      "images/twibbon.JPG",
+      "images/WhatsApp Image 2026-09-09 at 20.57.00.jpeg"
+    ],
+    "deskripsi": "",
+    "upload_order": 51
   }
 ]

@@ -1,0 +1,3836 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>AL KAUTSAR — Admin Dashboard</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+
+<script>
+tailwind.config = {
+    theme: {
+        extend: {
+            fontFamily: {
+                sans: ["Inter", "system-ui", "sans-serif"]
+            }
+        }
+    }
+}
+</script>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+body {
+    font-family: Inter, system-ui, sans-serif;
+}
+
+.glass {
+    background: rgba(255,255,255,.82);
+    backdrop-filter: blur(18px);
+}
+
+.drop-active {
+    border-color: #111827 !important;
+    background: #f3f4f6 !important;
+}
+
+.fade-in {
+    animation: fadeIn .35s ease;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.sidebar-item {
+    transition: .2s ease;
+}
+
+.sidebar-item:hover {
+    background: #f3f4f6;
+}
+
+.sidebar-item.active {
+    background: #111827;
+    color: white;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: #111827;
+    box-shadow: 0 0 0 3px rgba(17,24,39,.08);
+}
+
+.modal-bg {
+    background: rgba(0,0,0,.45);
+    backdrop-filter: blur(6px);
+}
+
+.photo-thumb {
+    position: relative;
+}
+
+.photo-thumb button {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    z-index: 5;
+}
+
+.photo-main {
+    border: 2px solid #111827;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+    display: none;
+}
+
+.scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+}
+
+.gallery-wrapper {
+    position: relative;
+}
+
+.gallery-image {
+    transition: opacity .2s ease;
+}
+
+.gallery-button {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 36px;
+    height: 36px;
+    border-radius: 999px;
+    background: rgba(0,0,0,.65);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.gallery-button:hover {
+    background: rgba(0,0,0,.85);
+}
+
+.gallery-button.left {
+    left: 10px;
+}
+
+.gallery-button.right {
+    right: 10px;
+}
+
+.gallery-dots {
+    position: absolute;
+    bottom: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 5px;
+    z-index: 10;
+}
+
+.gallery-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.55);
+}
+
+.gallery-dot.active {
+    width: 18px;
+    background: white;
+}
+
+.preview-thumbnails {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+}
+
+.preview-thumbnail {
+    flex: 0 0 58px;
+    width: 58px;
+    height: 58px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 2px solid transparent;
+    cursor: pointer;
+}
+
+.preview-thumbnail.active {
+    border-color: #111827;
+}
+
+.preview-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.card-thumbnails {
+    display: flex;
+    gap: 6px;
+    padding: 10px;
+    overflow-x: auto;
+    background: white;
+}
+
+.card-thumbnail {
+    flex: 0 0 48px;
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 2px solid transparent;
+    cursor: pointer;
+}
+
+.card-thumbnail.active {
+    border-color: #111827;
+}
+
+.card-thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+</style>
+</head>
+
+<body class="bg-gray-100 text-gray-900">
+
+<!-- MOBILE HEADER -->
+<header class="lg:hidden sticky top-0 z-50 bg-white border-b px-5 py-4 flex items-center justify-between">
+    <div>
+        <h1 class="font-black text-lg tracking-tight">AL KAUTSAR</h1>
+        <p class="text-xs text-gray-500">Admin Dashboard</p>
+    </div>
+
+    <button
+        onclick="toggleSidebar()"
+        class="w-10 h-10 rounded-xl bg-gray-100 flex items-center justify-center text-xl">
+        ☰
+    </button>
+</header>
+
+<!-- SIDEBAR -->
+<aside
+    id="sidebar"
+    class="fixed left-0 top-0 bottom-0 z-50 w-72 bg-white border-r transform -translate-x-full lg:translate-x-0 transition-transform duration-300">
+
+    <div class="h-full flex flex-col">
+
+        <div class="px-7 py-7 border-b">
+            <div class="flex items-center gap-3">
+
+                <div class="w-11 h-11 bg-black text-white rounded-2xl flex items-center justify-center font-black">
+                    KS
+                </div>
+
+                <div>
+                    <h1 class="font-black tracking-tight text-lg">
+                        AL KAUTSAR
+                    </h1>
+
+                    <p class="text-xs text-gray-400">
+                        Admin Panel
+                    </p>
+                </div>
+
+            </div>
+        </div>
+
+        <nav class="p-4 space-y-2">
+
+            <button
+                id="menu-tambah"
+                onclick="showPage('tambah')"
+                class="sidebar-item active w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 font-semibold">
+
+                <span>＋</span>
+                Tambah Produk
+            </button>
+
+            <button
+                id="menu-semua"
+                onclick="showPage('semua')"
+                class="sidebar-item w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 font-semibold text-gray-600">
+
+                <span>▦</span>
+                Semua Produk
+            </button>
+
+            <button
+                onclick="refreshProducts(); showToast('Data produk diperbarui.', 'success');"
+                class="sidebar-item w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 font-semibold text-gray-600">
+
+                <span>↻</span>
+                Refresh Data
+            </button>
+
+        </nav>
+
+        <div class="mt-auto p-5">
+            <div class="rounded-2xl bg-gray-100 p-4">
+
+                <p class="text-xs text-gray-500">
+                    Status Sistem
+                </p>
+
+                <div class="flex items-center gap-2 mt-2">
+
+                    <span class="w-2.5 h-2.5 bg-green-500 rounded-full"></span>
+
+                    <span class="font-semibold text-sm">
+                        Online
+                    </span>
+
+                </div>
+
+            </div>
+        </div>
+
+    </div>
+</aside>
+
+<!-- OVERLAY -->
+<div
+    id="sidebar-overlay"
+    onclick="toggleSidebar()"
+    class="fixed inset-0 bg-black/30 z-40 hidden lg:hidden">
+</div>
+
+<!-- MAIN -->
+<main class="lg:ml-72 min-h-screen">
+
+    <!-- TOP BAR -->
+    <div class="hidden lg:flex sticky top-0 z-30 bg-white/90 backdrop-blur border-b px-8 py-5 items-center justify-between">
+
+        <div>
+            <p class="text-xs text-gray-400 uppercase tracking-widest">
+                Dashboard
+            </p>
+
+            <h2 id="top-title" class="font-bold text-xl">
+                Tambah Produk
+            </h2>
+        </div>
+
+        <div class="flex items-center gap-3">
+
+            <div class="text-right">
+                <p class="font-semibold text-sm">
+                    Administrator
+                </p>
+
+                <p class="text-xs text-gray-400">
+                    AL KAUTSAR
+                </p>
+            </div>
+
+            <div class="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center font-bold">
+                A
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- CONTENT -->
+    <div class="max-w-7xl mx-auto px-5 sm:px-8 py-8">
+
+        <!-- STATS -->
+        <section class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+
+            <div class="bg-white rounded-2xl border p-5">
+                <p class="text-xs text-gray-400 uppercase tracking-wide">
+                    Total Produk
+                </p>
+
+                <p id="stat-total" class="text-2xl font-black mt-2">
+                    —
+                </p>
+            </div>
+
+            <div class="bg-white rounded-2xl border p-5">
+                <p class="text-xs text-gray-400 uppercase tracking-wide">
+                    Total Stok
+                </p>
+
+                <p id="stat-stock" class="text-2xl font-black mt-2">
+                    —
+                </p>
+            </div>
+
+            <div class="bg-white rounded-2xl border p-5">
+                <p class="text-xs text-gray-400 uppercase tracking-wide">
+                    Produk Lokal
+                </p>
+
+                <p id="stat-lokal" class="text-2xl font-black mt-2">
+                    —
+                </p>
+            </div>
+
+            <div class="bg-white rounded-2xl border p-5">
+                <p class="text-xs text-gray-400 uppercase tracking-wide">
+                    Database
+                </p>
+
+                <p class="font-bold mt-2">
+                    products.json
+                </p>
+            </div>
+
+        </section>
+
+        <!-- PAGE TAMBAH -->
+        <section id="page-tambah" class="fade-in">
+
+            <section class="mb-8">
+
+                <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+
+                    <div>
+
+                        <p class="text-sm text-gray-500 mb-2">
+                            Katalog Produk
+                        </p>
+
+                        <h1 class="text-3xl md:text-4xl font-black tracking-tight">
+                            Tambah Produk
+                        </h1>
+
+                        <p class="text-gray-500 mt-2 max-w-xl">
+                            Tambahkan produk baru ke katalog Kicks Station
+                            tanpa perlu mengedit kode secara manual.
+                        </p>
+
+                    </div>
+
+                    <button
+                        onclick="resetForm()"
+                        class="px-5 py-3 rounded-xl bg-white border font-semibold hover:bg-gray-50 transition">
+                        Reset
+                    </button>
+
+                </div>
+
+            </section>
+
+            <div class="grid xl:grid-cols-[1fr_380px] gap-8">
+
+                <!-- LEFT -->
+                <section class="bg-white border rounded-3xl overflow-hidden">
+
+                    <div class="px-6 sm:px-8 py-6 border-b">
+
+                        <h2 class="font-bold text-lg">
+                            Informasi Produk
+                        </h2>
+
+                        <p class="text-sm text-gray-500 mt-1">
+                            Isi informasi dasar produk.
+                        </p>
+
+                    </div>
+
+                    <div class="p-6 sm:p-8 space-y-7">
+
+                        <!-- BASIC INFO -->
+                        <div class="grid md:grid-cols-2 gap-5">
+
+                            <div class="md:col-span-2">
+
+                                <label class="block text-sm font-bold mb-2">
+                                    Nama Produk
+                                    <span class="text-red-500">*</span>
+                                </label>
+
+                                <input
+                                    id="nama"
+                                    type="text"
+                                    placeholder="Contoh: Adidas Campus 00s"
+                                    class="w-full border border-gray-200 rounded-xl px-4 py-3.5 transition">
+
+                            </div>
+
+                            <div>
+
+                                <label class="block text-sm font-bold mb-2">
+                                    Brand
+                                    <span class="text-red-500">*</span>
+                                </label>
+
+                                <input
+                                    id="brand"
+                                    type="text"
+                                    placeholder="Adidas"
+                                    class="w-full border border-gray-200 rounded-xl px-4 py-3.5 transition">
+
+                            </div>
+
+                            <div>
+
+                                <label class="block text-sm font-bold mb-2">
+                                    Tipe Produk
+                                </label>
+
+                                <select
+                                    id="tipe"
+                                    class="w-full border border-gray-200 rounded-xl px-4 py-3.5 transition">
+
+                                    <option value="kasual">Kasual</option>
+                                    <option value="running">Running</option>
+                                    <option value="sandal">Sandal</option>
+                                    <option value="tas">Tas</option>
+
+                                </select>
+
+                            </div>
+
+                        </div>
+
+                        <!-- PRICE -->
+                        <div>
+
+                            <div class="flex items-center justify-between mb-3">
+
+                                <h3 class="font-bold">
+                                    Harga
+                                </h3>
+
+                                <span class="text-xs text-gray-400">
+                                    Dalam Rupiah
+                                </span>
+
+                            </div>
+
+                            <div class="grid md:grid-cols-2 gap-5">
+
+                                <div>
+
+                                    <label class="block text-sm font-semibold mb-2">
+                                        Harga Jual
+                                        <span class="text-red-500">*</span>
+                                    </label>
+
+                                    <div class="relative">
+
+                                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                                            Rp
+                                        </span>
+
+                                        <input
+                                            id="harga"
+                                            type="number"
+                                            min="0"
+                                            placeholder="750000"
+                                            class="w-full border border-gray-200 rounded-xl pl-11 pr-4 py-3.5">
+
+                                    </div>
+
+                                </div>
+
+                                <div>
+
+                                    <label class="block text-sm font-semibold mb-2">
+                                        Harga Coret
+                                    </label>
+
+                                    <div class="relative">
+
+                                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                                            Rp
+                                        </span>
+
+                                        <input
+                                            id="harga_coret"
+                                            type="number"
+                                            min="0"
+                                            placeholder="1000000"
+                                            class="w-full border border-gray-200 rounded-xl pl-11 pr-4 py-3.5">
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <!-- CATEGORY -->
+                        <div>
+
+                            <h3 class="font-bold mb-3">
+                                Kategori
+                            </h3>
+
+                            <div class="grid md:grid-cols-2 gap-5">
+
+                                <div>
+
+                                    <label class="block text-sm font-semibold mb-2">
+                                        Asal Produk
+                                    </label>
+
+                                    <select
+                                        id="asal"
+                                        class="w-full border border-gray-200 rounded-xl px-4 py-3.5">
+
+                                        <option value="internasional">
+                                            Internasional
+                                        </option>
+
+                                        <option value="lokal">
+                                            Lokal
+                                        </option>
+
+                                    </select>
+
+                                </div>
+
+                                <div>
+
+                                    <label class="block text-sm font-semibold mb-2">
+                                        Pengguna
+                                    </label>
+
+                                    <select
+                                        id="pengguna"
+                                        class="w-full border border-gray-200 rounded-xl px-4 py-3.5">
+
+                                        <option value="pria">Pria</option>
+                                        <option value="wanita">Wanita</option>
+                                        <option value="unisex">Unisex</option>
+
+                                    </select>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <!-- STOCK -->
+                        <div>
+
+                            <h3 class="font-bold mb-3">
+                                Stok
+                            </h3>
+
+                            <input
+                                id="stok"
+                                type="number"
+                                min="0"
+                                placeholder="10"
+                                class="w-full border border-gray-200 rounded-xl px-4 py-3.5">
+
+                        </div>
+
+                        <!-- SIZES -->
+                        <div>
+
+                            <div class="flex items-center justify-between mb-3">
+
+                                <h3 class="font-bold">
+                                    Ukuran
+                                </h3>
+
+                                <span class="text-xs text-gray-400">
+                                    Pilih ukuran tersedia
+                                </span>
+
+                            </div>
+
+                            <div
+                                id="size-container"
+                                class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+                            </div>
+
+                        </div>
+
+                        <!-- PHOTO -->
+                        <div>
+
+                            <div class="flex items-center justify-between mb-3">
+
+                                <h3 class="font-bold">
+                                    Foto Produk
+                                </h3>
+
+                                <span
+                                    id="photo-count"
+                                    class="text-xs text-gray-400">
+                                    0 / 10 foto
+                                </span>
+
+                            </div>
+
+                            <div
+                                id="drop-zone"
+                                class="border-2 border-dashed border-gray-200 rounded-2xl p-8 text-center transition cursor-pointer">
+
+                                <input
+                                    type="file"
+                                    id="gambar"
+                                    accept="image/jpeg,image/png,image/webp"
+                                    multiple
+                                    class="hidden">
+
+                                <div id="upload-placeholder">
+
+                                    <div class="w-16 h-16 mx-auto bg-gray-100 rounded-2xl flex items-center justify-center text-2xl">
+                                        ↑
+                                    </div>
+
+                                    <h4 class="font-bold mt-4">
+                                        Upload foto produk
+                                    </h4>
+
+                                    <p class="text-sm text-gray-500 mt-1">
+                                        Klik atau drag & drop foto ke sini
+                                    </p>
+
+                                    <p class="text-xs text-gray-400 mt-3">
+                                        JPG, JPEG, PNG, WEBP · Maksimal 5 MB / foto · Maksimal 10 foto
+                                    </p>
+
+                                </div>
+
+                                <div id="image-preview-wrapper" class="hidden">
+
+                                    <div
+                                        id="image-preview-grid"
+                                        class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-left">
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onclick="clearAllImages(event)"
+                                        class="mt-5 px-4 py-2 bg-gray-100 rounded-lg text-sm font-semibold hover:bg-gray-200">
+
+                                        Hapus Semua Foto
+
+                                    </button>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <!-- DESCRIPTION -->
+                        <div>
+
+                            <label class="block text-sm font-bold mb-2">
+                                Deskripsi
+                            </label>
+
+                            <textarea
+                                id="deskripsi"
+                                rows="5"
+                                placeholder="Tulis deskripsi produk..."
+                                class="w-full border border-gray-200 rounded-xl px-4 py-3.5 resize-none"></textarea>
+
+                        </div>
+
+                        <!-- ACTION -->
+                        <div class="pt-5 border-t flex flex-col sm:flex-row gap-3 sm:justify-end">
+
+                            <button
+                                type="button"
+                                onclick="resetForm()"
+                                class="px-6 py-3.5 rounded-xl border font-bold hover:bg-gray-50">
+
+                                Batal
+
+                            </button>
+
+                            <button
+                                id="btn-tambah"
+                                type="button"
+                                onclick="saveProduct()"
+                                class="px-7 py-3.5 rounded-xl bg-black text-white font-bold hover:bg-gray-800 transition">
+
+                                Simpan Produk
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+                </section>
+
+                <!-- RIGHT PREVIEW -->
+                <aside class="space-y-6">
+
+                    <section
+                        class="bg-white border rounded-3xl overflow-hidden sticky top-24">
+
+                        <div class="px-6 py-5 border-b">
+
+                            <h2 class="font-bold">
+                                Preview Produk
+                            </h2>
+
+                            <p class="text-xs text-gray-500 mt-1">
+                                Foto pertama akan menjadi foto utama.
+                            </p>
+
+                        </div>
+
+                        <div class="p-5">
+
+                            <div
+                                class="bg-gray-100 rounded-2xl aspect-square flex items-center justify-center overflow-hidden relative">
+
+                                <img
+                                    id="card-preview-image"
+                                    class="hidden w-full h-full object-cover"
+                                    alt="Preview">
+
+                                <div
+                                    id="card-preview-placeholder"
+                                    class="text-center text-gray-400">
+
+                                    <div class="text-4xl mb-3">
+                                        👟
+                                    </div>
+
+                                    <p class="text-sm">
+                                        Foto produk
+                                    </p>
+
+                                </div>
+
+                            </div>
+
+                            <div
+                                id="preview-thumbnail-container"
+                                class="preview-thumbnails mt-3 hidden">
+                            </div>
+
+                            <div
+                                id="main-photo-label"
+                                class="hidden mt-2 text-center text-xs font-semibold text-gray-500">
+                                Foto utama
+                            </div>
+
+                            <div class="pt-5">
+
+                                <p
+                                    id="preview-brand"
+                                    class="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                                    BRAND
+                                </p>
+
+                                <h3
+                                    id="preview-name"
+                                    class="font-black text-xl mt-1">
+                                    Nama Produk
+                                </h3>
+
+                                <div class="flex items-center gap-2 mt-3">
+
+                                    <span
+                                        id="preview-price"
+                                        class="font-black text-lg">
+                                        Rp0
+                                    </span>
+
+                                    <span
+                                        id="preview-old-price"
+                                        class="text-sm text-gray-400 line-through">
+                                    </span>
+
+                                </div>
+
+                                <div class="flex gap-2 mt-4 flex-wrap">
+
+                                    <span
+                                        id="preview-type"
+                                        class="px-3 py-1.5 bg-gray-100 rounded-lg text-xs font-semibold">
+                                        Kasual
+                                    </span>
+
+                                    <span
+                                        id="preview-user"
+                                        class="px-3 py-1.5 bg-gray-100 rounded-lg text-xs font-semibold">
+                                        Pria
+                                    </span>
+
+                                </div>
+
+                                <div class="mt-5 pt-5 border-t">
+
+                                    <p class="text-xs text-gray-400 mb-2">
+                                        Ukuran tersedia
+                                    </p>
+
+                                    <div
+                                        id="preview-sizes"
+                                        class="flex flex-wrap gap-2">
+
+                                        <span class="text-xs text-gray-400">
+                                            Belum dipilih
+                                        </span>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </section>
+
+                    <section class="bg-black text-white rounded-3xl p-6">
+
+                        <div class="flex gap-4">
+
+                            <div class="w-10 h-10 rounded-xl bg-white/10 flex items-center justify-center">
+                                ✓
+                            </div>
+
+                            <div>
+
+                                <h3 class="font-bold">
+                                    Siap untuk disimpan
+                                </h3>
+
+                                <p class="text-sm text-gray-400 mt-1 leading-relaxed">
+                                    Produk dan seluruh foto akan otomatis
+                                    disimpan melalui backend Kicks Station.
+                                </p>
+
+                            </div>
+
+                        </div>
+
+                    </section>
+
+                </aside>
+
+            </div>
+
+        </section>
+
+        <!-- PAGE SEMUA PRODUK -->
+        <section id="page-semua" class="hidden fade-in">
+
+            <div class="mb-8">
+
+                <p class="text-sm text-gray-500 mb-2">
+                    Katalog
+                </p>
+
+                <h1 class="text-3xl md:text-4xl font-black tracking-tight">
+                    Semua Produk
+                </h1>
+
+                <p class="text-gray-500 mt-2">
+                    Kelola seluruh produk Kicks Station dari satu tempat.
+                </p>
+
+            </div>
+
+            <section class="bg-white border rounded-3xl p-5 sm:p-6 mb-6">
+
+                <div class="grid md:grid-cols-[1fr_220px_auto] gap-3">
+
+                    <div class="relative">
+
+                        <span class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">
+                            🔎
+                        </span>
+
+                        <input
+                            id="product-search"
+                            type="text"
+                            placeholder="Cari nama atau brand produk..."
+                            class="w-full border border-gray-200 rounded-xl pl-11 pr-4 py-3.5">
+
+                    </div>
+
+                    <select
+                        id="product-filter"
+                        class="border border-gray-200 rounded-xl px-4 py-3.5">
+
+                        <option value="semua">Semua tipe</option>
+                        <option value="kasual">Kasual</option>
+                        <option value="running">Running</option>
+                        <option value="sandal">Sandal</option>
+                        <option value="tas">Tas</option>
+
+                    </select>
+
+                    <button
+                        onclick="refreshProducts()"
+                        class="px-5 py-3.5 rounded-xl bg-black text-white font-bold hover:bg-gray-800">
+
+                        ↻ Refresh
+
+                    </button>
+
+                </div>
+
+            </section>
+
+            <div class="flex items-center justify-between mb-4">
+
+                <p
+                    id="product-count"
+                    class="text-sm text-gray-500">
+                    Memuat produk...
+                </p>
+
+            </div>
+
+            <div
+                id="product-list"
+                class="grid sm:grid-cols-2 xl:grid-cols-3 gap-5">
+
+                <div class="bg-white border rounded-3xl p-8 text-center sm:col-span-2 xl:col-span-3">
+
+                    <div class="text-3xl mb-3">
+                        ⏳
+                    </div>
+
+                    <p class="font-bold">
+                        Memuat produk...
+                    </p>
+
+                </div>
+
+            </div>
+
+        </section>
+
+    </div>
+</main>
+
+<!-- EDIT MODAL -->
+<div
+    id="edit-modal"
+    class="fixed inset-0 z-[200] modal-bg hidden items-center justify-center p-4">
+
+    <div
+        class="bg-white rounded-3xl w-full max-w-4xl max-h-[92vh] overflow-y-auto shadow-2xl">
+
+        <div class="sticky top-0 bg-white border-b px-6 py-5 flex items-center justify-between z-10">
+
+            <div>
+
+                <h2 class="font-black text-xl">
+                    Edit Produk
+                </h2>
+
+                <p
+                    id="edit-product-id"
+                    class="text-xs text-gray-400 mt-1">
+                </p>
+
+            </div>
+
+            <button
+                onclick="closeEditModal()"
+                class="w-10 h-10 rounded-xl bg-gray-100 hover:bg-gray-200">
+                ×
+            </button>
+
+        </div>
+
+        <div class="p-6 space-y-6">
+
+            <div class="grid md:grid-cols-2 gap-5">
+
+                <div class="md:col-span-2">
+
+                    <label class="block text-sm font-bold mb-2">
+                        Nama Produk
+                    </label>
+
+                    <input
+                        id="edit-nama"
+                        class="w-full border border-gray-200 rounded-xl px-4 py-3">
+
+                </div>
+
+                <div>
+
+                    <label class="block text-sm font-bold mb-2">
+                        Brand
+                    </label>
+
+                    <input
+                        id="edit-brand"
+                        class="w-full border border-gray-200 rounded-xl px-4 py-3">
+
+                </div>
+
+                <div>
+
+                    <label class="block text-sm font-bold mb-2">
+                        Tipe
+                    </label>
+
+                    <select
+                        id="edit-tipe"
+                        class="w-full border border-gray-200 rounded-xl px-4 py-3">
+
+                        <option value="kasual">Kasual</option>
+                        <option value="running">Running</option>
+                        <option value="sandal">Sandal</option>
+                        <option value="tas">Tas</option>
+
+                    </select>
+
+                </div>
+
+                <div>
+
+                    <label class="block text-sm font-bold mb-2">
+                        Harga Jual
+                    </label>
+
+                    <input
+                        id="edit-harga"
+                        type="number"
+                        min="0"
+                        class="w-full border border-gray-200 rounded-xl px-4 py-3">
+
+                </div>
+
+                <div>
+
+                    <label class="block text-sm font-bold mb-2">
+                        Harga Coret
+                    </label>
+
+                    <input
+                        id="edit-harga-coret"
+                        type="number"
+                        min="0"
+                        class="w-full border border-gray-200 rounded-xl px-4 py-3">
+
+                </div>
+
+                <div>
+
+                    <label class="block text-sm font-bold mb-2">
+                        Asal Produk
+                    </label>
+
+                    <select
+                        id="edit-asal"
+                        class="w-full border border-gray-200 rounded-xl px-4 py-3">
+
+                        <option value="internasional">
+                            Internasional
+                        </option>
+
+                        <option value="lokal">
+                            Lokal
+                        </option>
+
+                    </select>
+
+                </div>
+
+                <div>
+
+                    <label class="block text-sm font-bold mb-2">
+                        Pengguna
+                    </label>
+
+                    <select
+                        id="edit-pengguna"
+                        class="w-full border border-gray-200 rounded-xl px-4 py-3">
+
+                        <option value="pria">Pria</option>
+                        <option value="wanita">Wanita</option>
+                        <option value="unisex">Unisex</option>
+
+                    </select>
+
+                </div>
+
+                <div>
+
+                    <label class="block text-sm font-bold mb-2">
+                        Stok
+                    </label>
+
+                    <input
+                        id="edit-stok"
+                        type="number"
+                        min="0"
+                        class="w-full border border-gray-200 rounded-xl px-4 py-3">
+
+                </div>
+
+            </div>
+
+            <!-- EDIT SIZE -->
+            <div>
+
+                <h3 class="font-bold mb-3">
+                    Ukuran
+                </h3>
+
+                <div
+                    id="edit-size-container"
+                    class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-2">
+                </div>
+
+            </div>
+
+            <!-- EDIT PHOTOS -->
+            <div>
+
+                <div class="flex items-center justify-between mb-3">
+
+                    <h3 class="font-bold">
+                        Foto Produk
+                    </h3>
+
+                    <span
+                        id="edit-photo-count"
+                        class="text-xs text-gray-400">
+                        0 / 10 foto
+                    </span>
+
+                </div>
+
+                <div
+                    id="edit-photo-grid"
+                    class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mb-5">
+                </div>
+
+                <label class="block text-sm font-semibold mb-2">
+                    Tambah Foto
+                </label>
+
+                <input
+                    id="edit-gambar"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    multiple
+                    class="w-full border border-gray-200 rounded-xl px-4 py-3">
+
+                <p class="text-xs text-gray-400 mt-2">
+                    Foto yang dihapus akan dihapus dari produk. Foto baru akan ditambahkan.
+                </p>
+
+            </div>
+
+            <!-- EDIT DESCRIPTION -->
+            <div>
+
+                <label class="block text-sm font-bold mb-2">
+                    Deskripsi
+                </label>
+
+                <textarea
+                    id="edit-deskripsi"
+                    rows="5"
+                    class="w-full border border-gray-200 rounded-xl px-4 py-3 resize-none"></textarea>
+
+            </div>
+
+            <!-- ACTION -->
+            <div class="pt-5 border-t flex flex-col sm:flex-row gap-3 sm:justify-end">
+
+                <button
+                    onclick="closeEditModal()"
+                    class="px-6 py-3.5 rounded-xl border font-bold hover:bg-gray-50">
+
+                    Batal
+
+                </button>
+
+                <button
+                    id="btn-save-edit"
+                    onclick="updateProduct()"
+                    class="px-7 py-3.5 rounded-xl bg-black text-white font-bold hover:bg-gray-800">
+
+                    Simpan Perubahan
+
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+</div>
+
+<!-- DELETE MODAL -->
+<div
+    id="delete-modal"
+    class="fixed inset-0 z-[210] modal-bg hidden items-center justify-center p-4">
+
+    <div
+        class="bg-white rounded-3xl w-full max-w-md shadow-2xl p-7">
+
+        <div class="w-14 h-14 bg-red-50 text-red-600 rounded-2xl flex items-center justify-center text-2xl mb-5">
+            🗑️
+        </div>
+
+        <h2 class="text-xl font-black">
+            Hapus Produk?
+        </h2>
+
+        <p class="text-gray-500 text-sm mt-2 leading-relaxed">
+            Produk berikut akan dihapus dari database:
+        </p>
+
+        <p
+            id="delete-product-name"
+            class="font-bold mt-3">
+        </p>
+
+        <p class="text-red-500 text-xs mt-3">
+            Semua foto produk juga akan dihapus dari folder images.
+        </p>
+
+        <div class="flex gap-3 mt-7">
+
+            <button
+                onclick="closeDeleteModal()"
+                class="flex-1 px-5 py-3 rounded-xl border font-bold hover:bg-gray-50">
+
+                Batal
+
+            </button>
+
+            <button
+                id="btn-confirm-delete"
+                onclick="confirmDelete()"
+                class="flex-1 px-5 py-3 rounded-xl bg-red-600 text-white font-bold hover:bg-red-700">
+
+                Ya, Hapus
+
+            </button>
+
+        </div>
+
+    </div>
+</div>
+
+<!-- TOAST -->
+<div
+    id="toast"
+    class="fixed bottom-6 right-6 z-[300] translate-y-20 opacity-0 transition-all duration-300">
+
+    <div
+        id="toast-box"
+        class="bg-black text-white px-5 py-4 rounded-2xl shadow-xl flex items-center gap-3">
+
+        <span id="toast-icon">
+            ✓
+        </span>
+
+        <span
+            id="toast-message"
+            class="font-semibold text-sm">
+        </span>
+
+    </div>
+</div>
+
+<script>
+
+const API_URL = "http://localhost:3000";
+
+
+// =========================================================
+// SIDEBAR
+// =========================================================
+
+function toggleSidebar() {
+
+    const sidebar =
+        document.getElementById("sidebar");
+
+    const overlay =
+        document.getElementById("sidebar-overlay");
+
+    sidebar.classList.toggle("-translate-x-full");
+    overlay.classList.toggle("hidden");
+}
+
+
+// =========================================================
+// PAGE NAVIGATION
+// =========================================================
+
+function showPage(page) {
+
+    const tambah =
+        document.getElementById("page-tambah");
+
+    const semua =
+        document.getElementById("page-semua");
+
+    const menuTambah =
+        document.getElementById("menu-tambah");
+
+    const menuSemua =
+        document.getElementById("menu-semua");
+
+    if (page === "tambah") {
+
+        tambah.classList.remove("hidden");
+        semua.classList.add("hidden");
+
+        menuTambah.classList.add("active");
+        menuTambah.classList.remove("text-gray-600");
+
+        menuSemua.classList.remove("active");
+        menuSemua.classList.add("text-gray-600");
+
+        document.getElementById("top-title").textContent =
+            "Tambah Produk";
+    }
+
+    if (page === "semua") {
+
+        tambah.classList.add("hidden");
+        semua.classList.remove("hidden");
+
+        menuSemua.classList.add("active");
+        menuSemua.classList.remove("text-gray-600");
+
+        menuTambah.classList.remove("active");
+        menuTambah.classList.add("text-gray-600");
+
+        document.getElementById("top-title").textContent =
+            "Semua Produk";
+
+        loadProducts();
+    }
+
+    if (window.innerWidth < 1024) {
+
+        document.getElementById("sidebar")
+            .classList.add("-translate-x-full");
+
+        document.getElementById("sidebar-overlay")
+            .classList.add("hidden");
+    }
+}
+
+
+// =========================================================
+// SIZE SYSTEM
+// =========================================================
+
+const sizes = [
+    "35",
+    "36",
+    "37",
+    "38",
+    "39",
+    "40",
+    "41",
+    "42",
+    "43",
+    "44",
+    "45",
+    "46"
+];
+
+const selectedSizes = new Set();
+
+function renderSizes() {
+
+    const container =
+        document.getElementById("size-container");
+
+    container.innerHTML = "";
+
+    sizes.forEach(size => {
+
+        const button =
+            document.createElement("button");
+
+        button.type = "button";
+        button.textContent = size;
+
+        button.className =
+            "size-button border border-gray-200 rounded-xl py-3 text-sm font-bold hover:border-black transition";
+
+        if (selectedSizes.has(size)) {
+
+            button.classList.add(
+                "bg-black",
+                "text-white",
+                "border-black"
+            );
+        }
+
+        button.addEventListener("click", () => {
+
+            if (selectedSizes.has(size)) {
+                selectedSizes.delete(size);
+            } else {
+                selectedSizes.add(size);
+            }
+
+            renderSizes();
+            updatePreview();
+        });
+
+        container.appendChild(button);
+    });
+}
+
+
+// =========================================================
+// MULTI IMAGE SYSTEM - TAMBAH
+// =========================================================
+
+const dropZone =
+    document.getElementById("drop-zone");
+
+const imageInput =
+    document.getElementById("gambar");
+
+let selectedImageFiles = [];
+
+let previewMainIndex = 0;
+
+dropZone.addEventListener("click", function(event) {
+
+    if (
+        event.target.tagName === "BUTTON" ||
+        event.target.closest("button")
+    ) {
+        return;
+    }
+
+    imageInput.click();
+});
+
+
+imageInput.addEventListener("change", function() {
+
+    const files =
+        Array.from(this.files);
+
+    if (files.length > 0) {
+        addImageFiles(files);
+    }
+
+    this.value = "";
+});
+
+
+dropZone.addEventListener("dragover", function(event) {
+
+    event.preventDefault();
+
+    dropZone.classList.add("drop-active");
+});
+
+
+dropZone.addEventListener("dragleave", function() {
+
+    dropZone.classList.remove("drop-active");
+});
+
+
+dropZone.addEventListener("drop", function(event) {
+
+    event.preventDefault();
+
+    dropZone.classList.remove("drop-active");
+
+    const files =
+        Array.from(event.dataTransfer.files);
+
+    addImageFiles(files);
+});
+
+
+function addImageFiles(files) {
+
+    const remaining =
+        10 - selectedImageFiles.length;
+
+    if (remaining <= 0) {
+
+        showToast(
+            "Maksimal 10 foto per produk.",
+            "error"
+        );
+
+        return;
+    }
+
+    const validFiles = [];
+
+    for (const file of files) {
+
+        if (!file.type.startsWith("image/")) {
+
+            showToast(
+                `${file.name} bukan file gambar.`,
+                "error"
+            );
+
+            continue;
+        }
+
+        if (file.size > 5 * 1024 * 1024) {
+
+            showToast(
+                `${file.name} melebihi batas 5 MB.`,
+                "error"
+            );
+
+            continue;
+        }
+
+        validFiles.push(file);
+    }
+
+    if (validFiles.length > remaining) {
+
+        validFiles.splice(remaining);
+
+        showToast(
+            "Sebagian foto tidak ditambahkan karena batas maksimal 10 foto.",
+            "error"
+        );
+    }
+
+    selectedImageFiles.push(...validFiles);
+
+    renderImagePreviews();
+}
+
+
+function renderImagePreviews() {
+
+    const wrapper =
+        document.getElementById(
+            "image-preview-wrapper"
+        );
+
+    const grid =
+        document.getElementById(
+            "image-preview-grid"
+        );
+
+    const placeholder =
+        document.getElementById(
+            "upload-placeholder"
+        );
+
+    const count =
+        document.getElementById(
+            "photo-count"
+        );
+
+    grid.innerHTML = "";
+
+    count.textContent =
+        `${selectedImageFiles.length} / 10 foto`;
+
+    if (selectedImageFiles.length === 0) {
+
+        wrapper.classList.add("hidden");
+        placeholder.classList.remove("hidden");
+
+        document.getElementById(
+            "card-preview-image"
+        ).classList.add("hidden");
+
+        document.getElementById(
+            "card-preview-placeholder"
+        ).classList.remove("hidden");
+
+        document.getElementById(
+            "preview-thumbnail-container"
+        ).classList.add("hidden");
+
+        document.getElementById(
+            "main-photo-label"
+        ).classList.add("hidden");
+
+        previewMainIndex = 0;
+
+        return;
+    }
+
+    if (
+        previewMainIndex >=
+        selectedImageFiles.length
+    ) {
+        previewMainIndex =
+            selectedImageFiles.length - 1;
+    }
+
+    wrapper.classList.remove("hidden");
+    placeholder.classList.add("hidden");
+
+    selectedImageFiles.forEach((file, index) => {
+
+        const url =
+            URL.createObjectURL(file);
+
+        const item =
+            document.createElement("div");
+
+        item.className =
+            "photo-thumb bg-gray-100 rounded-xl overflow-hidden aspect-square";
+
+        item.innerHTML = `
+
+            <img
+                src="${url}"
+                class="w-full h-full object-cover"
+                alt="Foto ${index + 1}">
+
+            <button
+                type="button"
+                onclick="removeSelectedImage(${index}, event)"
+                class="w-7 h-7 rounded-full bg-black/80 text-white text-xs flex items-center justify-center hover:bg-red-600">
+
+                ×
+
+            </button>
+
+            <button
+                type="button"
+                onclick="setPreviewMain(${index}, event)"
+                class="absolute bottom-2 left-2 bg-white/90 text-black text-[10px] px-2 py-1 rounded-lg font-bold">
+
+                ${index === 0 ? "UTAMA" : "JADIKAN UTAMA"}
+
+            </button>
+
+        `;
+
+        grid.appendChild(item);
+    });
+
+    renderAddPreviewGallery();
+    updatePreview();
+}
+
+
+function renderAddPreviewGallery() {
+
+    const container =
+        document.getElementById(
+            "preview-thumbnail-container"
+        );
+
+    container.innerHTML = "";
+
+    if (selectedImageFiles.length === 0) {
+
+        container.classList.add("hidden");
+
+        return;
+    }
+
+    container.classList.remove("hidden");
+
+    selectedImageFiles.forEach((file, index) => {
+
+        const url =
+            URL.createObjectURL(file);
+
+        const thumb =
+            document.createElement("div");
+
+        thumb.className =
+            "preview-thumbnail" +
+            (index === previewMainIndex
+                ? " active"
+                : "");
+
+        thumb.innerHTML = `
+            <img
+                src="${url}"
+                alt="Thumbnail ${index + 1}">
+        `;
+
+        thumb.addEventListener("click", () => {
+
+            previewMainIndex = index;
+
+            renderAddPreviewGallery();
+            updateMainAddPreview();
+        });
+
+        container.appendChild(thumb);
+    });
+
+    updateMainAddPreview();
+}
+
+
+function updateMainAddPreview() {
+
+    const mainImage =
+        document.getElementById(
+            "card-preview-image"
+        );
+
+    const placeholder =
+        document.getElementById(
+            "card-preview-placeholder"
+        );
+
+    const label =
+        document.getElementById(
+            "main-photo-label"
+        );
+
+    if (selectedImageFiles.length === 0) {
+
+        mainImage.classList.add("hidden");
+        placeholder.classList.remove("hidden");
+        label.classList.add("hidden");
+
+        return;
+    }
+
+    const file =
+        selectedImageFiles[previewMainIndex];
+
+    if (!file) {
+        return;
+    }
+
+    const url =
+        URL.createObjectURL(file);
+
+    mainImage.src = url;
+    mainImage.classList.remove("hidden");
+
+    placeholder.classList.add("hidden");
+
+    label.classList.remove("hidden");
+
+    label.textContent =
+        `Foto utama ${previewMainIndex + 1} dari ${selectedImageFiles.length}`;
+}
+
+
+function setPreviewMain(index, event) {
+
+    if (event) {
+        event.stopPropagation();
+    }
+
+    if (
+        index < 0 ||
+        index >= selectedImageFiles.length
+    ) {
+        return;
+    }
+
+    if (index !== 0) {
+
+        const selected =
+            selectedImageFiles.splice(index, 1)[0];
+
+        selectedImageFiles.unshift(selected);
+    }
+
+    previewMainIndex = 0;
+
+    renderImagePreviews();
+}
+
+
+function removeSelectedImage(index, event) {
+
+    if (event) {
+        event.stopPropagation();
+    }
+
+    selectedImageFiles.splice(index, 1);
+
+    if (
+        previewMainIndex >=
+        selectedImageFiles.length
+    ) {
+        previewMainIndex =
+            Math.max(
+                0,
+                selectedImageFiles.length - 1
+            );
+    }
+
+    renderImagePreviews();
+}
+
+
+function clearAllImages(event) {
+
+    if (event) {
+        event.stopPropagation();
+    }
+
+    selectedImageFiles = [];
+
+    imageInput.value = "";
+
+    previewMainIndex = 0;
+
+    renderImagePreviews();
+}
+
+
+function removeImage(event) {
+
+    clearAllImages(event);
+}
+
+
+// =========================================================
+// PREVIEW
+// =========================================================
+
+const fields = [
+    "nama",
+    "brand",
+    "harga",
+    "harga_coret",
+    "tipe",
+    "asal",
+    "pengguna",
+    "stok",
+    "deskripsi"
+];
+
+fields.forEach(id => {
+
+    const element =
+        document.getElementById(id);
+
+    element.addEventListener(
+        "input",
+        updatePreview
+    );
+
+    element.addEventListener(
+        "change",
+        updatePreview
+    );
+});
+
+
+function formatRupiah(number) {
+
+    if (!number) {
+        return "Rp0";
+    }
+
+    return "Rp" +
+        Number(number).toLocaleString("id-ID");
+}
+
+
+function updatePreview() {
+
+    const nama =
+        document.getElementById("nama").value;
+
+    const brand =
+        document.getElementById("brand").value;
+
+    const harga =
+        document.getElementById("harga").value;
+
+    const hargaCoret =
+        document.getElementById("harga_coret").value;
+
+    const tipe =
+        document.getElementById("tipe").value;
+
+    const pengguna =
+        document.getElementById("pengguna").value;
+
+    document.getElementById("preview-name").textContent =
+        nama || "Nama Produk";
+
+    document.getElementById("preview-brand").textContent =
+        brand || "BRAND";
+
+    document.getElementById("preview-price").textContent =
+        formatRupiah(harga);
+
+    document.getElementById("preview-old-price").textContent =
+        hargaCoret
+            ? formatRupiah(hargaCoret)
+            : "";
+
+    document.getElementById("preview-type").textContent =
+        capitalize(tipe);
+
+    document.getElementById("preview-user").textContent =
+        capitalize(pengguna);
+
+    const sizeContainer =
+        document.getElementById("preview-sizes");
+
+    if (selectedSizes.size === 0) {
+
+        sizeContainer.innerHTML = `
+            <span class="text-xs text-gray-400">
+                Belum dipilih
+            </span>
+        `;
+
+    } else {
+
+        sizeContainer.innerHTML = "";
+
+        [...selectedSizes]
+            .sort((a, b) => Number(a) - Number(b))
+            .forEach(size => {
+
+                const span =
+                    document.createElement("span");
+
+                span.className =
+                    "px-2.5 py-1.5 bg-gray-100 rounded-lg text-xs font-bold";
+
+                span.textContent = size;
+
+                sizeContainer.appendChild(span);
+            });
+    }
+
+    updateMainAddPreview();
+}
+
+
+// =========================================================
+// VALIDATION
+// =========================================================
+
+function validateForm() {
+
+    const nama =
+        document.getElementById("nama").value.trim();
+
+    const brand =
+        document.getElementById("brand").value.trim();
+
+    const harga =
+        document.getElementById("harga").value;
+
+    if (!nama) {
+
+        showToast(
+            "Nama produk belum diisi.",
+            "error"
+        );
+
+        document.getElementById("nama").focus();
+
+        return false;
+    }
+
+    if (!brand) {
+
+        showToast(
+            "Brand belum diisi.",
+            "error"
+        );
+
+        document.getElementById("brand").focus();
+
+        return false;
+    }
+
+    if (!harga || Number(harga) <= 0) {
+
+        showToast(
+            "Harga produk belum benar.",
+            "error"
+        );
+
+        document.getElementById("harga").focus();
+
+        return false;
+    }
+
+    if (selectedSizes.size === 0) {
+
+        showToast(
+            "Pilih minimal satu ukuran.",
+            "error"
+        );
+
+        return false;
+    }
+
+    if (selectedImageFiles.length === 0) {
+
+        showToast(
+            "Pilih minimal satu foto produk.",
+            "error"
+        );
+
+        return false;
+    }
+
+    return true;
+}
+
+
+// =========================================================
+// FILE TO BASE64
+// =========================================================
+
+function fileToBase64(file) {
+
+    return new Promise((resolve, reject) => {
+
+        const reader = new FileReader();
+
+        reader.onload = () => {
+            resolve({
+                name: file.name,
+                data: reader.result
+            });
+        };
+
+        reader.onerror = () => {
+            reject(
+                new Error(
+                    `Gagal membaca file "${file.name}".`
+                )
+            );
+        };
+
+        reader.readAsDataURL(file);
+    });
+}
+
+
+async function filesToBase64(files) {
+
+    const results = [];
+
+    for (const file of files) {
+
+        const imageData = await fileToBase64(file);
+
+        results.push(imageData);
+    }
+
+    return results;
+}
+
+
+// =========================================================
+// SAVE PRODUCT
+// =========================================================
+
+async function saveProduct() {
+
+    if (!validateForm()) {
+        return;
+    }
+
+    const button =
+        document.getElementById("btn-tambah");
+
+    const originalText =
+        button.textContent;
+
+    try {
+
+        button.disabled = true;
+        button.textContent = "Menyimpan...";
+
+        const gambar =
+            await filesToBase64(
+                selectedImageFiles
+            );
+
+        const productData = {
+
+            nama:
+                document.getElementById("nama")
+                    .value.trim(),
+
+            brand:
+                document.getElementById("brand")
+                    .value.trim(),
+
+            harga:
+                Number(
+                    document.getElementById("harga")
+                        .value
+                ),
+
+            harga_coret:
+                Number(
+                    document.getElementById("harga_coret")
+                        .value
+                ) || 0,
+
+            tipe:
+                document.getElementById("tipe")
+                    .value,
+
+            asal:
+                document.getElementById("asal")
+                    .value,
+
+            pengguna:
+                document.getElementById("pengguna")
+                    .value,
+
+            stok:
+                Number(
+                    document.getElementById("stok")
+                        .value
+                ) || 0,
+
+            sizes:
+                [...selectedSizes]
+                    .sort(
+                        (a, b) =>
+                            Number(a) - Number(b)
+                    ),
+
+            deskripsi:
+                document.getElementById("deskripsi")
+                    .value.trim(),
+
+            gambar
+        };
+
+        const response =
+            await fetch(
+                `${API_URL}/api/products`,
+                {
+                    method: "POST",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify(
+                            productData
+                        )
+                }
+            );
+
+        const result =
+            await response.json();
+
+        if (!response.ok || !result.success) {
+
+            throw new Error(
+                result.message ||
+                result.error ||
+                "Gagal menyimpan produk."
+            );
+        }
+
+        showToast(
+            "Produk berhasil ditambahkan!",
+            "success"
+        );
+
+        clearForm();
+
+        await loadProducts();
+
+    } catch (error) {
+
+        console.error(error);
+
+        showToast(
+            error.message ||
+            "Gagal menyimpan produk.",
+            "error"
+        );
+
+    } finally {
+
+        button.disabled = false;
+        button.textContent = originalText;
+    }
+}
+
+
+// =========================================================
+// CLEAR FORM
+// =========================================================
+
+function clearForm() {
+
+    document.getElementById("nama").value = "";
+    document.getElementById("brand").value = "";
+    document.getElementById("harga").value = "";
+    document.getElementById("harga_coret").value = "";
+    document.getElementById("stok").value = "";
+    document.getElementById("deskripsi").value = "";
+
+    document.getElementById("tipe").value = "kasual";
+    document.getElementById("asal").value = "internasional";
+    document.getElementById("pengguna").value = "pria";
+
+    selectedSizes.clear();
+    selectedImageFiles = [];
+
+    imageInput.value = "";
+
+    previewMainIndex = 0;
+
+    renderSizes();
+    renderImagePreviews();
+    updatePreview();
+}
+
+
+// =========================================================
+// RESET FORM
+// =========================================================
+
+function resetForm() {
+
+    const confirmed =
+        confirm(
+            "Kosongkan semua data yang sudah diisi?"
+        );
+
+    if (!confirmed) {
+        return;
+    }
+
+    clearForm();
+
+    showToast(
+        "Form berhasil dikosongkan.",
+        "success"
+    );
+}
+
+
+// =========================================================
+// DATABASE PRODUCTS
+// =========================================================
+
+let allProducts = [];
+
+
+async function loadProducts() {
+
+    const list =
+        document.getElementById("product-list");
+
+    try {
+
+        const response =
+            await fetch(
+                `${API_URL}/api/products`
+            );
+
+        const result =
+            await response.json();
+
+        if (!response.ok || !result.success) {
+
+            throw new Error(
+                result.message ||
+                "Gagal membaca produk."
+            );
+        }
+
+        allProducts =
+            result.products || [];
+
+        updateStats();
+        renderProducts();
+
+    } catch (error) {
+
+        console.error(error);
+
+        list.innerHTML = `
+
+            <div
+                class="bg-white border rounded-3xl p-8 text-center sm:col-span-2 xl:col-span-3">
+
+                <div class="text-3xl mb-3">
+                    ⚠️
+                </div>
+
+                <p class="font-bold">
+                    Gagal memuat produk
+                </p>
+
+                <p class="text-sm text-gray-500 mt-2">
+                    Pastikan backend berjalan di localhost:3000
+                </p>
+
+                <button
+                    onclick="loadProducts()"
+                    class="mt-5 px-5 py-3 rounded-xl bg-black text-white font-bold">
+
+                    Coba Lagi
+
+                </button>
+
+            </div>
+        `;
+
+        document.getElementById("product-count").textContent =
+            "Data gagal dimuat.";
+    }
+}
+
+
+async function refreshProducts() {
+
+    await loadProducts();
+}
+
+
+// =========================================================
+// UPDATE STATS
+// =========================================================
+
+function updateStats() {
+
+    const total =
+        allProducts.length;
+
+    const stock =
+        allProducts.reduce(
+            (total, product) =>
+                total +
+                (Number(product.stok) || 0),
+            0
+        );
+
+    const lokal =
+        allProducts.filter(
+            product =>
+                product.asal === "lokal"
+        ).length;
+
+    document.getElementById("stat-total").textContent =
+        total;
+
+    document.getElementById("stat-stock").textContent =
+        stock;
+
+    document.getElementById("stat-lokal").textContent =
+        lokal;
+}
+
+
+// =========================================================
+// PRODUCT IMAGE HELPER
+// =========================================================
+
+function getProductImages(product) {
+
+    if (!product || !product.gambar) {
+        return [];
+    }
+
+    if (Array.isArray(product.gambar)) {
+
+        return product.gambar.filter(
+            image =>
+                typeof image === "string" &&
+                image.trim() !== ""
+        );
+    }
+
+    if (typeof product.gambar === "string") {
+
+        return product.gambar.trim()
+            ? [product.gambar.trim()]
+            : [];
+    }
+
+    return [];
+}
+
+
+// =========================================================
+// PRODUCT GALLERY STATE
+// =========================================================
+
+const productGalleryIndexes = {};
+
+
+// =========================================================
+// RENDER PRODUCTS
+// =========================================================
+
+function renderProducts() {
+
+    const list =
+        document.getElementById("product-list");
+
+    const search =
+        (
+            document.getElementById("product-search")
+                .value ||
+            ""
+        )
+        .toLowerCase()
+        .trim();
+
+    const filter =
+        document.getElementById("product-filter")
+            .value;
+
+    const filtered =
+        allProducts.filter(product => {
+
+            const name =
+                String(
+                    product.nama || ""
+                ).toLowerCase();
+
+            const brand =
+                String(
+                    product.brand || ""
+                ).toLowerCase();
+
+            const searchMatch =
+                name.includes(search) ||
+                brand.includes(search);
+
+            const filterMatch =
+                filter === "semua" ||
+                product.tipe === filter;
+
+            return (
+                searchMatch &&
+                filterMatch
+            );
+        });
+
+    document.getElementById("product-count").textContent =
+        `${filtered.length} produk ditampilkan dari ${allProducts.length} produk`;
+
+    if (filtered.length === 0) {
+
+        list.innerHTML = `
+
+            <div
+                class="bg-white border rounded-3xl p-10 text-center sm:col-span-2 xl:col-span-3">
+
+                <div class="text-4xl mb-3">
+                    🔎
+                </div>
+
+                <h3 class="font-black text-lg">
+                    Produk tidak ditemukan
+                </h3>
+
+                <p class="text-sm text-gray-500 mt-2">
+                    Coba ubah kata pencarian atau filter.
+                </p>
+
+            </div>
+        `;
+
+        return;
+    }
+
+    list.innerHTML = "";
+
+    filtered.forEach(product => {
+
+        list.appendChild(
+            createProductCard(product)
+        );
+    });
+}
+
+
+// =========================================================
+// PRODUCT CARD - MULTI IMAGE
+// =========================================================
+
+function createProductCard(product) {
+
+    const card =
+        document.createElement("article");
+
+    card.className =
+        "bg-white border rounded-3xl overflow-hidden fade-in";
+
+    const images =
+        getProductImages(product);
+
+    if (
+        productGalleryIndexes[product.id] === undefined
+    ) {
+        productGalleryIndexes[product.id] = 0;
+    }
+
+    let currentIndex =
+        productGalleryIndexes[product.id];
+
+    if (currentIndex >= images.length) {
+        currentIndex = 0;
+        productGalleryIndexes[product.id] = 0;
+    }
+
+    const image =
+        images.length > 0
+            ? images[currentIndex]
+            : "";
+
+    const sizesText =
+        Array.isArray(product.sizes)
+            ? product.sizes.join(", ")
+            : "-";
+
+    card.innerHTML = `
+
+        <div class="gallery-wrapper bg-gray-100">
+
+            <div class="relative aspect-square overflow-hidden">
+
+                ${
+                    image
+                        ? `
+                            <img
+                                src="${escapeHTML(image)}"
+                                alt="${escapeHTML(product.nama)}"
+                                class="gallery-image w-full h-full object-cover"
+                                onerror="this.style.display='none';">
+                        `
+                        : `
+                            <div class="absolute inset-0 flex items-center justify-center text-gray-400">
+
+                                <div class="text-center">
+
+                                    <div class="text-4xl">
+                                        👟
+                                    </div>
+
+                                    <p class="text-xs mt-2">
+                                        Tidak ada foto
+                                    </p>
+
+                                </div>
+
+                            </div>
+                        `
+                }
+
+                <div class="absolute top-3 left-3">
+
+                    <span
+                        class="px-3 py-1.5 rounded-lg bg-white/90 backdrop-blur text-xs font-bold">
+
+                        #${product.id}
+
+                    </span>
+
+                </div>
+
+                ${
+                    images.length > 1
+                        ? `
+
+                            <button
+                                type="button"
+                                onclick="changeProductImage(${Number(product.id)}, -1)"
+                                class="gallery-button left">
+
+                                ‹
+
+                            </button>
+
+                            <button
+                                type="button"
+                                onclick="changeProductImage(${Number(product.id)}, 1)"
+                                class="gallery-button right">
+
+                                ›
+
+                            </button>
+
+                            <div class="gallery-dots">
+
+                                ${images.map((_, index) => `
+                                    <span
+                                        class="gallery-dot ${
+                                            index === currentIndex
+                                                ? "active"
+                                                : ""
+                                        }">
+                                    </span>
+                                `).join("")}
+
+                            </div>
+
+                            <div class="absolute bottom-3 right-3">
+
+                                <span class="px-3 py-1.5 rounded-lg bg-black/80 text-white text-xs font-bold">
+
+                                    📷 ${images.length}
+
+                                </span>
+
+                            </div>
+                        `
+                        : ""
+                }
+
+            </div>
+
+            ${
+                images.length > 1
+                    ? `
+                        <div class="card-thumbnails scrollbar-hide">
+
+                            ${images.map((imagePath, index) => `
+                                <button
+                                    type="button"
+                                    onclick="setProductImage(${Number(product.id)}, ${index})"
+                                    class="card-thumbnail ${
+                                        index === currentIndex
+                                            ? "active"
+                                            : ""
+                                    }">
+
+                                    <img
+                                        src="${escapeHTML(imagePath)}"
+                                        alt="Foto ${index + 1}">
+
+                                </button>
+                            `).join("")}
+
+                        </div>
+                    `
+                    : ""
+            }
+
+        </div>
+
+        <div class="p-5">
+
+            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                ${escapeHTML(product.brand || "BRAND")}
+            </p>
+
+            <h3 class="font-black text-lg mt-1 line-clamp-2">
+                ${escapeHTML(product.nama || "Tanpa nama")}
+            </h3>
+
+            <div class="flex items-center gap-2 mt-3 flex-wrap">
+
+                <span class="font-black">
+                    ${formatRupiah(product.harga)}
+                </span>
+
+                ${
+                    product.harga_coret
+                        ? `
+                            <span class="text-sm text-gray-400 line-through">
+                                ${formatRupiah(product.harga_coret)}
+                            </span>
+                        `
+                        : ""
+                }
+
+            </div>
+
+            <div class="flex gap-2 flex-wrap mt-4">
+
+                <span
+                    class="px-2.5 py-1.5 bg-gray-100 rounded-lg text-xs font-semibold">
+
+                    ${capitalize(product.tipe)}
+
+                </span>
+
+                <span
+                    class="px-2.5 py-1.5 bg-gray-100 rounded-lg text-xs font-semibold">
+
+                    ${capitalize(product.pengguna)}
+
+                </span>
+
+                <span
+                    class="px-2.5 py-1.5 bg-gray-100 rounded-lg text-xs font-semibold">
+
+                    Stok ${Number(product.stok) || 0}
+
+                </span>
+
+            </div>
+
+            <div class="mt-4 pt-4 border-t">
+
+                <p class="text-xs text-gray-400 mb-2">
+                    Ukuran
+                </p>
+
+                <p class="text-sm font-semibold">
+                    ${escapeHTML(sizesText)}
+                </p>
+
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 mt-5">
+
+                <button
+                    onclick="openEditModal(${Number(product.id)})"
+                    class="px-4 py-3 rounded-xl border font-bold text-sm hover:bg-gray-50">
+
+                    ✏️ Edit
+
+                </button>
+
+                <button
+                    onclick="openDeleteModal(${Number(product.id)})"
+                    class="px-4 py-3 rounded-xl bg-red-50 text-red-600 font-bold text-sm hover:bg-red-100">
+
+                    🗑️ Hapus
+
+                </button>
+
+            </div>
+
+        </div>
+    `;
+
+    return card;
+}
+
+
+function changeProductImage(id, direction) {
+
+    const product =
+        allProducts.find(
+            item =>
+                Number(item.id) ===
+                Number(id)
+        );
+
+    if (!product) {
+        return;
+    }
+
+    const images =
+        getProductImages(product);
+
+    if (images.length <= 1) {
+        return;
+    }
+
+    let current =
+        productGalleryIndexes[id] || 0;
+
+    current += direction;
+
+    if (current < 0) {
+        current = images.length - 1;
+    }
+
+    if (current >= images.length) {
+        current = 0;
+    }
+
+    productGalleryIndexes[id] =
+        current;
+
+    renderProducts();
+}
+
+
+function setProductImage(id, index) {
+
+    const product =
+        allProducts.find(
+            item =>
+                Number(item.id) ===
+                Number(id)
+        );
+
+    if (!product) {
+        return;
+    }
+
+    const images =
+        getProductImages(product);
+
+    if (
+        index < 0 ||
+        index >= images.length
+    ) {
+        return;
+    }
+
+    productGalleryIndexes[id] =
+        index;
+
+    renderProducts();
+}
+
+
+// =========================================================
+// ESCAPE HTML
+// =========================================================
+
+function escapeHTML(value) {
+
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+
+// =========================================================
+// CAPITALIZE
+// =========================================================
+
+function capitalize(value) {
+
+    const text =
+        String(value || "");
+
+    return text.charAt(0).toUpperCase() +
+        text.slice(1);
+}
+
+
+// =========================================================
+// SEARCH
+// =========================================================
+
+document.getElementById(
+    "product-search"
+).addEventListener(
+    "input",
+    renderProducts
+);
+
+
+document.getElementById(
+    "product-filter"
+).addEventListener(
+    "change",
+    renderProducts
+);
+
+
+// =========================================================
+// EDIT SYSTEM
+// =========================================================
+
+let editingProduct = null;
+
+const editSelectedSizes = new Set();
+
+let editExistingImages = [];
+
+let editNewImageFiles = [];
+
+
+// =========================================================
+// EDIT SIZES
+// =========================================================
+
+function renderEditSizes() {
+
+    const container =
+        document.getElementById(
+            "edit-size-container"
+        );
+
+    container.innerHTML = "";
+
+    sizes.forEach(size => {
+
+        const button =
+            document.createElement("button");
+
+        button.type = "button";
+        button.textContent = size;
+
+        button.className =
+            "border border-gray-200 rounded-xl py-3 text-sm font-bold hover:border-black transition";
+
+        if (editSelectedSizes.has(size)) {
+
+            button.classList.add(
+                "bg-black",
+                "text-white",
+                "border-black"
+            );
+        }
+
+        button.addEventListener("click", () => {
+
+            if (editSelectedSizes.has(size)) {
+                editSelectedSizes.delete(size);
+            } else {
+                editSelectedSizes.add(size);
+            }
+
+            renderEditSizes();
+        });
+
+        container.appendChild(button);
+    });
+}
+
+
+// =========================================================
+// EDIT PHOTO RENDER
+// =========================================================
+
+function renderEditPhotos() {
+
+    const grid =
+        document.getElementById(
+            "edit-photo-grid"
+        );
+
+    const count =
+        document.getElementById(
+            "edit-photo-count"
+        );
+
+    grid.innerHTML = "";
+
+    const total =
+        editExistingImages.length +
+        editNewImageFiles.length;
+
+    count.textContent =
+        `${total} / 10 foto`;
+
+    if (total === 0) {
+
+        grid.innerHTML = `
+
+            <div class="col-span-full border-2 border-dashed border-gray-200 rounded-2xl p-8 text-center">
+
+                <div class="text-3xl mb-2">
+                    📷
+                </div>
+
+                <p class="text-sm text-gray-400">
+                    Belum ada foto
+                </p>
+
+            </div>
+
+        `;
+
+        return;
+    }
+
+    editExistingImages.forEach((image, index) => {
+
+        const item =
+            document.createElement("div");
+
+        item.className =
+            "photo-thumb bg-gray-100 rounded-xl overflow-hidden aspect-square";
+
+        item.innerHTML = `
+
+            <img
+                src="${escapeHTML(image)}"
+                class="w-full h-full object-cover"
+                alt="Foto produk ${index + 1}"
+                onerror="this.style.display='none';">
+
+            <button
+                type="button"
+                onclick="removeExistingEditImage(${index}, event)"
+                class="w-7 h-7 rounded-full bg-black/80 text-white text-xs flex items-center justify-center hover:bg-red-600">
+
+                ×
+
+            </button>
+
+            <button
+                type="button"
+                onclick="makeExistingEditImageMain(${index}, event)"
+                class="absolute bottom-2 left-2 bg-white/90 text-black text-[10px] px-2 py-1 rounded-lg font-bold">
+
+                ${index === 0 ? "UTAMA" : "JADIKAN UTAMA"}
+
+            </button>
+
+        `;
+
+        grid.appendChild(item);
+    });
+
+
+    editNewImageFiles.forEach((file, index) => {
+
+        const url =
+            URL.createObjectURL(file);
+
+        const item =
+            document.createElement("div");
+
+        item.className =
+            "photo-thumb bg-gray-100 rounded-xl overflow-hidden aspect-square";
+
+        const totalIndex =
+            editExistingImages.length + index;
+
+        item.innerHTML = `
+
+            <img
+                src="${url}"
+                class="w-full h-full object-cover"
+                alt="Foto baru ${index + 1}">
+
+            <button
+                type="button"
+                onclick="removeNewEditImage(${index}, event)"
+                class="w-7 h-7 rounded-full bg-black/80 text-white text-xs flex items-center justify-center hover:bg-red-600">
+
+                ×
+
+            </button>
+
+            <button
+                type="button"
+                onclick="makeNewEditImageMain(${index}, event)"
+                class="absolute bottom-2 left-2 bg-white/90 text-black text-[10px] px-2 py-1 rounded-lg font-bold">
+
+                ${totalIndex === 0 ? "UTAMA" : "JADIKAN UTAMA"}
+
+            </button>
+
+        `;
+
+        grid.appendChild(item);
+    });
+}
+
+
+function makeExistingEditImageMain(index, event) {
+
+    if (event) {
+        event.stopPropagation();
+    }
+
+    if (
+        index < 0 ||
+        index >= editExistingImages.length
+    ) {
+        return;
+    }
+
+    const image =
+        editExistingImages.splice(index, 1)[0];
+
+    editExistingImages.unshift(image);
+
+    renderEditPhotos();
+}
+
+
+function makeNewEditImageMain(index, event) {
+
+    if (event) {
+        event.stopPropagation();
+    }
+
+    if (
+        index < 0 ||
+        index >= editNewImageFiles.length
+    ) {
+        return;
+    }
+
+    const file =
+        editNewImageFiles.splice(index, 1)[0];
+
+    editNewImageFiles.unshift(file);
+
+    renderEditPhotos();
+}
+
+
+function removeExistingEditImage(index, event) {
+
+    if (event) {
+        event.stopPropagation();
+    }
+
+    editExistingImages.splice(index, 1);
+
+    renderEditPhotos();
+}
+
+
+function removeNewEditImage(index, event) {
+
+    if (event) {
+        event.stopPropagation();
+    }
+
+    editNewImageFiles.splice(index, 1);
+
+    renderEditPhotos();
+}
+
+
+// =========================================================
+// EDIT IMAGE INPUT
+// =========================================================
+
+document.getElementById(
+    "edit-gambar"
+).addEventListener(
+    "change",
+    function() {
+
+        const files =
+            Array.from(this.files);
+
+        const currentTotal =
+            editExistingImages.length +
+            editNewImageFiles.length;
+
+        const remaining =
+            10 - currentTotal;
+
+        if (remaining <= 0) {
+
+            showToast(
+                "Maksimal 10 foto per produk.",
+                "error"
+            );
+
+            this.value = "";
+
+            return;
+        }
+
+        const validFiles = [];
+
+        for (const file of files) {
+
+            if (!file.type.startsWith("image/")) {
+
+                showToast(
+                    `${file.name} bukan file gambar.`,
+                    "error"
+                );
+
+                continue;
+            }
+
+            if (file.size > 5 * 1024 * 1024) {
+
+                showToast(
+                    `${file.name} melebihi batas 5 MB.`,
+                    "error"
+                );
+
+                continue;
+            }
+
+            validFiles.push(file);
+        }
+
+        if (validFiles.length > remaining) {
+
+            validFiles.splice(remaining);
+
+            showToast(
+                "Sebagian foto tidak ditambahkan karena batas maksimal 10 foto.",
+                "error"
+            );
+        }
+
+        editNewImageFiles.push(...validFiles);
+
+        this.value = "";
+
+        renderEditPhotos();
+    }
+);
+
+
+// =========================================================
+// OPEN EDIT
+// =========================================================
+
+function openEditModal(id) {
+
+    const product =
+        allProducts.find(
+            item =>
+                Number(item.id) ===
+                Number(id)
+        );
+
+    if (!product) {
+
+        showToast(
+            "Produk tidak ditemukan.",
+            "error"
+        );
+
+        return;
+    }
+
+    editingProduct = product;
+
+    document.getElementById(
+        "edit-product-id"
+    ).textContent =
+        `ID Produk: ${product.id}`;
+
+    document.getElementById(
+        "edit-nama"
+    ).value =
+        product.nama || "";
+
+    document.getElementById(
+        "edit-brand"
+    ).value =
+        product.brand || "";
+
+    document.getElementById(
+        "edit-tipe"
+    ).value =
+        product.tipe || "kasual";
+
+    document.getElementById(
+        "edit-harga"
+    ).value =
+        product.harga || 0;
+
+    document.getElementById(
+        "edit-harga-coret"
+    ).value =
+        product.harga_coret || 0;
+
+    document.getElementById(
+        "edit-asal"
+    ).value =
+        product.asal || "internasional";
+
+    document.getElementById(
+        "edit-pengguna"
+    ).value =
+        product.pengguna || "unisex";
+
+    document.getElementById(
+        "edit-stok"
+    ).value =
+        product.stok || 0;
+
+    document.getElementById(
+        "edit-deskripsi"
+    ).value =
+        product.deskripsi || "";
+
+    editSelectedSizes.clear();
+
+    if (Array.isArray(product.sizes)) {
+
+        product.sizes.forEach(size => {
+
+            editSelectedSizes.add(
+                String(size)
+            );
+        });
+    }
+
+    editExistingImages =
+        getProductImages(product);
+
+    editNewImageFiles = [];
+
+    renderEditSizes();
+    renderEditPhotos();
+
+    document.getElementById(
+        "edit-gambar"
+    ).value = "";
+
+    const modal =
+        document.getElementById(
+            "edit-modal"
+        );
+
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+}
+
+
+// =========================================================
+// CLOSE EDIT
+// =========================================================
+
+function closeEditModal() {
+
+    const modal =
+        document.getElementById(
+            "edit-modal"
+        );
+
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+
+    editingProduct = null;
+    editExistingImages = [];
+    editNewImageFiles = [];
+}
+
+
+// =========================================================
+// UPDATE PRODUCT
+// =========================================================
+
+async function updateProduct() {
+
+    if (!editingProduct) {
+        return;
+    }
+
+    const button =
+        document.getElementById(
+            "btn-save-edit"
+        );
+
+    const originalText =
+        button.textContent;
+
+    try {
+
+        button.disabled = true;
+        button.textContent = "Menyimpan...";
+
+        const totalImages =
+            editExistingImages.length +
+            editNewImageFiles.length;
+
+        if (totalImages === 0) {
+
+            throw new Error(
+                "Produk harus memiliki minimal satu foto."
+            );
+        }
+
+        if (totalImages > 10) {
+
+            throw new Error(
+                "Maksimal 10 foto per produk."
+            );
+        }
+
+        const data = {
+
+            nama:
+                document.getElementById(
+                    "edit-nama"
+                ).value.trim(),
+
+            brand:
+                document.getElementById(
+                    "edit-brand"
+                ).value.trim(),
+
+            harga:
+                Number(
+                    document.getElementById(
+                        "edit-harga"
+                    ).value
+                ),
+
+            harga_coret:
+                Number(
+                    document.getElementById(
+                        "edit-harga-coret"
+                    ).value
+                ) || 0,
+
+            tipe:
+                document.getElementById(
+                    "edit-tipe"
+                ).value,
+
+            asal:
+                document.getElementById(
+                    "edit-asal"
+                ).value,
+
+            pengguna:
+                document.getElementById(
+                    "edit-pengguna"
+                ).value,
+
+            stok:
+                Number(
+                    document.getElementById(
+                        "edit-stok"
+                    ).value
+                ) || 0,
+
+            sizes:
+                [...editSelectedSizes]
+                    .sort(
+                        (a, b) =>
+                            Number(a) -
+                            Number(b)
+                    ),
+
+            deskripsi:
+                document.getElementById(
+                    "edit-deskripsi"
+                ).value.trim()
+        };
+
+        if (
+            !data.nama ||
+            !data.brand ||
+            data.harga <= 0
+        ) {
+
+            throw new Error(
+                "Nama, brand, dan harga wajib diisi."
+            );
+        }
+
+        if (
+            data.sizes.length === 0
+        ) {
+
+            throw new Error(
+                "Minimal satu ukuran harus dipilih."
+            );
+        }
+
+        const newImages =
+            await filesToBase64(
+                editNewImageFiles
+            );
+
+        data.gambar = [
+            ...editExistingImages,
+            ...newImages
+        ];
+
+        const response =
+            await fetch(
+                `${API_URL}/api/products/${editingProduct.id}`,
+                {
+                    method: "PUT",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    body:
+                        JSON.stringify(data)
+                }
+            );
+
+        const result =
+            await response.json();
+
+        if (
+            !response.ok ||
+            !result.success
+        ) {
+
+            throw new Error(
+                result.message ||
+                result.error ||
+                "Gagal mengubah produk."
+            );
+        }
+
+        closeEditModal();
+
+        showToast(
+            "Produk berhasil diperbarui!",
+            "success"
+        );
+
+        await loadProducts();
+
+    } catch (error) {
+
+        console.error(error);
+
+        showToast(
+            error.message ||
+            "Gagal mengubah produk.",
+            "error"
+        );
+
+    } finally {
+
+        button.disabled = false;
+        button.textContent = originalText;
+    }
+}
+
+
+// =========================================================
+// DELETE SYSTEM
+// =========================================================
+
+let deletingProduct = null;
+
+
+function openDeleteModal(id) {
+
+    const product =
+        allProducts.find(
+            item =>
+                Number(item.id) ===
+                Number(id)
+        );
+
+    if (!product) {
+
+        showToast(
+            "Produk tidak ditemukan.",
+            "error"
+        );
+
+        return;
+    }
+
+    deletingProduct = product;
+
+    document.getElementById(
+        "delete-product-name"
+    ).textContent =
+        product.nama;
+
+    const modal =
+        document.getElementById(
+            "delete-modal"
+        );
+
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+}
+
+
+// =========================================================
+// CLOSE DELETE
+// =========================================================
+
+function closeDeleteModal() {
+
+    const modal =
+        document.getElementById(
+            "delete-modal"
+        );
+
+    modal.classList.add("hidden");
+    modal.classList.remove("flex");
+
+    deletingProduct = null;
+}
+
+
+// =========================================================
+// CONFIRM DELETE
+// =========================================================
+
+async function confirmDelete() {
+
+    if (!deletingProduct) {
+        return;
+    }
+
+    const button =
+        document.getElementById(
+            "btn-confirm-delete"
+        );
+
+    const originalText =
+        button.textContent;
+
+    try {
+
+        button.disabled = true;
+        button.textContent = "Menghapus...";
+
+        const response =
+            await fetch(
+                `${API_URL}/api/products/${deletingProduct.id}`,
+                {
+                    method: "DELETE"
+                }
+            );
+
+        const result =
+            await response.json();
+
+        if (
+            !response.ok ||
+            !result.success
+        ) {
+
+            throw new Error(
+                result.message ||
+                result.error ||
+                "Gagal menghapus produk."
+            );
+        }
+
+        closeDeleteModal();
+
+        showToast(
+            "Produk berhasil dihapus!",
+            "success"
+        );
+
+        await loadProducts();
+
+    } catch (error) {
+
+        console.error(error);
+
+        showToast(
+            error.message ||
+            "Gagal menghapus produk.",
+            "error"
+        );
+
+    } finally {
+
+        button.disabled = false;
+        button.textContent = originalText;
+    }
+}
+
+
+// =========================================================
+// TOAST
+// =========================================================
+
+let toastTimeout;
+
+
+function showToast(
+    message,
+    type = "success"
+) {
+
+    const toast =
+        document.getElementById("toast");
+
+    const box =
+        document.getElementById("toast-box");
+
+    const icon =
+        document.getElementById("toast-icon");
+
+    const text =
+        document.getElementById("toast-message");
+
+    text.textContent = message;
+
+    if (type === "error") {
+
+        box.classList.remove("bg-black");
+        box.classList.add("bg-red-600");
+
+        icon.textContent = "!";
+
+    } else {
+
+        box.classList.remove("bg-red-600");
+        box.classList.add("bg-black");
+
+        icon.textContent = "✓";
+    }
+
+    toast.classList.remove(
+        "translate-y-20",
+        "opacity-0"
+    );
+
+    clearTimeout(toastTimeout);
+
+    toastTimeout =
+        setTimeout(() => {
+
+            toast.classList.add(
+                "translate-y-20",
+                "opacity-0"
+            );
+
+        }, 3000);
+}
+
+
+// =========================================================
+// INITIALIZE
+// =========================================================
+
+renderSizes();
+
+renderImagePreviews();
+
+updatePreview();
+
+loadProducts();
+
+</script>
+
+</body>
+</html>
