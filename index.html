@@ -2627,39 +2627,39 @@
            FETCH DATABASE PRODUK
         ===================================================== */
 
-        fetch('products.json')
+       fetch('https://kicks-station.onrender.com/api/products')
 
-            .then(response => {
+    .then(response => {
 
-                if (!response.ok) {
+        if (!response.ok) {
 
-                    throw new Error(
-                        `HTTP ${response.status}`
-                    );
+            throw new Error(
+                `HTTP ${response.status}`
+            );
 
-                }
+        }
 
-                return response.json();
+        return response.json();
 
-            })
+    })
 
-            .then(products => {
+    .then(products => {
 
-                renderProducts(products);
+        renderProducts(products);
 
-            })
+    })
 
-            .catch(error => {
+    .catch(error => {
 
-                console.error(
-                    'Gagal memuat products.json:',
-                    error
-                );
+        console.error(
+            'Gagal memuat produk dari server:',
+            error
+        );
 
-                productLoading.innerHTML =
-                    'Gagal memuat produk.';
+        productLoading.innerHTML =
+            'Gagal memuat produk.';
 
-            });
+    });
 
     </script>
 
