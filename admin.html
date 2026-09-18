@@ -341,14 +341,16 @@ textarea:focus {
                 <span>↻</span>
                 Refresh Data
             </button>
-<button
-    type="button"
-    onclick="adminLogout()"
-    class="sidebar-item w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 font-semibold text-red-600 hover:bg-red-50">
 
-    <span>↪</span>
-    Logout
-</button>
+            <button
+                id="menu-pesanan"
+                onclick="showPage('pesanan')"
+                class="sidebar-item w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 font-semibold text-gray-600">
+
+                <span>📦</span>
+                Pesanan Masuk
+            </button>
+
         </nav>
 
         <div class="mt-auto p-5">
@@ -1088,6 +1090,34 @@ textarea:focus {
 
             </div>
 
+        <!-- PAGE PESANAN -->
+        <section id="page-pesanan" class="hidden fade-in">
+
+            <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-4 mb-8">
+                <div>
+                    <p class="text-sm text-gray-500 mb-2">Checkout Website</p>
+                    <h1 class="text-3xl md:text-4xl font-black tracking-tight">Pesanan Masuk</h1>
+                    <p class="text-gray-500 mt-2 max-w-2xl">
+                        Catatan checkout yang dibuat saat pelanggan menekan tombol Checkout WhatsApp.
+                    </p>
+                </div>
+
+                <button
+                    onclick="loadOrders()"
+                    class="px-5 py-3 rounded-xl bg-black text-white font-bold hover:bg-gray-800 transition">
+                    ↻ Refresh Pesanan
+                </button>
+            </div>
+
+            <div id="orders-list" class="space-y-4">
+                <div class="bg-white border rounded-3xl p-8 text-center">
+                    <div class="text-3xl mb-3">⏳</div>
+                    <p class="font-bold">Memuat pesanan...</p>
+                </div>
+            </div>
+
+        </section>
+
         </section>
 
     </div>
@@ -1422,7 +1452,6 @@ textarea:focus {
 
     </div>
 </div>
-
 <script>
 
 const API_URL = "https://kicks-station.onrender.com";
@@ -1780,107 +1809,48 @@ function toggleSidebar() {
 
 function showPage(page) {
 
-    const tambah =
-        document.getElementById(
-            "page-tambah"
-        );
+    const pages = {
+        tambah: document.getElementById("page-tambah"),
+        semua: document.getElementById("page-semua"),
+        pesanan: document.getElementById("page-pesanan")
+    };
 
-    const semua =
-        document.getElementById(
-            "page-semua"
-        );
+    const menus = {
+        tambah: document.getElementById("menu-tambah"),
+        semua: document.getElementById("menu-semua"),
+        pesanan: document.getElementById("menu-pesanan")
+    };
 
-    const menuTambah =
-        document.getElementById(
-            "menu-tambah"
-        );
+    Object.values(pages).forEach(el => {
+        if (el) el.classList.add("hidden");
+    });
 
-    const menuSemua =
-        document.getElementById(
-            "menu-semua"
-        );
+    Object.values(menus).forEach(el => {
+        if (!el) return;
+        el.classList.remove("active");
+        el.classList.add("text-gray-600");
+    });
 
-    if (page === "tambah") {
+    if (!pages[page] || !menus[page]) return;
 
-        tambah.classList.remove(
-            "hidden"
-        );
+    pages[page].classList.remove("hidden");
+    menus[page].classList.add("active");
+    menus[page].classList.remove("text-gray-600");
 
-        semua.classList.add(
-            "hidden"
-        );
+    const titles = {
+        tambah: "Tambah Produk",
+        semua: "Semua Produk",
+        pesanan: "Pesanan Masuk"
+    };
 
-        menuTambah.classList.add(
-            "active"
-        );
+    document.getElementById("top-title").textContent = titles[page];
 
-        menuTambah.classList.remove(
-            "text-gray-600"
-        );
-
-        menuSemua.classList.remove(
-            "active"
-        );
-
-        menuSemua.classList.add(
-            "text-gray-600"
-        );
-
-        document.getElementById(
-            "top-title"
-        ).textContent =
-            "Tambah Produk";
-    }
-
-
-    if (page === "semua") {
-
-        tambah.classList.add(
-            "hidden"
-        );
-
-        semua.classList.remove(
-            "hidden"
-        );
-
-        menuSemua.classList.add(
-            "active"
-        );
-
-        menuSemua.classList.remove(
-            "text-gray-600"
-        );
-
-        menuTambah.classList.remove(
-            "active"
-        );
-
-        menuTambah.classList.add(
-            "text-gray-600"
-        );
-
-        document.getElementById(
-            "top-title"
-        ).textContent =
-            "Semua Produk";
-
-        loadProducts();
-    }
-
+    if (page === "semua") loadProducts();
+    if (page === "pesanan") loadOrders();
 
     if (window.innerWidth < 1024) {
-
-        document.getElementById(
-            "sidebar"
-        ).classList.add(
-            "-translate-x-full"
-        );
-
-        document.getElementById(
-            "sidebar-overlay"
-        ).classList.add(
-            "hidden"
-        );
+        document.getElementById("sidebar").classList.add("-translate-x-full");
+        document.getElementById("sidebar-overlay").classList.add("hidden");
     }
 }
 
@@ -5045,6 +5015,179 @@ checkAdminAuth()
             }
         }
     );
+
+
+
+// =========================================================
+// ORDERS / PESANAN MASUK
+// =========================================================
+
+let ordersLoaded = false;
+
+function formatOrderDate(value) {
+    if (!value) return "-";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return String(value);
+    return date.toLocaleString("id-ID", {
+        day: "2-digit",
+        month: "2-digit",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit"
+    });
+}
+
+function formatRupiah(value) {
+    return `Rp ${Number(value || 0).toLocaleString("id-ID")}`;
+}
+
+function escapeOrderHTML(value) {
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
+function orderStatusClass(status) {
+    if (status === "selesai") return "bg-green-50 text-green-700 border-green-200";
+    if (status === "diproses") return "bg-blue-50 text-blue-700 border-blue-200";
+    if (status === "batal") return "bg-red-50 text-red-700 border-red-200";
+    return "bg-yellow-50 text-yellow-700 border-yellow-200";
+}
+
+function renderOrders(orders) {
+    const container = document.getElementById("orders-list");
+    if (!container) return;
+
+    if (!Array.isArray(orders) || orders.length === 0) {
+        container.innerHTML = `
+            <div class="bg-white border rounded-3xl p-10 text-center">
+                <div class="text-4xl mb-3">📭</div>
+                <p class="font-black text-lg">Belum ada pesanan</p>
+                <p class="text-sm text-gray-500 mt-2">Pesanan dari tombol Checkout WhatsApp akan muncul di sini.</p>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = orders.map(order => {
+        const items = Array.isArray(order.items) ? order.items : [];
+        const itemsHTML = items.map(item => `
+            <div class="py-3 border-b last:border-b-0">
+                <div class="font-bold text-gray-900">${escapeOrderHTML(item.name)}</div>
+                <div class="text-sm text-gray-500 mt-1">
+                    Size: <strong>${escapeOrderHTML(item.size || "-")}</strong>
+                    · Qty: <strong>${Number(item.qty || 0)}</strong>
+                    · Harga: <strong>${formatRupiah(Number(item.price || 0) * Number(item.qty || 0))}</strong>
+                </div>
+            </div>
+        `).join("");
+
+        const status = String(order.status || "baru");
+        return `
+            <article class="bg-white border rounded-3xl p-5 md:p-6 shadow-sm">
+                <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
+                    <div class="min-w-0 flex-1">
+                        <div class="flex flex-wrap items-center gap-2 mb-3">
+                            <span class="font-black">Order #${escapeOrderHTML(order.id)}</span>
+                            <span class="px-3 py-1 rounded-full border text-xs font-bold ${orderStatusClass(status)}">
+                                ${escapeOrderHTML(status.toUpperCase())}
+                            </span>
+                        </div>
+
+                        <div class="grid sm:grid-cols-2 gap-3 text-sm mb-4">
+                            <div class="bg-gray-50 rounded-2xl p-3">
+                                <p class="text-xs text-gray-400 uppercase tracking-wide">Waktu Checkout</p>
+                                <p class="font-bold mt-1">${escapeOrderHTML(formatOrderDate(order.created_at))}</p>
+                            </div>
+                            <div class="bg-gray-50 rounded-2xl p-3">
+                                <p class="text-xs text-gray-400 uppercase tracking-wide">Referral</p>
+                                <p class="font-bold mt-1">${escapeOrderHTML(order.referral || "-")}</p>
+                            </div>
+                        </div>
+
+                        <div class="border rounded-2xl px-4">
+                            ${itemsHTML}
+                        </div>
+                    </div>
+
+                    <div class="lg:w-56 shrink-0">
+                        <p class="text-xs text-gray-400 uppercase tracking-wide">Total</p>
+                        <p class="text-2xl font-black mt-1">${formatRupiah(order.total)}</p>
+
+                        <label class="block text-xs text-gray-400 uppercase tracking-wide mt-5 mb-2">Ubah Status</label>
+                        <select
+                            class="w-full border rounded-xl px-3 py-3 font-bold"
+                            onchange="updateOrderStatus(${Number(order.id)}, this.value)">
+                            <option value="baru" ${status === "baru" ? "selected" : ""}>Baru</option>
+                            <option value="diproses" ${status === "diproses" ? "selected" : ""}>Diproses</option>
+                            <option value="selesai" ${status === "selesai" ? "selected" : ""}>Selesai</option>
+                            <option value="batal" ${status === "batal" ? "selected" : ""}>Batal</option>
+                        </select>
+                    </div>
+                </div>
+            </article>
+        `;
+    }).join("");
+}
+
+async function loadOrders() {
+    const container = document.getElementById("orders-list");
+    if (!container) return;
+
+    container.innerHTML = `
+        <div class="bg-white border rounded-3xl p-8 text-center">
+            <div class="text-3xl mb-3">⏳</div>
+            <p class="font-bold">Memuat pesanan...</p>
+        </div>
+    `;
+
+    try {
+        const response = await authFetch(`${API_URL}/api/orders`);
+        const result = await response.json();
+
+        if (!response.ok || !result.success) {
+            throw new Error(result.message || "Pesanan gagal dimuat.");
+        }
+
+        renderOrders(result.orders || []);
+        ordersLoaded = true;
+    } catch (error) {
+        console.error("Gagal memuat pesanan:", error);
+        container.innerHTML = `
+            <div class="bg-white border border-red-200 rounded-3xl p-8 text-center">
+                <div class="text-3xl mb-3">⚠️</div>
+                <p class="font-black text-red-600">Pesanan gagal dimuat</p>
+                <p class="text-sm text-gray-500 mt-2">${escapeOrderHTML(error.message || "Terjadi kesalahan.")}</p>
+                <button onclick="loadOrders()" class="mt-5 px-5 py-3 rounded-xl bg-black text-white font-bold">Coba Lagi</button>
+            </div>
+        `;
+    }
+}
+
+async function updateOrderStatus(id, status) {
+    try {
+        const response = await authFetch(`${API_URL}/api/orders/${id}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ status })
+        });
+
+        const result = await response.json();
+        if (!response.ok || !result.success) {
+            throw new Error(result.message || "Status gagal diperbarui.");
+        }
+
+        showToast("Status pesanan berhasil diperbarui.", "success");
+        await loadOrders();
+    } catch (error) {
+        console.error("Gagal memperbarui status pesanan:", error);
+        showToast(error.message || "Status gagal diperbarui.", "error");
+        await loadOrders();
+    }
+}
 
 </script>
 
