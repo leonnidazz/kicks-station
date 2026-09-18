@@ -2237,12 +2237,23 @@
             );
 
 
-        const ref =
-            params.get("ref");
+        const REFERRAL_STORAGE_KEY =
+            'kicks_station_referral';
 
+        const urlRef =
+            (params.get('ref') || '').trim().toLowerCase();
 
+        if (urlRef) {
+            sessionStorage.setItem(REFERRAL_STORAGE_KEY, urlRef);
+        }
+
+        const referral =
+            urlRef || sessionStorage.getItem(REFERRAL_STORAGE_KEY) || '';
+
+        // SEMUA checkout dan tombol WhatsApp selalu menuju WA utama.
+        // Referral hanya dipakai untuk pencatatan pesanan di Admin.
         const targetWA =
-            affiliates[ref] || defaultWA;
+            defaultWA;
 
 
         function checkoutWA() {
@@ -2287,9 +2298,28 @@
 
 
             window.open(
-                `https://wa.me/${targetWA}?text=${encodeURIComponent(text)}`,
+                `https://wa.me/${defaultWA}?text=${encodeURIComponent(text)}`,
                 '_blank'
             );
+
+            // Simpan pesanan ke Admin tanpa mengubah tujuan WhatsApp.
+            fetch('https://kicks-station.onrender.com/api/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    referral,
+                    items: cart.map(item => ({
+                        name: item.name,
+                        size: item.size || '',
+                        qty: item.qty,
+                        price: Number(item.price) || 0
+                    })),
+                    total
+                }),
+                keepalive: true
+            }).catch(error => {
+                console.error('Gagal mencatat pesanan:', error);
+            });
 
         }
 
@@ -2297,7 +2327,7 @@
         document.getElementById(
             "whatsapp-float"
         ).href =
-            `https://wa.me/${targetWA}?text=${encodeURIComponent(
+            `https://wa.me/${defaultWA}?text=${encodeURIComponent(
                 "Halo Kicks Station, saya mau bertanya tentang produk."
             )}`;
 
