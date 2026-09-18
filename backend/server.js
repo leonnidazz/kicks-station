@@ -139,7 +139,13 @@ function toStoragePath(imagePath) {
     const value = imagePath.trim();
     if (!value) return null;
 
-    // Format internal storage yang kita simpan.
+    // Path internal Supabase Storage.
+    // Contoh: products/51/foto.jpg
+    if (value.startsWith("products/")) {
+        return value;
+    }
+
+    // Format lama: product-images/products/51/foto.jpg
     if (value.startsWith("product-images/")) {
         return value.slice("product-images/".length);
     }
@@ -149,8 +155,14 @@ function toStoragePath(imagePath) {
         try {
             const parsed = new URL(value);
             const prefix = `/storage/v1/object/public/${SUPABASE_BUCKET}/`;
-            if (parsed.origin === SUPABASE_URL && parsed.pathname.startsWith(prefix)) {
-                return decodeURIComponent(parsed.pathname.slice(prefix.length));
+
+            if (
+                parsed.origin === SUPABASE_URL &&
+                parsed.pathname.startsWith(prefix)
+            ) {
+                return decodeURIComponent(
+                    parsed.pathname.slice(prefix.length)
+                );
             }
         } catch {}
     }
