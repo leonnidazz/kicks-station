@@ -2206,33 +2206,6 @@
            WHATSAPP AFFILIATE
         ===================================================== */
 
-        const affiliates = {
-
-            ah: "6285640054840",
-
-            mrm: "6288221120405",
-
-            amr: "6285943328676",
-
-            ajn: "6281328949530",
-
-            roy: "6285969035741",
-
-            king: "6289514056278",
-
-            zkr: "6285119475823",
-
-            udn: "6288221088143",
-
-            amu: "6285943458445",
-
-            zni: "6285640773843",
-
-            anm: "6281228759794"
-
-        };
-
-
         const defaultWA =
             "6285931100080";
 
@@ -2243,23 +2216,18 @@
             );
 
 
-        const REFERRAL_STORAGE_KEY =
-            'kicks_station_referral';
+        const ref =
+            (params.get("ref") || "").trim().toLowerCase();
 
-        const urlRef =
-            (params.get('ref') || '').trim().toLowerCase();
-
-        if (urlRef) {
-            sessionStorage.setItem(REFERRAL_STORAGE_KEY, urlRef);
+        // Referral hanya untuk pencatatan. Semua checkout tetap ke WA utama.
+        if (ref) {
+            sessionStorage.setItem("kicks_station_referral", ref);
         }
 
         const referral =
-            urlRef || sessionStorage.getItem(REFERRAL_STORAGE_KEY) || '';
+            ref || sessionStorage.getItem("kicks_station_referral") || "";
 
-        // SEMUA checkout dan tombol WhatsApp selalu menuju WA utama.
-        // Referral hanya dipakai untuk pencatatan pesanan di Admin.
-        const targetWA =
-            defaultWA;
+        const targetWA = defaultWA;
 
 
         function checkoutWA() {
@@ -2303,29 +2271,26 @@
                 `Terima kasih!`;
 
 
-            window.open(
-                `https://wa.me/${defaultWA}?text=${encodeURIComponent(text)}`,
-                '_blank'
-            );
-
-            // Simpan pesanan ke Admin tanpa mengubah tujuan WhatsApp.
-            fetch('https://kicks-station.onrender.com/api/orders', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+            fetch("https://kicks-station.onrender.com/api/orders", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
                     referral,
                     items: cart.map(item => ({
                         name: item.name,
-                        size: item.size || '',
+                        size: item.size,
                         qty: item.qty,
-                        price: Number(item.price) || 0
+                        price: item.price
                     })),
                     total
                 }),
                 keepalive: true
-            }).catch(error => {
-                console.error('Gagal mencatat pesanan:', error);
-            });
+            }).catch(error => console.error("Gagal mencatat pesanan:", error));
+
+            window.open(
+                `https://wa.me/${defaultWA}?text=${encodeURIComponent(text)}`,
+                '_blank'
+            );
 
         }
 
@@ -2333,7 +2298,7 @@
         document.getElementById(
             "whatsapp-float"
         ).href =
-            `https://wa.me/${defaultWA}?text=${encodeURIComponent(
+            `https://wa.me/${targetWA}?text=${encodeURIComponent(
                 "Halo Kicks Station, saya mau bertanya tentang produk."
             )}`;
 

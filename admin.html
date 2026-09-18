@@ -4942,6 +4942,30 @@ function showToast(
 
 
 // =========================================================
+// REFERRAL
+// =========================================================
+const referralNames = {
+    hsn: "Hasan AU",
+    mrm: "Rosyad AU",
+    amr: "Ammar GE",
+    ajn: "Juna CTAF",
+    roy: "Roy CTAF",
+    king: "Risky CTAF",
+    zkr: "Zaka UNDIP",
+    udn: "Udin CTAF",
+    amu: "Amru UNDIP",
+    zni: "Zaini CTAF",
+    anm: "Anam CTAF",
+    rhn: "Rihan CTAF"
+};
+
+function formatReferral(referral) {
+    const code = String(referral || "").trim().toLowerCase();
+    if (!code) return "-";
+    return referralNames[code] ? `${referralNames[code]} (${code.toUpperCase()})` : code.toUpperCase();
+}
+
+// =========================================================
 // ORDERS
 // =========================================================
 function formatRupiah(value) {
@@ -4967,7 +4991,7 @@ async function loadOrders() {
             const date = order.created_at ? new Date(order.created_at).toLocaleString("id-ID") : "-";
             return `<article class="border rounded-2xl p-5">
                 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-                    <div><p class="font-black">Pesanan #${escapeOrderText(order.id)}</p><p class="text-xs text-gray-500">${escapeOrderText(date)}</p><p class="text-xs text-gray-500 mt-1">Referral: <b>${escapeOrderText(order.referral || "-")}</b></p></div>
+                    <div><p class="font-black">Pesanan #${escapeOrderText(order.id)}</p><p class="text-xs text-gray-500">${escapeOrderText(date)}</p><p class="text-xs text-gray-500 mt-1">Referral: <b>${escapeOrderText(formatReferral(order.referral))}</b></p></div>
                     <select onchange="updateOrderStatus(${Number(order.id)}, this.value)" class="border rounded-xl px-3 py-2 font-bold">
                         ${["baru","diproses","selesai","batal"].map(st => `<option value="${st}" ${order.status === st ? "selected" : ""}>${st}</option>`).join("")}
                     </select>
