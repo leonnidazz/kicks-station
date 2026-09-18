@@ -711,11 +711,66 @@ function extractProductId(req) {
     return id;
 }
 
+// =========================================================
+// PESANAN / CHECKOUT
+// =========================================================
+
+function validateOrderData(data) {
+    if (!data || typeof data !== "object") throw new Error("Data pesanan tidak valid.");
+    const referral = typeof data.referral === "string" ? data.referral.trim().slice(0, 100) : "";
+    if (!Array.isArray(data.items) || !data.items.length) throw new Error("Pesanan tidak memiliki produk.");
+    if (data.items.length > 30) throw new Error("Pesanan terlalu banyak.");
+    const items = data.items.map((item) => {
+        if (!item || typeof item !== "object") throw new Error("Data item pesanan tidak valid.");
+        const name = String(item.name || item.nama || "").trim();
+        const size = String(item.size || "").trim();
+        const qty = Number(item.qty);
+        const price = Number(item.price);
+        if (!name) throw new Error("Nama produk pada pesanan tidak valid.");
+        if (name.length > 200) throw new Error("Nama produk terlalu panjang.");
+        if (size.length > 50) throw new Error("Ukuran produk tidak valid.");
+        if (!Number.isInteger(qty) || qty < 1 || qty > 99) throw new Error("Jumlah produk tidak valid.");
+        if (!Number.isFinite(price) || price < 0 || price > 1000000000) throw new Error("Harga produk tidak valid.");
+        return { name, size, qty, price };
+    });
+    const total = items.reduce((sum, item) => sum + item.price * item.qty, 0);
+    if (!Number.isFinite(total) || total < 0 || total > 100000000000) throw new Error("Total pesanan tidak valid.");
+    return { referral, items, total };
+}
+
+async function ensureOrdersTable() {
+    if (!pool) throw new Error("DATABASE_URL belum diset di Render.");
+    await pool.query(`CREATE TABLE IF NOT EXISTS orders (id BIGSERIAL PRIMARY KEY, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), referral TEXT DEFAULT '', items JSONB NOT NULL DEFAULT '[]'::jsonb, total NUMERIC NOT NULL DEFAULT 0, status TEXT NOT NULL DEFAULT 'baru')`);
+    await pool.query(`ALTER TABLE orders ENABLE ROW LEVEL SECURITY`);
+}
+
+async function createOrder(order) {
+    await ensureOrdersTable();
+    const result = await pool.query(`INSERT INTO orders (referral, items, total, status) VALUES ($1, $2::jsonb, $3, 'baru') RETURNING id, created_at, referral, items, total, status`, [order.referral, JSON.stringify(order.items), order.total]);
+    return result.rows[0];
+}
+
+async function getOrders() {
+    await ensureOrdersTable();
+    const result = await pool.query(`SELECT id, created_at, referral, items, total, status FROM orders ORDER BY created_at DESC, id DESC`);
+    return result.rows.map(row => ({ id:Number(row.id), created_at:row.created_at, referral:row.referral || "", items:Array.isArray(row.items) ? row.items : [], total:Number(row.total || 0), status:row.status || "baru" }));
+}
+
+async function updateOrderStatus(id, status) {
+    await ensureOrdersTable();
+    const allowedStatuses = ["baru", "diproses", "selesai", "batal"];
+    if (!allowedStatuses.includes(status)) throw new Error("Status pesanan tidak valid.");
+    const result = await pool.query(`UPDATE orders SET status=$2 WHERE id=$1 RETURNING id, created_at, referral, items, total, status`, [id, status]);
+    if (!result.rows.length) throw new Error("Pesanan tidak ditemukan.");
+    const row = result.rows[0];
+    return { id:Number(row.id), created_at:row.created_at, referral:row.referral || "", items:Array.isArray(row.items) ? row.items : [], total:Number(row.total || 0), status:row.status || "baru" };
+}
+
 const server = http.createServer(async (req, res) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader(
         "Access-Control-Allow-Methods",
-        "GET, POST, PUT, DELETE, OPTIONS"
+        "GET, POST, PUT, PATCH, DELETE, OPTIONS"
     );
     res.setHeader(
         "Access-Control-Allow-Headers",
@@ -735,6 +790,21 @@ const server = http.createServer(async (req, res) => {
                 message: "Kicks Station Backend berhasil berjalan!",
                 database: databaseReady ? "supabase" : "not-ready",
             });
+            return;
+        }
+
+        // =====================================================
+        // POST PESANAN / CHECKOUT
+        // =====================================================
+        if (req.method === "POST" && req.url === "/api/orders") {
+            try {
+                const order = validateOrderData(await readBody(req));
+                const savedOrder = await createOrder(order);
+                sendJSON(res, 201, { success:true, message:"Checkout berhasil dicatat.", order:{ id:Number(savedOrder.id), created_at:savedOrder.created_at, referral:savedOrder.referral || "", total:Number(savedOrder.total || 0), status:savedOrder.status } });
+            } catch (error) {
+                console.error("Gagal menyimpan pesanan:", error);
+                sendJSON(res, 400, { success:false, message:error.message || "Pesanan tidak dapat disimpan." });
+            }
             return;
         }
 
@@ -1156,6 +1226,32 @@ const server = http.createServer(async (req, res) => {
                 product: productForClient(deletedProduct),
                 products: productsForClient(remaining),
             });
+            return;
+        }
+
+        // =====================================================
+        // GET SEMUA PESANAN - ADMIN
+        // =====================================================
+        if (req.method === "GET" && req.url === "/api/orders") {
+            if (!requireAdmin(req, res)) return;
+            try { sendJSON(res, 200, { success:true, orders:await getOrders() }); }
+            catch (error) { console.error("Gagal mengambil pesanan:", error); sendJSON(res, 500, { success:false, message:error.message || "Pesanan tidak dapat diambil." }); }
+            return;
+        }
+
+        // =====================================================
+        // PATCH STATUS PESANAN - ADMIN
+        // =====================================================
+        if (req.method === "PATCH" && new URL(req.url, "http://localhost").pathname.startsWith("/api/orders/")) {
+            if (!requireAdmin(req, res)) return;
+            try {
+                const pathname = new URL(req.url, "http://localhost").pathname;
+                const id = Number(pathname.split("/").pop());
+                if (!Number.isInteger(id) || id <= 0) throw new Error("ID pesanan tidak valid.");
+                const data = await readBody(req);
+                const order = await updateOrderStatus(id, String(data?.status || "").trim());
+                sendJSON(res, 200, { success:true, message:"Status pesanan berhasil diperbarui.", order });
+            } catch (error) { console.error("Gagal memperbarui status pesanan:", error); sendJSON(res, 400, { success:false, message:error.message || "Status pesanan tidak dapat diperbarui." }); }
             return;
         }
 
