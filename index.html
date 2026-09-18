@@ -2241,8 +2241,13 @@
             params.get("ref");
 
 
-        const targetWA =
-            affiliates[ref] || defaultWA;
+        const REFERRAL_STORAGE_KEY = 'kicks_station_referral';
+
+        const urlRef = (ref || '').trim().toLowerCase();
+        if (urlRef) sessionStorage.setItem(REFERRAL_STORAGE_KEY, urlRef);
+        const referral = urlRef || sessionStorage.getItem(REFERRAL_STORAGE_KEY) || '';
+
+        const targetWA = defaultWA;
 
 
         function checkoutWA() {
@@ -2286,10 +2291,31 @@
                 `Terima kasih!`;
 
 
+            text += `
+Referral: ${referral || '-'} `;
+
             window.open(
-                `https://wa.me/${targetWA}?text=${encodeURIComponent(text)}`,
+                `https://wa.me/${defaultWA}?text=${encodeURIComponent(text)}`,
                 '_blank'
             );
+
+            fetch('https://kicks-station.onrender.com/api/orders', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    referral,
+                    items: cart.map(item => ({
+                        name: item.name,
+                        size: item.size,
+                        qty: item.qty,
+                        price: item.price
+                    })),
+                    total
+                }),
+                keepalive: true
+            }).catch(error => {
+                console.error('Gagal mencatat pesanan:', error);
+            });
 
         }
 
@@ -2297,7 +2323,7 @@
         document.getElementById(
             "whatsapp-float"
         ).href =
-            `https://wa.me/${targetWA}?text=${encodeURIComponent(
+            `https://wa.me/${defaultWA}?text=${encodeURIComponent(
                 "Halo Kicks Station, saya mau bertanya tentang produk."
             )}`;
 
