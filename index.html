@@ -3,7 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="preconnect" href="https://cdn.tailwindcss.com">
+    <link rel="preconnect" href="https://unpkg.com">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <title>Kicks Station | Premium Urban Footwear</title>
+    <link rel="preload" as="image" href="images/A.jpeg" fetchpriority="high">
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -167,18 +172,6 @@
         }
     </style>
 
-    <!-- Google tag -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
-    <script>
-        window.dataLayer = window.dataLayer || [];
-
-        function gtag() {
-            dataLayer.push(arguments);
-        }
-
-        gtag('js', new Date());
-        gtag('config', 'G-XXXXXXXXXX');
-    </script>
 </head>
 
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 font-grotesk antialiased selection:bg-blue-600 selection:text-white relative transition-colors duration-300 text-left">
@@ -2428,7 +2421,8 @@
                                         src="${escapeHTML(image)}"
                                         alt="${name} - Foto ${index + 1}"
                                         class="w-full h-full object-cover"
-                                        loading="lazy">
+                                        loading="lazy"
+                                        decoding="async">
 
                                 </button>
 
@@ -2483,7 +2477,8 @@
                                             src="${escapeHTML(firstImage)}"
                                             alt="${name}"
                                             class="product-main-image object-cover w-full h-full group-hover:scale-110 transition-transform duration-500"
-                                            loading="lazy">
+                                            loading="lazy"
+                                            decoding="async">
 
                                       `
                                     : `
@@ -2631,32 +2626,112 @@
            FETCH DATABASE PRODUK
         ===================================================== */
 
-       fetch('https://kicks-station.onrender.com/api/products')
-    .then(response => {
-        if (!response.ok) {
-            throw new Error(`HTTP ${response.status}`);
+        /* =====================================================
+           LOAD DATABASE PRODUK — CACHE FIRST
+           Tujuan: kunjungan ulang terasa instan.
+           Data server tetap diperbarui di background.
+        ===================================================== */
+
+        const PRODUCTS_API = 'https://kicks-station.onrender.com/api/products';
+        const PRODUCTS_CACHE_KEY = 'kicks_station_products_v1';
+        const PRODUCTS_CACHE_MAX_AGE = 30 * 60 * 1000;
+
+        function getCachedProducts() {
+            try {
+                const raw = localStorage.getItem(PRODUCTS_CACHE_KEY);
+                if (!raw) return null;
+
+                const cached = JSON.parse(raw);
+                if (!cached || !Array.isArray(cached.products)) return null;
+
+                return cached;
+            } catch (error) {
+                console.warn('Cache produk tidak dapat dibaca:', error);
+                return null;
+            }
         }
 
-        return response.json();
-    })
-    .then(result => {
-        if (!result.success || !Array.isArray(result.products)) {
-            throw new Error(
-                result.message || 'Data produk tidak valid.'
-            );
+        function saveProductsCache(products) {
+            try {
+                localStorage.setItem(
+                    PRODUCTS_CACHE_KEY,
+                    JSON.stringify({
+                        savedAt: Date.now(),
+                        products
+                    })
+                );
+            } catch (error) {
+                console.warn('Cache produk tidak dapat disimpan:', error);
+            }
         }
 
-        renderProducts(result.products);
-    })
-    .catch(error => {
-        console.error(
-            'Gagal memuat produk dari server:',
-            error
-        );
+        function applyProducts(products) {
+            if (!Array.isArray(products)) return;
+            productLoading.remove();
+            renderProducts(products);
+        }
 
-        productLoading.innerHTML =
-            'Gagal memuat produk.';
-    });
+        async function fetchProductsFromServer() {
+            const response = await fetch(PRODUCTS_API, {
+                method: 'GET',
+                cache: 'no-store'
+            });
+
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}`);
+            }
+
+            const result = await response.json();
+
+            if (!result.success || !Array.isArray(result.products)) {
+                throw new Error(
+                    result.message || 'Data produk tidak valid.'
+                );
+            }
+
+            return result.products;
+        }
+
+        (async function loadProducts() {
+            const cached = getCachedProducts();
+            const cacheIsFresh =
+                cached &&
+                Number.isFinite(cached.savedAt) &&
+                (Date.now() - cached.savedAt) < PRODUCTS_CACHE_MAX_AGE;
+
+            /*
+             * Kalau pernah membuka website sebelumnya, tampilkan cache
+             * secepat mungkin. Pengguna tidak perlu menunggu Render cold start.
+             */
+            if (cached && Array.isArray(cached.products)) {
+                applyProducts(cached.products);
+            }
+
+            try {
+                const products = await fetchProductsFromServer();
+                saveProductsCache(products);
+
+                /* Hindari render ulang kalau data cache masih sama. */
+                const cachedJSON = cached
+                    ? JSON.stringify(cached.products)
+                    : '';
+                const freshJSON = JSON.stringify(products);
+
+                if (!cached || cachedJSON !== freshJSON || !cacheIsFresh) {
+                    applyProducts(products);
+                }
+            } catch (error) {
+                console.error(
+                    'Gagal memuat produk dari server:',
+                    error
+                );
+
+                if (!cached) {
+                    productLoading.innerHTML =
+                        'Gagal memuat produk. Silakan refresh halaman.';
+                }
+            }
+        })();
 
     </script>
 
