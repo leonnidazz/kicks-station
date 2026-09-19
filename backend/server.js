@@ -394,7 +394,6 @@ async function uploadBufferToStorage(storagePath, buffer, mime) {
 
     return storagePath;
 }
-
 async function deleteStorageImages(imagePaths) {
     const names = normalizeImages(imagePaths)
         .map(toStoragePath)
@@ -402,18 +401,18 @@ async function deleteStorageImages(imagePaths) {
 
     if (!names.length) return;
 
-    await supabaseStorageRequest("/storage/v1/object/remove", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-        },
-        body: JSON.stringify(
-            names.map((name) => ({
-                bucket_id: SUPABASE_BUCKET,
-                name,
-            }))
-        ),
-    });
+    await supabaseStorageRequest(
+        `/storage/v1/object/${SUPABASE_BUCKET}`,
+        {
+            method: "DELETE",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                prefixes: names,
+            }),
+        }
+    );
 }
 
 async function uploadImageObject(imageData, prefix = "products") {
