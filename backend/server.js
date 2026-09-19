@@ -187,7 +187,33 @@ function toStoragePath(imagePath) {
 
     return null;
 }
+function toPublicImageUrl(imagePath) {
+    if (typeof imagePath !== "string") return imagePath;
 
+    const storagePath = toStoragePath(imagePath);
+
+    if (storagePath && SUPABASE_URL) {
+        return `${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_BUCKET}/${storagePath
+            .split("/")
+            .map(encodeURIComponent)
+            .join("/")}`;
+    }
+
+    return imagePath;
+}
+
+function productForClient(product) {
+    const result = { ...product };
+    const images = normalizeImages(product.gambar);
+
+    result.gambar = images.map(toPublicImageUrl);
+
+    return result;
+}
+
+function productsForClient(products) {
+    return products.map(productForClient);
+}
 function validateImageData(imageData) {
     if (!imageData || !imageData.data) {
         throw new Error("Data foto tidak lengkap.");
