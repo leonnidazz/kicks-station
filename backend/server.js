@@ -214,6 +214,13 @@ function productForClient(product) {
 function productsForClient(products) {
     return products.map(productForClient);
 }
+function sanitizeFilename(name) {
+    return String(name || "image")
+        .trim()
+        .replace(/[^a-zA-Z0-9._-]+/g, "-")
+        .replace(/-+/g, "-")
+        .replace(/^-|-$/g, "");
+}
 function validateImageData(imageData) {
     if (!imageData || !imageData.data) {
         throw new Error("Data foto tidak lengkap.");
