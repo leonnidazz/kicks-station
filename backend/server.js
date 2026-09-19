@@ -145,63 +145,47 @@ function toStoragePath(imagePath) {
         return value;
     }
 
-    // Format lama: product-images/products/51/foto.jpg
+    // Format: product-images/products/51/foto.jpg
     if (value.startsWith("product-images/")) {
         return value.slice("product-images/".length);
     }
 
-    // URL Supabase Storage public.
+    // URL Supabase Storage yang benar.
     if (SUPABASE_URL) {
         try {
             const parsed = new URL(value);
-            const prefix = `/storage/v1/object/public/${SUPABASE_BUCKET}/`;
+
+            const correctPrefix =
+                `/storage/v1/object/public/${SUPABASE_BUCKET}/`;
+
+            // URL normal:
+            // https://project.supabase.co/storage/v1/object/public/product-images/products/51/foto.jpg
+            if (
+                parsed.origin === SUPABASE_URL &&
+                parsed.pathname.startsWith(correctPrefix)
+            ) {
+                return decodeURIComponent(
+                    parsed.pathname.slice(correctPrefix.length)
+                );
+            }
+
+            // URL lama/salah:
+            // https://project.supabase.co/rest/v1/storage/v1/object/public/product-images/products/51/foto.jpg
+            const oldPrefix =
+                `/rest/v1/storage/v1/object/public/${SUPABASE_BUCKET}/`;
 
             if (
                 parsed.origin === SUPABASE_URL &&
-                parsed.pathname.startsWith(prefix)
+                parsed.pathname.startsWith(oldPrefix)
             ) {
                 return decodeURIComponent(
-                    parsed.pathname.slice(prefix.length)
+                    parsed.pathname.slice(oldPrefix.length)
                 );
             }
         } catch {}
     }
 
     return null;
-}
-
-function toPublicImageUrl(imagePath) {
-    if (typeof imagePath !== "string") return imagePath;
-
-    const storagePath = toStoragePath(imagePath);
-    if (storagePath && SUPABASE_URL) {
-        return `${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_BUCKET}/${storagePath
-            .split("/")
-            .map(encodeURIComponent)
-            .join("/")}`;
-    }
-
-    return imagePath;
-}
-
-function productForClient(product) {
-    const result = { ...product };
-    const images = normalizeImages(product.gambar);
-
-    result.gambar = images.map(toPublicImageUrl);
-    return result;
-}
-
-function productsForClient(products) {
-    return products.map(productForClient);
-}
-
-function sanitizeFilename(filename) {
-    return path
-        .basename(String(filename || "image"))
-        .replace(/[<>:"/\\|?*\x00-\x1F]/g, "_")
-        .replace(/\s+/g, " ")
-        .trim();
 }
 
 function validateImageData(imageData) {
