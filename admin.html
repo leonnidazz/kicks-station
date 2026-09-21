@@ -434,16 +434,6 @@ textarea:focus {
 
             <div class="bg-white rounded-2xl border p-5">
                 <p class="text-xs text-gray-400 uppercase tracking-wide">
-                    Total Stok
-                </p>
-
-                <p id="stat-stock" class="text-2xl font-black mt-2">
-                    —
-                </p>
-            </div>
-
-            <div class="bg-white rounded-2xl border p-5">
-                <p class="text-xs text-gray-400 uppercase tracking-wide">
                     Produk Lokal
                 </p>
 
@@ -693,24 +683,7 @@ textarea:focus {
                             </div>
 
                         </div>
-
-                        <!-- STOCK -->
-                        <div>
-
-                            <h3 class="font-bold mb-3">
-                                Stok
-                            </h3>
-
-                            <input
-                                id="stok"
-                                type="number"
-                                min="0"
-                                placeholder="10"
-                                class="w-full border border-gray-200 rounded-xl px-4 py-3.5">
-
-                        </div>
-
-                        <!-- SIZES -->
+<!-- SIZES -->
                         <div>
 
                             <div class="flex items-center justify-between mb-3">
@@ -1294,20 +1267,6 @@ textarea:focus {
                         <option value="unisex">Unisex</option>
 
                     </select>
-
-                </div>
-
-                <div>
-
-                    <label class="block text-sm font-bold mb-2">
-                        Stok
-                    </label>
-
-                    <input
-                        id="edit-stok"
-                        type="number"
-                        min="0"
-                        class="w-full border border-gray-200 rounded-xl px-4 py-3">
 
                 </div>
 
@@ -2525,7 +2484,6 @@ const fields = [
     "tipe",
     "asal",
     "pengguna",
-    "stok",
     "deskripsi"
 ];
 
@@ -2936,13 +2894,6 @@ async function saveProduct() {
                     "pengguna"
                 ).value,
 
-            stok:
-                Number(
-                    document.getElementById(
-                        "stok"
-                    ).value
-                ) || 0,
-
             sizes:
                 [
                     ...selectedSizes
@@ -3050,12 +3001,7 @@ function clearForm() {
     document.getElementById(
         "harga_coret"
     ).value = "";
-
-    document.getElementById(
-        "stok"
-    ).value = "";
-
-    document.getElementById(
+document.getElementById(
         "deskripsi"
     ).value = "";
 
@@ -3211,21 +3157,6 @@ function updateStats() {
     const total =
         allProducts.length;
 
-    const stock =
-        allProducts.reduce(
-            (
-                total,
-                product
-            ) =>
-                total +
-                (
-                    Number(
-                        product.stok
-                    ) || 0
-                ),
-            0
-        );
-
     const lokal =
         allProducts.filter(
             product =>
@@ -3237,11 +3168,6 @@ function updateStats() {
         "stat-total"
     ).textContent =
         total;
-
-    document.getElementById(
-        "stat-stock"
-    ).textContent =
-        stock;
 
     document.getElementById(
         "stat-lokal"
@@ -3680,17 +3606,6 @@ function createProductCard(
                     ${capitalize(
                         product.pengguna
                     )}
-
-                </span>
-
-                <span
-                    class="px-2.5 py-1.5 bg-gray-100 rounded-lg text-xs font-semibold">
-
-                    Stok ${
-                        Number(
-                            product.stok
-                        ) || 0
-                    }
 
                 </span>
 
@@ -4422,11 +4337,6 @@ function openEditModal(id) {
         "unisex";
 
     document.getElementById(
-        "edit-stok"
-    ).value =
-        product.stok || 0;
-
-    document.getElementById(
         "edit-deskripsi"
     ).value =
         product.deskripsi || "";
@@ -4603,13 +4513,6 @@ async function updateProduct() {
                 document.getElementById(
                     "edit-pengguna"
                 ).value,
-
-            stok:
-                Number(
-                    document.getElementById(
-                        "edit-stok"
-                    ).value
-                ) || 0,
 
             sizes:
                 [

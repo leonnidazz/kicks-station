@@ -455,13 +455,14 @@ async function ensureDatabase() {
             tipe TEXT DEFAULT 'kasual',
             asal TEXT DEFAULT 'internasional',
             pengguna TEXT DEFAULT 'unisex',
-            stok INTEGER DEFAULT 0,
             sizes JSONB NOT NULL DEFAULT '[]'::jsonb,
             gambar JSONB NOT NULL DEFAULT '[]'::jsonb,
             deskripsi TEXT DEFAULT '',
             upload_order INTEGER NOT NULL
         )
     `);
+
+    await pool.query(`ALTER TABLE products DROP COLUMN IF EXISTS stok`);
 
     databaseReady = true;
 }
@@ -479,7 +480,6 @@ async function getProducts() {
             tipe,
             asal,
             pengguna,
-            stok,
             sizes,
             gambar,
             deskripsi,
@@ -492,7 +492,6 @@ async function getProducts() {
         ...row,
         harga: Number(row.harga),
         harga_coret: Number(row.harga_coret || 0),
-        stok: Number(row.stok || 0),
         sizes: Array.isArray(row.sizes) ? row.sizes : [],
         gambar: normalizeImages(row.gambar),
         upload_order: Number(row.upload_order),
@@ -503,8 +502,8 @@ async function insertProduct(product) {
     await pool.query(
         `
         INSERT INTO products
-        (id, nama, brand, harga, harga_coret, tipe, asal, pengguna, stok, sizes, gambar, deskripsi, upload_order)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb,$11::jsonb,$12,$13)
+        (id, nama, brand, harga, harga_coret, tipe, asal, pengguna, sizes, gambar, deskripsi, upload_order)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10::jsonb,$11,$12)
         `,
         [
             product.id,
@@ -515,7 +514,6 @@ async function insertProduct(product) {
             product.tipe,
             product.asal,
             product.pengguna,
-            product.stok,
             JSON.stringify(product.sizes),
             JSON.stringify(product.gambar),
             product.deskripsi,
@@ -535,11 +533,10 @@ async function updateProductRow(product) {
             tipe=$6,
             asal=$7,
             pengguna=$8,
-            stok=$9,
-            sizes=$10::jsonb,
-            gambar=$11::jsonb,
-            deskripsi=$12,
-            upload_order=$13
+            sizes=$9::jsonb,
+            gambar=$10::jsonb,
+            deskripsi=$11,
+            upload_order=$12
         WHERE id=$1
         `,
         [
@@ -551,7 +548,6 @@ async function updateProductRow(product) {
             product.tipe,
             product.asal,
             product.pengguna,
-            product.stok,
             JSON.stringify(product.sizes),
             JSON.stringify(product.gambar),
             product.deskripsi,
@@ -628,7 +624,6 @@ async function migrateProductsFromJSONIfNeeded() {
             tipe: old.tipe || "kasual",
             asal: old.asal || "internasional",
             pengguna: old.pengguna || "unisex",
-            stok: Number(old.stok) || 0,
             sizes: Array.isArray(old.sizes)
                 ? old.sizes.map(String)
                 : [],
@@ -1052,7 +1047,6 @@ const server = http.createServer(async (req, res) => {
                 tipe: data.tipe || "kasual",
                 asal: data.asal || "internasional",
                 pengguna: data.pengguna || "unisex",
-                stok: Number(data.stok) || 0,
                 sizes: data.sizes.map((size) => String(size)),
                 gambar: imagePaths,
                 deskripsi: String(data.deskripsi || "").trim(),
@@ -1256,10 +1250,6 @@ const server = http.createServer(async (req, res) => {
                     data.pengguna !== undefined
                         ? data.pengguna
                         : oldProduct.pengguna,
-                stok:
-                    data.stok !== undefined
-                        ? Number(data.stok) || 0
-                        : oldProduct.stok,
                 sizes:
                     Array.isArray(data.sizes)
                         ? data.sizes.map(String)

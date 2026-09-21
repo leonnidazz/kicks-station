@@ -2238,12 +2238,16 @@
                     visitorId = (crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2)));
                     localStorage.setItem(VISITOR_KEY, visitorId);
                 }
-                fetch("https://kicks-station-api.onrender.com/api/analytics/visit", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ visitor_id: visitorId, referral: ref || "" }),
-                    keepalive: true
-                }).catch(() => {});
+                const payload = JSON.stringify({ visitor_id: visitorId, referral: ref || "" });
+                const analyticsUrl = "https://kicks-station-api.onrender.com/api/analytics/visit";
+                if (navigator.sendBeacon) {
+                    const queued = navigator.sendBeacon(analyticsUrl, new Blob([payload], { type: "application/json" }));
+                    if (!queued) {
+                        fetch(analyticsUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: payload, keepalive: true }).catch(() => {});
+                    }
+                } else {
+                    fetch(analyticsUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: payload, keepalive: true }).catch(() => {});
+                }
             } catch (_) {}
         })();
 
