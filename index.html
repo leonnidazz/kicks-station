@@ -2229,7 +2229,7 @@
 
         const targetWA = defaultWA;
 
-        // Catat kunjungan website. ID pengunjung disimpan di browser, bukan data pribadi.
+        // Analytics anonim: satu ID acak per browser, tanpa nama/nomor WhatsApp.
         (function trackKicksVisit() {
             try {
                 const VISITOR_KEY = "kicks_station_visitor_id";

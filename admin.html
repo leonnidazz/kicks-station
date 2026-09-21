@@ -1094,22 +1094,60 @@ textarea:focus {
     </div>
 
         <section id="page-pesanan" class="hidden fade-in">
-    <div class="grid lg:grid-cols-3 gap-5 mb-5">
-        <div class="bg-white border rounded-3xl p-6"><p class="text-sm text-gray-500">Total pembukaan tautan</p><p id="stat-total-visits" class="text-4xl font-black mt-2">-</p></div>
-        <div class="bg-white border rounded-3xl p-6"><p class="text-sm text-gray-500">Pengunjung unik</p><p id="stat-unique-visitors" class="text-4xl font-black mt-2">-</p></div>
-        <div class="bg-white border rounded-3xl p-6"><p class="text-sm text-gray-500">Klik dari referral</p><p id="stat-referral-visits" class="text-4xl font-black mt-2">-</p></div>
-    </div>
-    <div class="bg-white border rounded-3xl p-6 sm:p-8">
-        <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
-            <div><h2 class="text-2xl font-black">Pesanan Masuk</h2><p class="text-sm text-gray-500 mt-1">Kelola status dan keterangan setiap pesanan.</p></div>
-            <div class="flex flex-wrap gap-2">
-                <button onclick="loadOrders(); loadAnalytics();" class="px-4 py-2 rounded-xl bg-gray-900 text-white font-bold">↻ Refresh</button>
-                <button onclick="deleteOrderHistory()" class="px-4 py-2 rounded-xl bg-red-600 text-white font-bold">Hapus Riwayat Pesanan</button>
+            <div class="mb-7">
+                <div class="flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
+                    <div>
+                        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-gray-400 mb-2">Dashboard</p>
+                        <h2 class="text-3xl font-black tracking-tight text-gray-950">Aktivitas Kicks Station</h2>
+                        <p class="text-sm text-gray-500 mt-2">Pantau kunjungan anonim, referral, dan pesanan dari satu tempat.</p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button onclick="loadOrders();loadAnalytics()" class="px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-800 font-semibold hover:bg-gray-50 transition">↻ Refresh</button>
+                        <button onclick="deleteOrderHistory()" class="px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-500 font-semibold hover:border-gray-400 hover:text-gray-900 transition">Hapus riwayat</button>
+                    </div>
+                </div>
             </div>
-        </div>
-        <div id="orders-list" class="space-y-4"><div class="text-center py-12 text-gray-400">Memuat pesanan...</div></div>
-    </div>
-</section>
+
+            <div class="grid sm:grid-cols-3 gap-4 mb-7">
+                <div class="bg-white border border-gray-200 rounded-2xl p-5">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Total pembukaan tautan</p>
+                    <p id="stat-total-visits" class="text-3xl font-black text-gray-950 mt-2">—</p>
+                </div>
+                <div class="bg-white border border-gray-200 rounded-2xl p-5">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Pengunjung unik</p>
+                    <p id="stat-unique-visitors" class="text-3xl font-black text-gray-950 mt-2">—</p>
+                </div>
+                <div class="bg-white border border-gray-200 rounded-2xl p-5">
+                    <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Kunjungan dari referral</p>
+                    <p id="stat-referral-visits" class="text-3xl font-black text-gray-950 mt-2">—</p>
+                </div>
+            </div>
+
+            <div class="bg-white border border-gray-200 rounded-2xl overflow-hidden mb-7">
+                <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+                    <div>
+                        <h3 class="font-bold text-gray-950">Pengunjung terbaru</h3>
+                        <p class="text-xs text-gray-400 mt-1">ID anonim dibuat otomatis di browser pengunjung.</p>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead class="bg-gray-50 text-gray-500 text-xs uppercase tracking-wider">
+                            <tr><th class="text-left px-5 py-3">Waktu</th><th class="text-left px-5 py-3">Visitor ID</th><th class="text-left px-5 py-3">Referral</th></tr>
+                        </thead>
+                        <tbody id="visits-list"><tr><td colspan="3" class="px-5 py-8 text-center text-gray-400">Memuat data pengunjung...</td></tr></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div>
+                <div class="mb-4">
+                    <h3 class="font-bold text-gray-950">Pesanan masuk</h3>
+                    <p class="text-sm text-gray-500 mt-1">Kelola status dan catatan pesanan tanpa warna yang berlebihan.</p>
+                </div>
+                <div id="orders-list" class="space-y-3"><div class="text-center py-12 text-gray-400">Memuat pesanan...</div></div>
+            </div>
+        </section>
 
 </main>
 
@@ -1809,7 +1847,7 @@ function showPage(page) {
     [menuTambah, menuSemua, menuPesanan].forEach(el => el && el.classList.add("text-gray-600"));
     if (page === "tambah") { tambah.classList.remove("hidden"); menuTambah.classList.add("active"); menuTambah.classList.remove("text-gray-600"); document.getElementById("top-title").textContent = "Tambah Produk"; }
     if (page === "semua") { semua.classList.remove("hidden"); menuSemua.classList.add("active"); menuSemua.classList.remove("text-gray-600"); document.getElementById("top-title").textContent = "Semua Produk"; loadProducts(); }
-    if (page === "pesanan") { pesanan.classList.remove("hidden"); menuPesanan.classList.add("active"); menuPesanan.classList.remove("text-gray-600"); document.getElementById("top-title").textContent = "Pesanan Masuk"; loadOrders(); loadAnalytics(); }
+    if (page === "pesanan") { pesanan.classList.remove("hidden"); menuPesanan.classList.add("active"); menuPesanan.classList.remove("text-gray-600"); document.getElementById("top-title").textContent = "Aktivitas Kicks Station"; loadOrders(); loadAnalytics(); }
     if (window.innerWidth < 1024) { document.getElementById("sidebar").classList.add("-translate-x-full"); document.getElementById("sidebar-overlay").classList.add("hidden"); }
 }
 
@@ -4979,73 +5017,128 @@ function formatReferral(referral) {
 }
 
 // =========================================================
-// ORDERS + ANALYTICS
+// ORDERS
 // =========================================================
 function formatRupiah(value) {
     return "Rp " + Number(value || 0).toLocaleString("id-ID");
 }
+
 function escapeOrderText(value) {
     return String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]));
 }
+
 function statusLabel(status) {
-    return ({baru:"Menunggu pembelian", diproses:"Sedang diproses", selesai:"Pesanan sukses", batal:"Pesanan dibatalkan"}[status] || status);
+    return ({ baru: "Menunggu", diproses: "Diproses", selesai: "Sukses", batal: "Batal" }[status] || status || "Menunggu");
 }
-function statusClass(status) {
-    return ({baru:"bg-yellow-100 text-yellow-800",diproses:"bg-blue-100 text-blue-800",selesai:"bg-green-100 text-green-800",batal:"bg-red-100 text-red-800"}[status] || "bg-gray-100 text-gray-700");
-}
+
 async function loadOrders() {
-    const box=document.getElementById("orders-list"); if(!box)return;
-    box.innerHTML='<div class="text-center py-12 text-gray-400">Memuat pesanan...</div>';
+    const box = document.getElementById("orders-list");
+    if (!box) return;
+    box.innerHTML = '<div class="text-center py-10 text-gray-400">Memuat pesanan...</div>';
     try {
-        const response=await authFetch(`${API_URL}/api/orders`); const data=await response.json();
-        if(!response.ok||!data.success) throw new Error(data.message||"Gagal mengambil pesanan.");
-        const orders=Array.isArray(data.orders)?data.orders:[];
-        if(!orders.length){box.innerHTML='<div class="text-center py-12 text-gray-400">Belum ada pesanan masuk.</div>';return;}
-        box.innerHTML=orders.map(order=>{
-            const items=Array.isArray(order.items)?order.items:[]; const date=order.created_at?new Date(order.created_at).toLocaleString("id-ID"):"-";
-            const note=order.keterangan||"";
-            return `<article class="border rounded-2xl p-5">
-                <div class="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4 mb-4">
-                    <div><p class="font-black">Pesanan #${escapeOrderText(order.id)}</p><p class="text-xs text-gray-500">${escapeOrderText(date)}</p><p class="text-xs text-gray-500 mt-1">Referral: <b>${escapeOrderText(formatReferral(order.referral))}</b></p></div>
-                    <div class="flex flex-wrap gap-2 items-center">
-                        <span class="px-3 py-2 rounded-xl text-xs font-black ${statusClass(order.status)}">${escapeOrderText(statusLabel(order.status))}</span>
-                        <button onclick="updateOrderStatus(${Number(order.id)},'diproses')" class="px-3 py-2 rounded-xl bg-blue-600 text-white text-xs font-bold">Diproses</button>
-                        <button onclick="updateOrderStatus(${Number(order.id)},'selesai')" class="px-3 py-2 rounded-xl bg-green-600 text-white text-xs font-bold">✓ Sukses</button>
-                        <button onclick="updateOrderStatus(${Number(order.id)},'batal')" class="px-3 py-2 rounded-xl bg-red-600 text-white text-xs font-bold">✕ Batal</button>
-                        <button onclick="setOrderNote(${Number(order.id)}, ${JSON.stringify(note)})" class="px-3 py-2 rounded-xl bg-gray-900 text-white text-xs font-bold">Keterangan</button>
-                        <button onclick="deleteOrder(${Number(order.id)})" class="px-3 py-2 rounded-xl border border-red-300 text-red-600 text-xs font-bold">Hapus</button>
+        const response = await authFetch(`${API_URL}/api/orders`);
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || "Gagal mengambil pesanan.");
+        const orders = Array.isArray(data.orders) ? data.orders : [];
+        if (!orders.length) { box.innerHTML = '<div class="border border-dashed border-gray-200 rounded-2xl py-12 text-center text-gray-400">Belum ada pesanan masuk.</div>'; return; }
+        box.innerHTML = orders.map(order => {
+            const items = Array.isArray(order.items) ? order.items : [];
+            const date = order.created_at ? new Date(order.created_at).toLocaleString("id-ID") : "-";
+            return `<article class="bg-white border border-gray-200 rounded-2xl p-5 hover:border-gray-300 transition">
+                <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
+                    <div class="min-w-0">
+                        <div class="flex items-center gap-3 flex-wrap">
+                            <p class="font-black text-gray-950">#${escapeOrderText(order.id)}</p>
+                            <span class="px-2.5 py-1 rounded-full border border-gray-200 text-xs font-semibold text-gray-600">${escapeOrderText(statusLabel(order.status))}</span>
+                        </div>
+                        <p class="text-xs text-gray-400 mt-1">${escapeOrderText(date)}</p>
+                        <p class="text-xs text-gray-500 mt-2">Referral <span class="font-semibold text-gray-800">${escapeOrderText(formatReferral(order.referral))}</span></p>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <select onchange="updateOrderStatus(${Number(order.id)}, this.value)" class="border border-gray-200 bg-white rounded-xl px-3 py-2 text-sm font-semibold text-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-200">
+                            ${["baru","diproses","selesai","batal"].map(st => `<option value="${st}" ${order.status === st ? "selected" : ""}>${statusLabel(st)}</option>`).join("")}
+                        </select>
+                        <button onclick="setOrderNote(${Number(order.id)}, ${JSON.stringify(order.keterangan || "")})" class="px-3 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-700 hover:bg-gray-50">Keterangan</button>
+                        <button onclick="deleteOrder(${Number(order.id)})" class="px-3 py-2 rounded-xl border border-gray-200 text-sm font-semibold text-gray-500 hover:text-gray-900 hover:border-gray-400">Hapus</button>
                     </div>
                 </div>
-                <div class="space-y-2 text-sm">${items.map(item=>`<div class="flex justify-between gap-4 bg-gray-50 rounded-xl p-3"><span>${escapeOrderText(item.name)} · Size ${escapeOrderText(item.size)} × ${Number(item.qty||0)}</span><b>${formatRupiah(Number(item.price||0)*Number(item.qty||0))}</b></div>`).join("")}</div>
-                <div class="flex flex-col sm:flex-row sm:justify-between gap-2 mt-4"><p class="text-sm text-gray-600">Keterangan: <b>${escapeOrderText(note || "Belum ada keterangan")}</b></p><div class="font-black text-lg">Total: ${formatRupiah(order.total)}</div></div>
+                <div class="mt-4 space-y-2">${items.map(item => `<div class="flex justify-between gap-4 bg-gray-50 rounded-xl px-4 py-3 text-sm"><span class="text-gray-700">${escapeOrderText(item.name)} · Size ${escapeOrderText(item.size)} × ${Number(item.qty || 0)}</span><b class="text-gray-900">${formatRupiah(Number(item.price || 0) * Number(item.qty || 0))}</b></div>`).join("")}</div>
+                <div class="mt-4 pt-4 border-t border-gray-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    <p class="text-sm text-gray-500">${order.keterangan ? `Catatan: <span class="text-gray-800 font-medium">${escapeOrderText(order.keterangan)}</span>` : "Tidak ada keterangan."}</p>
+                    <p class="font-black text-gray-950">${formatRupiah(order.total)}</p>
+                </div>
             </article>`;
         }).join("");
-    }catch(error){console.error(error);box.innerHTML=`<div class="text-center py-12 text-red-500 font-semibold">${escapeOrderText(error.message||"Gagal mengambil pesanan.")}</div>`;}
+    } catch (error) {
+        console.error(error);
+        box.innerHTML = `<div class="text-center py-10 text-gray-500">${escapeOrderText(error.message || "Gagal mengambil pesanan.")}</div>`;
+    }
 }
-async function updateOrderStatus(id,status){
-    const label=statusLabel(status); if(!confirm(`Ubah pesanan #${id} menjadi "${label}"?`)) return;
-    try{const response=await authFetch(`${API_URL}/api/orders/${id}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status})});const data=await response.json();if(!response.ok||!data.success)throw new Error(data.message||"Gagal memperbarui status.");showToast("Status pesanan diperbarui.","success");loadOrders();}catch(error){showToast(error.message||"Gagal memperbarui status.","error");}
+
+async function loadAnalytics() {
+    const visitsBox = document.getElementById("visits-list");
+    try {
+        const response = await authFetch(`${API_URL}/api/analytics`);
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || "Analytics tidak tersedia.");
+        const a = data.analytics || {};
+        document.getElementById("stat-total-visits").textContent = Number(a.total_visits || 0).toLocaleString("id-ID");
+        document.getElementById("stat-unique-visitors").textContent = Number(a.unique_visitors || 0).toLocaleString("id-ID");
+        document.getElementById("stat-referral-visits").textContent = Number(a.referral_visits || 0).toLocaleString("id-ID");
+        const visits = Array.isArray(data.visits) ? data.visits : [];
+        if (!visits.length) { visitsBox.innerHTML = '<tr><td colspan="3" class="px-5 py-8 text-center text-gray-400">Belum ada data kunjungan.</td></tr>'; return; }
+        visitsBox.innerHTML = visits.map(v => `<tr class="border-t border-gray-100"><td class="px-5 py-3 text-gray-500 whitespace-nowrap">${escapeOrderText(new Date(v.created_at).toLocaleString("id-ID"))}</td><td class="px-5 py-3 font-mono text-xs text-gray-600">${escapeOrderText(v.visitor_id)}</td><td class="px-5 py-3 font-semibold text-gray-800">${escapeOrderText(formatReferral(v.referral))}</td></tr>`).join("");
+    } catch (error) {
+        document.getElementById("stat-total-visits").textContent = "—";
+        document.getElementById("stat-unique-visitors").textContent = "—";
+        document.getElementById("stat-referral-visits").textContent = "—";
+        visitsBox.innerHTML = `<tr><td colspan="3" class="px-5 py-8 text-center text-gray-500">${escapeOrderText(error.message || "Analytics belum tersedia.")}</td></tr>`;
+    }
 }
-async function setOrderNote(id,current){
-    const note=prompt("Masukkan keterangan pesanan:", current||""); if(note===null)return;
-    try{const response=await authFetch(`${API_URL}/api/orders/${id}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({keterangan:note})});const data=await response.json();if(!response.ok||!data.success)throw new Error(data.message||"Gagal menyimpan keterangan.");showToast("Keterangan disimpan.","success");loadOrders();}catch(error){showToast(error.message||"Gagal menyimpan keterangan.","error");}
+
+async function updateOrderStatus(id, status) {
+    try {
+        const response = await authFetch(`${API_URL}/api/orders/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || "Gagal memperbarui status.");
+        showToast("Status diperbarui.", "success");
+        loadOrders();
+    } catch (error) { showToast(error.message || "Gagal memperbarui status.", "error"); loadOrders(); }
 }
-async function deleteOrder(id){
-    if(!confirm(`Hapus pesanan #${id}?`))return;
-    try{const response=await authFetch(`${API_URL}/api/orders/${id}`,{method:"DELETE"});const data=await response.json();if(!response.ok||!data.success)throw new Error(data.message||"Gagal menghapus pesanan.");showToast("Pesanan dihapus.","success");loadOrders();}catch(error){showToast(error.message||"Gagal menghapus pesanan.","error");}
+
+async function setOrderNote(id, current) {
+    const note = prompt("Keterangan pesanan:", current || "");
+    if (note === null) return;
+    try {
+        const response = await authFetch(`${API_URL}/api/orders/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ keterangan: note }) });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || "Gagal menyimpan keterangan.");
+        showToast("Keterangan disimpan.", "success");
+        loadOrders();
+    } catch (error) { showToast(error.message || "Gagal menyimpan keterangan.", "error"); }
 }
-async function deleteOrderHistory(){
-    if(!confirm("Hapus SEMUA riwayat pesanan? Data ini akan dihapus permanen dari database."))return;
-    if(!confirm("Yakin? Tindakan ini tidak bisa dibatalkan."))return;
-    try{const response=await authFetch(`${API_URL}/api/orders`,{method:"DELETE"});const data=await response.json();if(!response.ok||!data.success)throw new Error(data.message||"Gagal menghapus riwayat.");showToast("Riwayat pesanan berhasil dihapus.","success");loadOrders();}catch(error){showToast(error.message||"Gagal menghapus riwayat.","error");}
+
+async function deleteOrder(id) {
+    if (!confirm(`Hapus pesanan #${id}?`)) return;
+    try {
+        const response = await authFetch(`${API_URL}/api/orders/${id}`, { method: "DELETE" });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || "Gagal menghapus pesanan.");
+        showToast("Pesanan dihapus.", "success");
+        loadOrders();
+    } catch (error) { showToast(error.message || "Gagal menghapus pesanan.", "error"); }
 }
-async function loadAnalytics(){
-    try{const response=await authFetch(`${API_URL}/api/analytics`);const data=await response.json();if(!response.ok||!data.success)throw new Error(data.message||"Gagal mengambil statistik.");
-        const t=document.getElementById("stat-total-visits"),u=document.getElementById("stat-unique-visitors"),r=document.getElementById("stat-referral-visits");
-        if(t)t.textContent=Number(data.total_visits||0).toLocaleString("id-ID");
-        if(u)u.textContent=Number(data.unique_visitors||0).toLocaleString("id-ID");
-        if(r)r.textContent=Number(data.referral_visits||0).toLocaleString("id-ID");
-    }catch(error){console.error(error);}
+
+async function deleteOrderHistory() {
+    if (!confirm("Hapus seluruh riwayat pesanan?")) return;
+    if (!confirm("Tindakan ini tidak dapat dibatalkan. Lanjutkan?")) return;
+    try {
+        const response = await authFetch(`${API_URL}/api/orders`, { method: "DELETE" });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || "Gagal menghapus riwayat pesanan.");
+        showToast("Riwayat pesanan dihapus.", "success");
+        loadOrders();
+    } catch (error) { showToast(error.message || "Gagal menghapus riwayat pesanan.", "error"); }
 }
 
 // =========================================================

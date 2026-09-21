@@ -455,6 +455,7 @@ async function ensureDatabase() {
             tipe TEXT DEFAULT 'kasual',
             asal TEXT DEFAULT 'internasional',
             pengguna TEXT DEFAULT 'unisex',
+            stok INTEGER DEFAULT 0,
             sizes JSONB NOT NULL DEFAULT '[]'::jsonb,
             gambar JSONB NOT NULL DEFAULT '[]'::jsonb,
             deskripsi TEXT DEFAULT '',
@@ -462,7 +463,6 @@ async function ensureDatabase() {
         )
     `);
 
-    await pool.query(`ALTER TABLE products DROP COLUMN IF EXISTS stok`);
     databaseReady = true;
 }
 
@@ -479,6 +479,7 @@ async function getProducts() {
             tipe,
             asal,
             pengguna,
+            stok,
             sizes,
             gambar,
             deskripsi,
@@ -491,6 +492,7 @@ async function getProducts() {
         ...row,
         harga: Number(row.harga),
         harga_coret: Number(row.harga_coret || 0),
+        stok: Number(row.stok || 0),
         sizes: Array.isArray(row.sizes) ? row.sizes : [],
         gambar: normalizeImages(row.gambar),
         upload_order: Number(row.upload_order),
@@ -501,8 +503,8 @@ async function insertProduct(product) {
     await pool.query(
         `
         INSERT INTO products
-        (id, nama, brand, harga, harga_coret, tipe, asal, pengguna, sizes, gambar, deskripsi, upload_order)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10::jsonb,$11,$12)
+        (id, nama, brand, harga, harga_coret, tipe, asal, pengguna, stok, sizes, gambar, deskripsi, upload_order)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb,$11::jsonb,$12,$13)
         `,
         [
             product.id,
@@ -513,6 +515,7 @@ async function insertProduct(product) {
             product.tipe,
             product.asal,
             product.pengguna,
+            product.stok,
             JSON.stringify(product.sizes),
             JSON.stringify(product.gambar),
             product.deskripsi,
@@ -532,10 +535,11 @@ async function updateProductRow(product) {
             tipe=$6,
             asal=$7,
             pengguna=$8,
-            sizes=$9::jsonb,
-            gambar=$10::jsonb,
-            deskripsi=$11,
-            upload_order=$12
+            stok=$9,
+            sizes=$10::jsonb,
+            gambar=$11::jsonb,
+            deskripsi=$12,
+            upload_order=$13
         WHERE id=$1
         `,
         [
@@ -547,6 +551,7 @@ async function updateProductRow(product) {
             product.tipe,
             product.asal,
             product.pengguna,
+            product.stok,
             JSON.stringify(product.sizes),
             JSON.stringify(product.gambar),
             product.deskripsi,
@@ -623,6 +628,7 @@ async function migrateProductsFromJSONIfNeeded() {
             tipe: old.tipe || "kasual",
             asal: old.asal || "internasional",
             pengguna: old.pengguna || "unisex",
+            stok: Number(old.stok) || 0,
             sizes: Array.isArray(old.sizes)
                 ? old.sizes.map(String)
                 : [],
@@ -734,50 +740,125 @@ function validateOrderData(data) {
 
 async function ensureOrdersTable() {
     if (!pool) throw new Error("DATABASE_URL belum diset di Render.");
-    await pool.query(`CREATE TABLE IF NOT EXISTS orders (id BIGSERIAL PRIMARY KEY, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), referral TEXT DEFAULT '', items JSONB NOT NULL DEFAULT '[]'::jsonb, total NUMERIC NOT NULL DEFAULT 0, status TEXT NOT NULL DEFAULT 'baru', keterangan TEXT DEFAULT '')`);
-    await pool.query(`ALTER TABLE orders ENABLE ROW LEVEL SECURITY`);
+    await pool.query(`CREATE TABLE IF NOT EXISTS orders (
+        id BIGSERIAL PRIMARY KEY,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        referral TEXT DEFAULT '',
+        items JSONB NOT NULL DEFAULT '[]'::jsonb,
+        total NUMERIC NOT NULL DEFAULT 0,
+        status TEXT NOT NULL DEFAULT 'baru',
+        keterangan TEXT DEFAULT ''
+    )`);
     await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS keterangan TEXT DEFAULT ''`);
+    await pool.query(`ALTER TABLE orders ENABLE ROW LEVEL SECURITY`);
+}
+
+function mapOrder(row) {
+    return {
+        id: Number(row.id),
+        created_at: row.created_at,
+        referral: row.referral || "",
+        items: Array.isArray(row.items) ? row.items : [],
+        total: Number(row.total || 0),
+        status: row.status || "baru",
+        keterangan: row.keterangan || ""
+    };
 }
 
 async function createOrder(order) {
     await ensureOrdersTable();
-    const result = await pool.query(`INSERT INTO orders (referral, items, total, status) VALUES ($1, $2::jsonb, $3, 'baru') RETURNING id, created_at, referral, items, total, status`, [order.referral, JSON.stringify(order.items), order.total]);
+    const result = await pool.query(
+        `INSERT INTO orders (referral, items, total, status)
+         VALUES ($1, $2::jsonb, $3, 'baru')
+         RETURNING id, created_at, referral, items, total, status, keterangan`,
+        [order.referral, JSON.stringify(order.items), order.total]
+    );
     return result.rows[0];
 }
 
 async function getOrders() {
     await ensureOrdersTable();
-    const result = await pool.query(`SELECT id, created_at, referral, items, total, status, keterangan FROM orders ORDER BY created_at DESC, id DESC`);
-    return result.rows.map(row => ({ id:Number(row.id), created_at:row.created_at, referral:row.referral || "", items:Array.isArray(row.items) ? row.items : [], total:Number(row.total || 0), status:row.status || "baru", keterangan:row.keterangan || "" }));
+    const result = await pool.query(
+        `SELECT id, created_at, referral, items, total, status, keterangan
+         FROM orders ORDER BY created_at DESC, id DESC`
+    );
+    return result.rows.map(mapOrder);
 }
 
 async function updateOrderStatus(id, status, keterangan) {
     await ensureOrdersTable();
     const allowedStatuses = ["baru", "diproses", "selesai", "batal"];
     if (!allowedStatuses.includes(status)) throw new Error("Status pesanan tidak valid.");
-    const result = await pool.query(`UPDATE orders SET status=$2, keterangan=COALESCE($3, keterangan) WHERE id=$1 RETURNING id, created_at, referral, items, total, status, keterangan`, [id, status, keterangan === undefined ? null : String(keterangan).slice(0,1000)]);
+    const result = await pool.query(
+        `UPDATE orders
+         SET status=$2, keterangan=COALESCE($3, keterangan)
+         WHERE id=$1
+         RETURNING id, created_at, referral, items, total, status, keterangan`,
+        [id, status, keterangan === undefined ? null : String(keterangan).slice(0, 1000)]
+    );
     if (!result.rows.length) throw new Error("Pesanan tidak ditemukan.");
-    const row = result.rows[0];
-    return { id:Number(row.id), created_at:row.created_at, referral:row.referral || "", items:Array.isArray(row.items) ? row.items : [], total:Number(row.total || 0), status:row.status || "baru", keterangan:row.keterangan || "" };
+    return mapOrder(result.rows[0]);
+}
+
+async function deleteOrder(id) {
+    await ensureOrdersTable();
+    const result = await pool.query(`DELETE FROM orders WHERE id=$1 RETURNING id`, [id]);
+    if (!result.rows.length) throw new Error("Pesanan tidak ditemukan.");
+}
+
+async function deleteAllOrders() {
+    await ensureOrdersTable();
+    await pool.query(`DELETE FROM orders`);
 }
 
 async function ensureAnalyticsTable() {
     if (!pool) throw new Error("DATABASE_URL belum diset di Render.");
-    await pool.query(`CREATE TABLE IF NOT EXISTS site_visits (id BIGSERIAL PRIMARY KEY, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), visitor_id TEXT NOT NULL, referral TEXT DEFAULT '')`);
+    await pool.query(`CREATE TABLE IF NOT EXISTS site_visits (
+        id BIGSERIAL PRIMARY KEY,
+        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+        visitor_id TEXT NOT NULL,
+        referral TEXT DEFAULT ''
+    )`);
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_site_visits_visitor_id ON site_visits(visitor_id)`);
 }
 
 async function recordVisit(visitorId, referral) {
     await ensureAnalyticsTable();
-    const vid = String(visitorId || "").trim().slice(0,200);
-    if (!vid) return;
-    await pool.query(`INSERT INTO site_visits (visitor_id, referral) VALUES ($1,$2)`, [vid, String(referral || "").trim().slice(0,100)]);
+    const safeVisitor = String(visitorId || '').trim().slice(0, 100);
+    const safeReferral = String(referral || '').trim().toLowerCase().slice(0, 100);
+    if (!safeVisitor) throw new Error('visitor_id wajib diisi.');
+    await pool.query(
+        `INSERT INTO site_visits (visitor_id, referral) VALUES ($1, $2)`,
+        [safeVisitor, safeReferral]
+    );
 }
 
 async function getAnalytics() {
     await ensureAnalyticsTable();
-    const result = await pool.query(`SELECT COUNT(*)::int AS total_visits, COUNT(DISTINCT visitor_id)::int AS unique_visitors, COUNT(*) FILTER (WHERE referral <> '')::int AS referral_visits FROM site_visits`);
-    return result.rows[0] || {total_visits:0, unique_visitors:0, referral_visits:0};
+    const result = await pool.query(`
+        SELECT
+            COUNT(*)::int AS total_visits,
+            COUNT(DISTINCT visitor_id)::int AS unique_visitors,
+            COUNT(*) FILTER (WHERE referral <> '')::int AS referral_visits
+        FROM site_visits
+    `);
+    return result.rows[0];
+}
+
+async function getRecentVisits(limit = 100) {
+    await ensureAnalyticsTable();
+    const result = await pool.query(`
+        SELECT id, created_at, visitor_id, referral
+        FROM site_visits
+        ORDER BY created_at DESC, id DESC
+        LIMIT $1
+    `, [Math.min(Math.max(Number(limit) || 100, 1), 500)]);
+    return result.rows.map(row => ({
+        id: Number(row.id),
+        created_at: row.created_at,
+        visitor_id: row.visitor_id,
+        referral: row.referral || ''
+    }));
 }
 
 const server = http.createServer(async (req, res) => {
@@ -804,6 +885,18 @@ const server = http.createServer(async (req, res) => {
                 message: "Kicks Station Backend berhasil berjalan!",
                 database: databaseReady ? "supabase" : "not-ready",
             });
+            return;
+        }
+
+        if (req.method === "POST" && new URL(req.url, "http://localhost").pathname === "/api/analytics/visit") {
+            try {
+                const data = await readBody(req);
+                await recordVisit(data?.visitor_id, data?.referral);
+                sendJSON(res, 201, { success: true });
+            } catch (error) {
+                console.error("Gagal mencatat kunjungan:", error);
+                sendJSON(res, 400, { success: false, message: error.message || "Kunjungan tidak dapat dicatat." });
+            }
             return;
         }
 
@@ -959,6 +1052,7 @@ const server = http.createServer(async (req, res) => {
                 tipe: data.tipe || "kasual",
                 asal: data.asal || "internasional",
                 pengguna: data.pengguna || "unisex",
+                stok: Number(data.stok) || 0,
                 sizes: data.sizes.map((size) => String(size)),
                 gambar: imagePaths,
                 deskripsi: String(data.deskripsi || "").trim(),
@@ -1162,6 +1256,10 @@ const server = http.createServer(async (req, res) => {
                     data.pengguna !== undefined
                         ? data.pengguna
                         : oldProduct.pengguna,
+                stok:
+                    data.stok !== undefined
+                        ? Number(data.stok) || 0
+                        : oldProduct.stok,
                 sizes:
                     Array.isArray(data.sizes)
                         ? data.sizes.map(String)
@@ -1239,22 +1337,18 @@ const server = http.createServer(async (req, res) => {
         }
 
         // =====================================================
-        // ANALYTICS KUNJUNGAN WEBSITE
+        // ANALYTICS - ADMIN
         // =====================================================
-        if (req.method === "POST" && req.url === "/api/analytics/visit") {
-            try {
-                const data = await readBody(req);
-                await recordVisit(data?.visitor_id, data?.referral);
-                sendJSON(res, 201, { success:true });
-            } catch (error) {
-                sendJSON(res, 400, { success:false, message:error.message });
-            }
-            return;
-        }
         if (req.method === "GET" && req.url === "/api/analytics") {
             if (!requireAdmin(req, res)) return;
-            try { sendJSON(res, 200, { success:true, ...(await getAnalytics()) }); }
-            catch (error) { sendJSON(res, 500, { success:false, message:error.message }); }
+            try {
+                const analytics = await getAnalytics();
+                const visits = await getRecentVisits(100);
+                sendJSON(res, 200, { success: true, analytics, visits });
+            } catch (error) {
+                console.error("Gagal mengambil analytics:", error);
+                sendJSON(res, 500, { success: false, message: error.message || "Analytics tidak dapat diambil." });
+            }
             return;
         }
 
@@ -1269,21 +1363,41 @@ const server = http.createServer(async (req, res) => {
         }
 
         // =====================================================
-        // PATCH STATUS PESANAN - ADMIN
+        // HAPUS SEMUA RIWAYAT PESANAN - ADMIN
         // =====================================================
         if (req.method === "DELETE" && req.url === "/api/orders") {
             if (!requireAdmin(req, res)) return;
-            try { await ensureOrdersTable(); await pool.query(`DELETE FROM orders`); sendJSON(res,200,{success:true,message:"Riwayat pesanan berhasil dihapus."}); }
-            catch(error){ sendJSON(res,500,{success:false,message:error.message}); }
-            return;
-        }
-        if (req.method === "DELETE" && new URL(req.url, "http://localhost").pathname.startsWith("/api/orders/")) {
-            if (!requireAdmin(req, res)) return;
-            try { const id=Number(new URL(req.url,"http://localhost").pathname.split("/").pop()); if(!Number.isInteger(id)||id<=0) throw new Error("ID pesanan tidak valid."); await ensureOrdersTable(); const result=await pool.query(`DELETE FROM orders WHERE id=$1`,[id]); if(!result.rowCount) throw new Error("Pesanan tidak ditemukan."); sendJSON(res,200,{success:true,message:"Pesanan berhasil dihapus."}); }
-            catch(error){ sendJSON(res,400,{success:false,message:error.message}); }
+            try {
+                await deleteAllOrders();
+                sendJSON(res, 200, { success:true, message:"Seluruh riwayat pesanan berhasil dihapus." });
+            } catch (error) {
+                console.error("Gagal menghapus riwayat pesanan:", error);
+                sendJSON(res, 500, { success:false, message:error.message || "Riwayat pesanan tidak dapat dihapus." });
+            }
             return;
         }
 
+        // =====================================================
+        // HAPUS SATU PESANAN - ADMIN
+        // =====================================================
+        if (req.method === "DELETE" && new URL(req.url, "http://localhost").pathname.startsWith("/api/orders/")) {
+            if (!requireAdmin(req, res)) return;
+            try {
+                const pathname = new URL(req.url, "http://localhost").pathname;
+                const id = Number(pathname.split("/").pop());
+                if (!Number.isInteger(id) || id <= 0) throw new Error("ID pesanan tidak valid.");
+                await deleteOrder(id);
+                sendJSON(res, 200, { success:true, message:"Pesanan berhasil dihapus." });
+            } catch (error) {
+                console.error("Gagal menghapus pesanan:", error);
+                sendJSON(res, 400, { success:false, message:error.message || "Pesanan tidak dapat dihapus." });
+            }
+            return;
+        }
+
+        // =====================================================
+        // PATCH STATUS / KETERANGAN PESANAN - ADMIN
+        // =====================================================
         if (req.method === "PATCH" && new URL(req.url, "http://localhost").pathname.startsWith("/api/orders/")) {
             if (!requireAdmin(req, res)) return;
             try {
@@ -1291,9 +1405,9 @@ const server = http.createServer(async (req, res) => {
                 const id = Number(pathname.split("/").pop());
                 if (!Number.isInteger(id) || id <= 0) throw new Error("ID pesanan tidak valid.");
                 const data = await readBody(req);
-                const order = await updateOrderStatus(id, String(data?.status || "").trim(), data?.keterangan);
-                sendJSON(res, 200, { success:true, message:"Status pesanan berhasil diperbarui.", order });
-            } catch (error) { console.error("Gagal memperbarui status pesanan:", error); sendJSON(res, 400, { success:false, message:error.message || "Status pesanan tidak dapat diperbarui." }); }
+                const order = await updateOrderStatus(id, String(data?.status || "baru").trim(), data?.keterangan);
+                sendJSON(res, 200, { success:true, message:"Pesanan berhasil diperbarui.", order });
+            } catch (error) { console.error("Gagal memperbarui pesanan:", error); sendJSON(res, 400, { success:false, message:error.message || "Pesanan tidak dapat diperbarui." }); }
             return;
         }
 
