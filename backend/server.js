@@ -139,59 +139,29 @@ function toStoragePath(imagePath) {
     const value = imagePath.trim();
     if (!value) return null;
 
-    // Path internal Supabase Storage.
-    // Contoh: products/51/foto.jpg
-    if (value.startsWith("products/")) {
-        return value;
-    }
-
-    // Format: product-images/products/51/foto.jpg
+    // Format internal storage yang kita simpan.
     if (value.startsWith("product-images/")) {
         return value.slice("product-images/".length);
     }
 
-    // URL Supabase Storage yang benar.
+    // URL Supabase Storage public.
     if (SUPABASE_URL) {
         try {
             const parsed = new URL(value);
-
-            const correctPrefix =
-                `/storage/v1/object/public/${SUPABASE_BUCKET}/`;
-
-            // URL normal:
-            // https://project.supabase.co/storage/v1/object/public/product-images/products/51/foto.jpg
-            if (
-                parsed.origin === SUPABASE_URL &&
-                parsed.pathname.startsWith(correctPrefix)
-            ) {
-                return decodeURIComponent(
-                    parsed.pathname.slice(correctPrefix.length)
-                );
-            }
-
-            // URL lama/salah:
-            // https://project.supabase.co/rest/v1/storage/v1/object/public/product-images/products/51/foto.jpg
-            const oldPrefix =
-                `/rest/v1/storage/v1/object/public/${SUPABASE_BUCKET}/`;
-
-            if (
-                parsed.origin === SUPABASE_URL &&
-                parsed.pathname.startsWith(oldPrefix)
-            ) {
-                return decodeURIComponent(
-                    parsed.pathname.slice(oldPrefix.length)
-                );
+            const prefix = `/storage/v1/object/public/${SUPABASE_BUCKET}/`;
+            if (parsed.origin === SUPABASE_URL && parsed.pathname.startsWith(prefix)) {
+                return decodeURIComponent(parsed.pathname.slice(prefix.length));
             }
         } catch {}
     }
 
     return null;
 }
+
 function toPublicImageUrl(imagePath) {
     if (typeof imagePath !== "string") return imagePath;
 
     const storagePath = toStoragePath(imagePath);
-
     if (storagePath && SUPABASE_URL) {
         return `${SUPABASE_URL}/storage/v1/object/public/${SUPABASE_BUCKET}/${storagePath
             .split("/")
@@ -207,20 +177,21 @@ function productForClient(product) {
     const images = normalizeImages(product.gambar);
 
     result.gambar = images.map(toPublicImageUrl);
-
     return result;
 }
 
 function productsForClient(products) {
     return products.map(productForClient);
 }
-function sanitizeFilename(name) {
-    return String(name || "image")
-        .trim()
-        .replace(/[^a-zA-Z0-9._-]+/g, "-")
-        .replace(/-+/g, "-")
-        .replace(/^-|-$/g, "");
+
+function sanitizeFilename(filename) {
+    return path
+        .basename(String(filename || "image"))
+        .replace(/[<>:"/\\|?*\x00-\x1F]/g, "_")
+        .replace(/\s+/g, " ")
+        .trim();
 }
+
 function validateImageData(imageData) {
     if (!imageData || !imageData.data) {
         throw new Error("Data foto tidak lengkap.");
@@ -394,6 +365,7 @@ async function uploadBufferToStorage(storagePath, buffer, mime) {
 
     return storagePath;
 }
+
 async function deleteStorageImages(imagePaths) {
     const names = normalizeImages(imagePaths)
         .map(toStoragePath)
@@ -401,18 +373,18 @@ async function deleteStorageImages(imagePaths) {
 
     if (!names.length) return;
 
-    await supabaseStorageRequest(
-        `/storage/v1/object/${SUPABASE_BUCKET}`,
-        {
-            method: "DELETE",
-            headers: {
-                "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-                prefixes: names,
-            }),
-        }
-    );
+    await supabaseStorageRequest("/storage/v1/object/remove", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+        },
+        body: JSON.stringify(
+            names.map((name) => ({
+                bucket_id: SUPABASE_BUCKET,
+                name,
+            }))
+        ),
+    });
 }
 
 async function uploadImageObject(imageData, prefix = "products") {
@@ -483,13 +455,15 @@ async function ensureDatabase() {
             tipe TEXT DEFAULT 'kasual',
             asal TEXT DEFAULT 'internasional',
             pengguna TEXT DEFAULT 'unisex',
-            stok INTEGER DEFAULT 0,
             sizes JSONB NOT NULL DEFAULT '[]'::jsonb,
             gambar JSONB NOT NULL DEFAULT '[]'::jsonb,
             deskripsi TEXT DEFAULT '',
             upload_order INTEGER NOT NULL
         )
     `);
+
+    // Migrasi: hapus kolom stok dari database lama jika masih ada.
+    await pool.query("ALTER TABLE products DROP COLUMN IF EXISTS stok");
 
     databaseReady = true;
 }
@@ -507,7 +481,6 @@ async function getProducts() {
             tipe,
             asal,
             pengguna,
-            stok,
             sizes,
             gambar,
             deskripsi,
@@ -520,7 +493,6 @@ async function getProducts() {
         ...row,
         harga: Number(row.harga),
         harga_coret: Number(row.harga_coret || 0),
-        stok: Number(row.stok || 0),
         sizes: Array.isArray(row.sizes) ? row.sizes : [],
         gambar: normalizeImages(row.gambar),
         upload_order: Number(row.upload_order),
@@ -531,8 +503,8 @@ async function insertProduct(product) {
     await pool.query(
         `
         INSERT INTO products
-        (id, nama, brand, harga, harga_coret, tipe, asal, pengguna, stok, sizes, gambar, deskripsi, upload_order)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10::jsonb,$11::jsonb,$12,$13)
+        (id, nama, brand, harga, harga_coret, tipe, asal, pengguna, sizes, gambar, deskripsi, upload_order)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10::jsonb,$11,$12)
         `,
         [
             product.id,
@@ -543,7 +515,6 @@ async function insertProduct(product) {
             product.tipe,
             product.asal,
             product.pengguna,
-            product.stok,
             JSON.stringify(product.sizes),
             JSON.stringify(product.gambar),
             product.deskripsi,
@@ -563,11 +534,10 @@ async function updateProductRow(product) {
             tipe=$6,
             asal=$7,
             pengguna=$8,
-            stok=$9,
-            sizes=$10::jsonb,
-            gambar=$11::jsonb,
-            deskripsi=$12,
-            upload_order=$13
+            sizes=$9::jsonb,
+            gambar=$10::jsonb,
+            deskripsi=$11,
+            upload_order=$12
         WHERE id=$1
         `,
         [
@@ -579,7 +549,6 @@ async function updateProductRow(product) {
             product.tipe,
             product.asal,
             product.pengguna,
-            product.stok,
             JSON.stringify(product.sizes),
             JSON.stringify(product.gambar),
             product.deskripsi,
@@ -656,7 +625,6 @@ async function migrateProductsFromJSONIfNeeded() {
             tipe: old.tipe || "kasual",
             asal: old.asal || "internasional",
             pengguna: old.pengguna || "unisex",
-            stok: Number(old.stok) || 0,
             sizes: Array.isArray(old.sizes)
                 ? old.sizes.map(String)
                 : [],
@@ -739,66 +707,11 @@ function extractProductId(req) {
     return id;
 }
 
-// =========================================================
-// PESANAN / CHECKOUT
-// =========================================================
-
-function validateOrderData(data) {
-    if (!data || typeof data !== "object") throw new Error("Data pesanan tidak valid.");
-    const referral = typeof data.referral === "string" ? data.referral.trim().slice(0, 100) : "";
-    if (!Array.isArray(data.items) || !data.items.length) throw new Error("Pesanan tidak memiliki produk.");
-    if (data.items.length > 30) throw new Error("Pesanan terlalu banyak.");
-    const items = data.items.map((item) => {
-        if (!item || typeof item !== "object") throw new Error("Data item pesanan tidak valid.");
-        const name = String(item.name || item.nama || "").trim();
-        const size = String(item.size || "").trim();
-        const qty = Number(item.qty);
-        const price = Number(item.price);
-        if (!name) throw new Error("Nama produk pada pesanan tidak valid.");
-        if (name.length > 200) throw new Error("Nama produk terlalu panjang.");
-        if (size.length > 50) throw new Error("Ukuran produk tidak valid.");
-        if (!Number.isInteger(qty) || qty < 1 || qty > 99) throw new Error("Jumlah produk tidak valid.");
-        if (!Number.isFinite(price) || price < 0 || price > 1000000000) throw new Error("Harga produk tidak valid.");
-        return { name, size, qty, price };
-    });
-    const total = items.reduce((sum, item) => sum + item.price * item.qty, 0);
-    if (!Number.isFinite(total) || total < 0 || total > 100000000000) throw new Error("Total pesanan tidak valid.");
-    return { referral, items, total };
-}
-
-async function ensureOrdersTable() {
-    if (!pool) throw new Error("DATABASE_URL belum diset di Render.");
-    await pool.query(`CREATE TABLE IF NOT EXISTS orders (id BIGSERIAL PRIMARY KEY, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(), referral TEXT DEFAULT '', items JSONB NOT NULL DEFAULT '[]'::jsonb, total NUMERIC NOT NULL DEFAULT 0, status TEXT NOT NULL DEFAULT 'baru')`);
-    await pool.query(`ALTER TABLE orders ENABLE ROW LEVEL SECURITY`);
-}
-
-async function createOrder(order) {
-    await ensureOrdersTable();
-    const result = await pool.query(`INSERT INTO orders (referral, items, total, status) VALUES ($1, $2::jsonb, $3, 'baru') RETURNING id, created_at, referral, items, total, status`, [order.referral, JSON.stringify(order.items), order.total]);
-    return result.rows[0];
-}
-
-async function getOrders() {
-    await ensureOrdersTable();
-    const result = await pool.query(`SELECT id, created_at, referral, items, total, status FROM orders ORDER BY created_at DESC, id DESC`);
-    return result.rows.map(row => ({ id:Number(row.id), created_at:row.created_at, referral:row.referral || "", items:Array.isArray(row.items) ? row.items : [], total:Number(row.total || 0), status:row.status || "baru" }));
-}
-
-async function updateOrderStatus(id, status) {
-    await ensureOrdersTable();
-    const allowedStatuses = ["baru", "diproses", "selesai", "batal"];
-    if (!allowedStatuses.includes(status)) throw new Error("Status pesanan tidak valid.");
-    const result = await pool.query(`UPDATE orders SET status=$2 WHERE id=$1 RETURNING id, created_at, referral, items, total, status`, [id, status]);
-    if (!result.rows.length) throw new Error("Pesanan tidak ditemukan.");
-    const row = result.rows[0];
-    return { id:Number(row.id), created_at:row.created_at, referral:row.referral || "", items:Array.isArray(row.items) ? row.items : [], total:Number(row.total || 0), status:row.status || "baru" };
-}
-
 const server = http.createServer(async (req, res) => {
     res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader(
         "Access-Control-Allow-Methods",
-        "GET, POST, PUT, PATCH, DELETE, OPTIONS"
+        "GET, POST, PUT, DELETE, OPTIONS"
     );
     res.setHeader(
         "Access-Control-Allow-Headers",
@@ -818,21 +731,6 @@ const server = http.createServer(async (req, res) => {
                 message: "Kicks Station Backend berhasil berjalan!",
                 database: databaseReady ? "supabase" : "not-ready",
             });
-            return;
-        }
-
-        // =====================================================
-        // POST PESANAN / CHECKOUT
-        // =====================================================
-        if (req.method === "POST" && req.url === "/api/orders") {
-            try {
-                const order = validateOrderData(await readBody(req));
-                const savedOrder = await createOrder(order);
-                sendJSON(res, 201, { success:true, message:"Checkout berhasil dicatat.", order:{ id:Number(savedOrder.id), created_at:savedOrder.created_at, referral:savedOrder.referral || "", total:Number(savedOrder.total || 0), status:savedOrder.status } });
-            } catch (error) {
-                console.error("Gagal menyimpan pesanan:", error);
-                sendJSON(res, 400, { success:false, message:error.message || "Pesanan tidak dapat disimpan." });
-            }
             return;
         }
 
@@ -973,7 +871,6 @@ const server = http.createServer(async (req, res) => {
                 tipe: data.tipe || "kasual",
                 asal: data.asal || "internasional",
                 pengguna: data.pengguna || "unisex",
-                stok: Number(data.stok) || 0,
                 sizes: data.sizes.map((size) => String(size)),
                 gambar: imagePaths,
                 deskripsi: String(data.deskripsi || "").trim(),
@@ -1177,11 +1074,7 @@ const server = http.createServer(async (req, res) => {
                     data.pengguna !== undefined
                         ? data.pengguna
                         : oldProduct.pengguna,
-                stok:
-                    data.stok !== undefined
-                        ? Number(data.stok) || 0
-                        : oldProduct.stok,
-                sizes:
+sizes:
                     Array.isArray(data.sizes)
                         ? data.sizes.map(String)
                         : oldProduct.sizes,
@@ -1254,32 +1147,6 @@ const server = http.createServer(async (req, res) => {
                 product: productForClient(deletedProduct),
                 products: productsForClient(remaining),
             });
-            return;
-        }
-
-        // =====================================================
-        // GET SEMUA PESANAN - ADMIN
-        // =====================================================
-        if (req.method === "GET" && req.url === "/api/orders") {
-            if (!requireAdmin(req, res)) return;
-            try { sendJSON(res, 200, { success:true, orders:await getOrders() }); }
-            catch (error) { console.error("Gagal mengambil pesanan:", error); sendJSON(res, 500, { success:false, message:error.message || "Pesanan tidak dapat diambil." }); }
-            return;
-        }
-
-        // =====================================================
-        // PATCH STATUS PESANAN - ADMIN
-        // =====================================================
-        if (req.method === "PATCH" && new URL(req.url, "http://localhost").pathname.startsWith("/api/orders/")) {
-            if (!requireAdmin(req, res)) return;
-            try {
-                const pathname = new URL(req.url, "http://localhost").pathname;
-                const id = Number(pathname.split("/").pop());
-                if (!Number.isInteger(id) || id <= 0) throw new Error("ID pesanan tidak valid.");
-                const data = await readBody(req);
-                const order = await updateOrderStatus(id, String(data?.status || "").trim());
-                sendJSON(res, 200, { success:true, message:"Status pesanan berhasil diperbarui.", order });
-            } catch (error) { console.error("Gagal memperbarui status pesanan:", error); sendJSON(res, 400, { success:false, message:error.message || "Status pesanan tidak dapat diperbarui." }); }
             return;
         }
 

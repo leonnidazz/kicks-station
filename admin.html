@@ -334,12 +334,6 @@ textarea:focus {
                 Semua Produk
             </button>
 
-
-            <button id="menu-pesanan" onclick="showPage('pesanan')" class="sidebar-item w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 font-semibold text-gray-600">
-                <span>🛒</span>
-                Pesanan Masuk
-            </button>
-
             <button
                 onclick="refreshProducts(); showToast('Data produk diperbarui.', 'success');"
                 class="sidebar-item w-full text-left px-4 py-3 rounded-xl flex items-center gap-3 font-semibold text-gray-600">
@@ -431,18 +425,7 @@ textarea:focus {
                     —
                 </p>
             </div>
-
-            <div class="bg-white rounded-2xl border p-5">
-                <p class="text-xs text-gray-400 uppercase tracking-wide">
-                    Total Stok
-                </p>
-
-                <p id="stat-stock" class="text-2xl font-black mt-2">
-                    —
-                </p>
-            </div>
-
-            <div class="bg-white rounded-2xl border p-5">
+<div class="bg-white rounded-2xl border p-5">
                 <p class="text-xs text-gray-400 uppercase tracking-wide">
                     Produk Lokal
                 </p>
@@ -673,7 +656,7 @@ textarea:focus {
                                 <div>
 
                                     <label class="block text-sm font-semibold mb-2">
-                                        Pengguna
+                                        Gender
                                     </label>
 
                                     <select
@@ -683,6 +666,7 @@ textarea:focus {
                                         <option value="pria">Pria</option>
                                         <option value="wanita">Wanita</option>
                                         <option value="unisex">Unisex</option>
+                                        <option value="anak">Anak</option>
 
                                     </select>
 
@@ -691,24 +675,7 @@ textarea:focus {
                             </div>
 
                         </div>
-
-                        <!-- STOCK -->
-                        <div>
-
-                            <h3 class="font-bold mb-3">
-                                Stok
-                            </h3>
-
-                            <input
-                                id="stok"
-                                type="number"
-                                min="0"
-                                placeholder="10"
-                                class="w-full border border-gray-200 rounded-xl px-4 py-3.5">
-
-                        </div>
-
-                        <!-- SIZES -->
+<!-- SIZES -->
                         <div>
 
                             <div class="flex items-center justify-between mb-3">
@@ -1090,17 +1057,6 @@ textarea:focus {
         </section>
 
     </div>
-
-        <section id="page-pesanan" class="hidden fade-in">
-            <div class="bg-white border rounded-3xl p-6 sm:p-8">
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-                    <div><h2 class="text-2xl font-black">Pesanan Masuk</h2><p class="text-sm text-gray-500 mt-1">Pesanan checkout dari website Kicks Station.</p></div>
-                    <button onclick="loadOrders()" class="px-4 py-2 rounded-xl bg-gray-900 text-white font-bold">↻ Refresh Pesanan</button>
-                </div>
-                <div id="orders-list" class="space-y-4"><div class="text-center py-12 text-gray-400">Memuat pesanan...</div></div>
-            </div>
-        </section>
-
 </main>
 
 <!-- EDIT MODAL -->
@@ -1234,7 +1190,7 @@ textarea:focus {
                 <div>
 
                     <label class="block text-sm font-bold mb-2">
-                        Pengguna
+                        Gender
                     </label>
 
                     <select
@@ -1244,26 +1200,12 @@ textarea:focus {
                         <option value="pria">Pria</option>
                         <option value="wanita">Wanita</option>
                         <option value="unisex">Unisex</option>
+                        <option value="anak">Anak</option>
 
                     </select>
 
                 </div>
-
-                <div>
-
-                    <label class="block text-sm font-bold mb-2">
-                        Stok
-                    </label>
-
-                    <input
-                        id="edit-stok"
-                        type="number"
-                        min="0"
-                        class="w-full border border-gray-200 rounded-xl px-4 py-3">
-
-                </div>
-
-            </div>
+</div>
 
             <!-- EDIT SIZE -->
             <div>
@@ -1434,7 +1376,7 @@ textarea:focus {
 </div>
 <script>
 
-const API_URL = "https://kicks-station-api.onrender.com";
+const API_URL = "https://kicks-station.onrender.com";
 
 
 // =========================================================
@@ -1788,19 +1730,109 @@ function toggleSidebar() {
 // =========================================================
 
 function showPage(page) {
-    const tambah = document.getElementById("page-tambah");
-    const semua = document.getElementById("page-semua");
-    const pesanan = document.getElementById("page-pesanan");
-    const menuTambah = document.getElementById("menu-tambah");
-    const menuSemua = document.getElementById("menu-semua");
-    const menuPesanan = document.getElementById("menu-pesanan");
-    [tambah, semua, pesanan].forEach(el => el && el.classList.add("hidden"));
-    [menuTambah, menuSemua, menuPesanan].forEach(el => el && el.classList.remove("active", "text-gray-600"));
-    [menuTambah, menuSemua, menuPesanan].forEach(el => el && el.classList.add("text-gray-600"));
-    if (page === "tambah") { tambah.classList.remove("hidden"); menuTambah.classList.add("active"); menuTambah.classList.remove("text-gray-600"); document.getElementById("top-title").textContent = "Tambah Produk"; }
-    if (page === "semua") { semua.classList.remove("hidden"); menuSemua.classList.add("active"); menuSemua.classList.remove("text-gray-600"); document.getElementById("top-title").textContent = "Semua Produk"; loadProducts(); }
-    if (page === "pesanan") { pesanan.classList.remove("hidden"); menuPesanan.classList.add("active"); menuPesanan.classList.remove("text-gray-600"); document.getElementById("top-title").textContent = "Pesanan Masuk"; loadOrders(); }
-    if (window.innerWidth < 1024) { document.getElementById("sidebar").classList.add("-translate-x-full"); document.getElementById("sidebar-overlay").classList.add("hidden"); }
+
+    const tambah =
+        document.getElementById(
+            "page-tambah"
+        );
+
+    const semua =
+        document.getElementById(
+            "page-semua"
+        );
+
+    const menuTambah =
+        document.getElementById(
+            "menu-tambah"
+        );
+
+    const menuSemua =
+        document.getElementById(
+            "menu-semua"
+        );
+
+    if (page === "tambah") {
+
+        tambah.classList.remove(
+            "hidden"
+        );
+
+        semua.classList.add(
+            "hidden"
+        );
+
+        menuTambah.classList.add(
+            "active"
+        );
+
+        menuTambah.classList.remove(
+            "text-gray-600"
+        );
+
+        menuSemua.classList.remove(
+            "active"
+        );
+
+        menuSemua.classList.add(
+            "text-gray-600"
+        );
+
+        document.getElementById(
+            "top-title"
+        ).textContent =
+            "Tambah Produk";
+    }
+
+
+    if (page === "semua") {
+
+        tambah.classList.add(
+            "hidden"
+        );
+
+        semua.classList.remove(
+            "hidden"
+        );
+
+        menuSemua.classList.add(
+            "active"
+        );
+
+        menuSemua.classList.remove(
+            "text-gray-600"
+        );
+
+        menuTambah.classList.remove(
+            "active"
+        );
+
+        menuTambah.classList.add(
+            "text-gray-600"
+        );
+
+        document.getElementById(
+            "top-title"
+        ).textContent =
+            "Semua Produk";
+
+        loadProducts();
+    }
+
+
+    if (window.innerWidth < 1024) {
+
+        document.getElementById(
+            "sidebar"
+        ).classList.add(
+            "-translate-x-full"
+        );
+
+        document.getElementById(
+            "sidebar-overlay"
+        ).classList.add(
+            "hidden"
+        );
+    }
 }
 
 
@@ -2477,7 +2509,6 @@ const fields = [
     "tipe",
     "asal",
     "pengguna",
-    "stok",
     "deskripsi"
 ];
 
@@ -2887,15 +2918,7 @@ async function saveProduct() {
                 document.getElementById(
                     "pengguna"
                 ).value,
-
-            stok:
-                Number(
-                    document.getElementById(
-                        "stok"
-                    ).value
-                ) || 0,
-
-            sizes:
+sizes:
                 [
                     ...selectedSizes
                 ].sort(
@@ -3002,12 +3025,7 @@ function clearForm() {
     document.getElementById(
         "harga_coret"
     ).value = "";
-
-    document.getElementById(
-        "stok"
-    ).value = "";
-
-    document.getElementById(
+document.getElementById(
         "deskripsi"
     ).value = "";
 
@@ -3162,23 +3180,7 @@ function updateStats() {
 
     const total =
         allProducts.length;
-
-    const stock =
-        allProducts.reduce(
-            (
-                total,
-                product
-            ) =>
-                total +
-                (
-                    Number(
-                        product.stok
-                    ) || 0
-                ),
-            0
-        );
-
-    const lokal =
+const lokal =
         allProducts.filter(
             product =>
                 product.asal ===
@@ -3189,13 +3191,7 @@ function updateStats() {
         "stat-total"
     ).textContent =
         total;
-
-    document.getElementById(
-        "stat-stock"
-    ).textContent =
-        stock;
-
-    document.getElementById(
+document.getElementById(
         "stat-lokal"
     ).textContent =
         lokal;
@@ -3634,19 +3630,7 @@ function createProductCard(
                     )}
 
                 </span>
-
-                <span
-                    class="px-2.5 py-1.5 bg-gray-100 rounded-lg text-xs font-semibold">
-
-                    Stok ${
-                        Number(
-                            product.stok
-                        ) || 0
-                    }
-
-                </span>
-
-            </div>
+</div>
 
             <div class="mt-4 pt-4 border-t">
 
@@ -4372,13 +4356,7 @@ function openEditModal(id) {
     ).value =
         product.pengguna ||
         "unisex";
-
-    document.getElementById(
-        "edit-stok"
-    ).value =
-        product.stok || 0;
-
-    document.getElementById(
+document.getElementById(
         "edit-deskripsi"
     ).value =
         product.deskripsi || "";
@@ -4555,15 +4533,7 @@ async function updateProduct() {
                 document.getElementById(
                     "edit-pengguna"
                 ).value,
-
-            stok:
-                Number(
-                    document.getElementById(
-                        "edit-stok"
-                    ).value
-                ) || 0,
-
-            sizes:
+sizes:
                 [
                     ...editSelectedSizes
                 ].sort(
@@ -4938,87 +4908,6 @@ function showToast(
             },
             3000
         );
-}
-
-
-// =========================================================
-// REFERRAL
-// =========================================================
-const referralNames = {
-    hsn: "Hasan AU",
-    mrm: "Rosyad AU",
-    amr: "Ammar GE",
-    ajn: "Juna CTAF",
-    roy: "Roy CTAF",
-    king: "Risky CTAF",
-    zkr: "Zaka UNDIP",
-    udn: "Udin CTAF",
-    amu: "Amru UNDIP",
-    zni: "Zaini CTAF",
-    anm: "Anam CTAF",
-    rhn: "Rihan CTAF",
-    bri: "Bara CTAF",
-    ali: "Ali jogja"
-};
-
-function formatReferral(referral) {
-    const code = String(referral || "").trim().toLowerCase();
-    if (!code) return "-";
-    return referralNames[code] ? `${referralNames[code]} (${code.toUpperCase()})` : code.toUpperCase();
-}
-
-// =========================================================
-// ORDERS
-// =========================================================
-function formatRupiah(value) {
-    return "Rp " + Number(value || 0).toLocaleString("id-ID");
-}
-
-function escapeOrderText(value) {
-    return String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c]));
-}
-
-async function loadOrders() {
-    const box = document.getElementById("orders-list");
-    if (!box) return;
-    box.innerHTML = '<div class="text-center py-12 text-gray-400">Memuat pesanan...</div>';
-    try {
-        const response = await authFetch(`${API_URL}/api/orders`);
-        const data = await response.json();
-        if (!response.ok || !data.success) throw new Error(data.message || "Gagal mengambil pesanan.");
-        const orders = Array.isArray(data.orders) ? data.orders : [];
-        if (!orders.length) { box.innerHTML = '<div class="text-center py-12 text-gray-400">Belum ada pesanan masuk.</div>'; return; }
-        box.innerHTML = orders.map(order => {
-            const items = Array.isArray(order.items) ? order.items : [];
-            const date = order.created_at ? new Date(order.created_at).toLocaleString("id-ID") : "-";
-            return `<article class="border rounded-2xl p-5">
-                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-                    <div><p class="font-black">Pesanan #${escapeOrderText(order.id)}</p><p class="text-xs text-gray-500">${escapeOrderText(date)}</p><p class="text-xs text-gray-500 mt-1">Referral: <b>${escapeOrderText(formatReferral(order.referral))}</b></p></div>
-                    <select onchange="updateOrderStatus(${Number(order.id)}, this.value)" class="border rounded-xl px-3 py-2 font-bold">
-                        ${["baru","diproses","selesai","batal"].map(st => `<option value="${st}" ${order.status === st ? "selected" : ""}>${st}</option>`).join("")}
-                    </select>
-                </div>
-                <div class="space-y-2 text-sm">${items.map(item => `<div class="flex justify-between gap-4 bg-gray-50 rounded-xl p-3"><span>${escapeOrderText(item.name)} · Size ${escapeOrderText(item.size)} × ${Number(item.qty || 0)}</span><b>${formatRupiah(Number(item.price || 0) * Number(item.qty || 0))}</b></div>`).join("")}</div>
-                <div class="text-right font-black text-lg mt-4">Total: ${formatRupiah(order.total)}</div>
-            </article>`;
-        }).join("");
-    } catch (error) {
-        console.error(error);
-        box.innerHTML = `<div class="text-center py-12 text-red-500 font-semibold">${escapeOrderText(error.message || "Gagal mengambil pesanan.")}</div>`;
-    }
-}
-
-async function updateOrderStatus(id, status) {
-    try {
-        const response = await authFetch(`${API_URL}/api/orders/${id}`, { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ status }) });
-        const data = await response.json();
-        if (!response.ok || !data.success) throw new Error(data.message || "Gagal memperbarui status.");
-        showToast("Status pesanan diperbarui.", "success");
-        loadOrders();
-    } catch (error) {
-        showToast(error.message || "Gagal memperbarui status.", "error");
-        loadOrders();
-    }
 }
 
 
