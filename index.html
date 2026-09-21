@@ -8,7 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <title>Kicks Station | Premium Urban Footwear</title>
-    <link rel="preload" as="image" href="images/A.jpeg" fetchpriority="high">
+    
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -486,13 +486,6 @@
                             Unisex
                         </button>
 
-                        <button
-                            onclick="setFilter('pengguna', 'anak')"
-                            id="btn-pengguna-anak"
-                            class="filter-link text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors uppercase">
-                            Anak
-                        </button>
-
                     </div>
 
                     <button
@@ -621,7 +614,7 @@
                     </h3>
 
                     <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
-                        Konsultasi ukuran dan pemesanan diproses secara cepat dan personal.
+                        Konsultasi ukuran, ketersediaan stok, dan pemesanan diproses secara cepat dan personal.
                     </p>
 
                 </div>
@@ -734,7 +727,7 @@
                                 <strong class="text-gray-700 dark:text-gray-300">
                                     Tanya Jawab:
                                 </strong>
-                                Mimin merespons cepat info ukuran.
+                                Mimin merespons cepat info stok dan ukuran.
                             </li>
 
                             <li>
@@ -2213,27 +2206,6 @@
            WHATSAPP AFFILIATE
         ===================================================== */
 
-        const affiliates = {
-
-            ah: "6285640054840",
-
-            mrm: "6288221120405",
-
-            amr: "6285943328676",
-
-            ajn: "6281328949530",
-
-            roy: "6285969035741",
-
-            king: "6289514056278",
-
-            zkr: "6285119475823",
-
-            udn: "6288221088143"
-
-        };
-
-
         const defaultWA =
             "6285931100080";
 
@@ -2245,11 +2217,17 @@
 
 
         const ref =
-            params.get("ref");
+            (params.get("ref") || "").trim().toLowerCase();
 
+        // Referral hanya untuk pencatatan. Semua checkout tetap ke WA utama.
+        if (ref) {
+            sessionStorage.setItem("kicks_station_referral", ref);
+        }
 
-        const targetWA =
-            affiliates[ref] || defaultWA;
+        const referral =
+            ref || sessionStorage.getItem("kicks_station_referral") || "";
+
+        const targetWA = defaultWA;
 
 
         function checkoutWA() {
@@ -2293,8 +2271,24 @@
                 `Terima kasih!`;
 
 
+            fetch("https://kicks-station.onrender.com/api/orders", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    referral,
+                    items: cart.map(item => ({
+                        name: item.name,
+                        size: item.size,
+                        qty: item.qty,
+                        price: item.price
+                    })),
+                    total
+                }),
+                keepalive: true
+            }).catch(error => console.error("Gagal mencatat pesanan:", error));
+
             window.open(
-                `https://wa.me/${targetWA}?text=${encodeURIComponent(text)}`,
+                `https://wa.me/${defaultWA}?text=${encodeURIComponent(text)}`,
                 '_blank'
             );
 
@@ -2639,7 +2633,7 @@
            Data server tetap diperbarui di background.
         ===================================================== */
 
-        const PRODUCTS_API = 'https://kicks-station.onrender.com/api/products';
+        const PRODUCTS_API = 'https://kicks-station-api.onrender.com/api/products';
         const PRODUCTS_CACHE_KEY = 'kicks_station_products_v1';
         const PRODUCTS_CACHE_MAX_AGE = 30 * 60 * 1000;
 
