@@ -116,41 +116,98 @@ function formatLocation(data) {
 
 async function getVisitorLocation(ip) {
     const safeIP = normalizeClientIP(ip);
+
     if (!safeIP) {
-        return { location: "", city: "", region: "", country: "", country_code: "", latitude: null, longitude: null };
+        return {
+            location: "",
+            city: "",
+            region: "",
+            country: "",
+            country_code: "",
+            latitude: null,
+            longitude: null
+        };
     }
 
     const cached = geoCache.get(safeIP);
+
     if (cached && cached.expiresAt > Date.now()) {
         return cached.data;
     }
 
-    // ipwho.is dipakai tanpa API key untuk lookup IP publik.
-    const url = `https://ipwho.is/${encodeURIComponent(safeIP)}`;
+    // ipapi.co digunakan untuk lookup lokasi berdasarkan IP publik.
+    const url = `https://ipapi.co/${encodeURIComponent(safeIP)}/json/`;
 
     try {
         const data = await fetchJSON(url);
+
+        if (data?.error) {
+            throw new Error(
+                data?.reason ||
+                data?.message ||
+                "ipapi.co mengembalikan error."
+            );
+        }
+
         const result = {
-            location: data?.success === false ? "" : formatLocation(data),
-            city: data?.success === false ? "" : String(data?.city || "").trim(),
-            region: data?.success === false ? "" : String(data?.region || "").trim(),
-            country: data?.success === false ? "" : String(data?.country || "").trim(),
-            country_code: data?.success === false ? "" : String(data?.country_code || "").trim(),
-            latitude: data?.success === false || data?.latitude == null ? null : Number(data.latitude),
-            longitude: data?.success === false || data?.longitude == null ? null : Number(data.longitude),
+            location: [
+                data?.city,
+                data?.region,
+                data?.country_name
+            ]
+                .map(value => String(value || "").trim())
+                .filter(Boolean)
+                .join(", "),
+
+            city: String(data?.city || "").trim(),
+
+            region: String(data?.region || "").trim(),
+
+            country: String(data?.country_name || "").trim(),
+
+            country_code: String(data?.country_code || "").trim(),
+
+            latitude:
+                data?.latitude == null
+                    ? null
+                    : Number(data.latitude),
+
+            longitude:
+                data?.longitude == null
+                    ? null
+                    : Number(data.longitude)
         };
 
-        geoCache.set(safeIP, { data: result, expiresAt: Date.now() + GEO_CACHE_TTL });
+        geoCache.set(safeIP, {
+            data: result,
+            expiresAt: Date.now() + GEO_CACHE_TTL
+        });
+
         while (geoCache.size > GEO_CACHE_MAX) {
             const firstKey = geoCache.keys().next().value;
+
             if (firstKey === undefined) break;
+
             geoCache.delete(firstKey);
         }
 
         return result;
+
     } catch (error) {
-        console.warn("Geolocation tidak tersedia:", error.message);
-        return { location: "", city: "", region: "", country: "", country_code: "", latitude: null, longitude: null };
+        console.warn(
+            "Geolocation tidak tersedia:",
+            error.message
+        );
+
+        return {
+            location: "",
+            city: "",
+            region: "",
+            country: "",
+            country_code: "",
+            latitude: null,
+            longitude: null
+        };
     }
 }
 
@@ -1091,30 +1148,43 @@ const server = http.createServer(async (req, res) => {
         }
 
         if (req.method === "POST" && new URL(req.url, "http://localhost").pathname === "/api/analytics/visit") {
-            try {
-                const clientIP = getClientIP(req);
-console.log("KICKSTATION VISITOR IP:", clientIP);
+    try {
+        const data = await readBody(req);
+        const clientIP = getClientIP(req);
 
-const locationData = await getVisitorLocation(clientIP);
-console.log("KICKSTATION LOCATION DATA:", JSON.stringify(locationData));
+        console.log("KICKSTATION VISITOR IP:", clientIP);
 
-                await recordVisit(
-                    data?.visitor_id,
-                    data?.referral,
-                    data?.user_agent,
-                    locationData
-                );
+        const locationData = await getVisitorLocation(clientIP);
 
-                sendJSON(res, 201, {
-                    success: true,
-                    location: locationData.location || ''
-                });
-            } catch (error) {
-                console.error("Gagal mencatat kunjungan:", error);
-                sendJSON(res, 400, { success: false, message: error.message || "Kunjungan tidak dapat dicatat." });
-            }
-            return;
-        }
+        console.log(
+            "KICKSTATION LOCATION DATA:",
+            JSON.stringify(locationData)
+        );
+
+        await recordVisit(
+            data?.visitor_id,
+            data?.referral,
+            data?.user_agent,
+            locationData
+        );
+
+        sendJSON(res, 201, {
+            success: true,
+            location: locationData.location || ""
+        });
+    } catch (error) {
+        console.error("Gagal mencatat kunjungan:", error);
+
+        sendJSON(res, 400, {
+            success: false,
+            message:
+                error.message ||
+                "Kunjungan tidak dapat dicatat."
+        });
+    }
+
+    return;
+}
 
         // =====================================================
         // POST PESANAN / CHECKOUT
