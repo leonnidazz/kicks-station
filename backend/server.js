@@ -1,4 +1,5 @@
 const http = require("http");
+const https = require("https");
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
@@ -54,6 +55,103 @@ function getClientIP(req) {
     )
         .split(",")[0]
         .trim();
+}
+
+// =====================================================
+// IP GEOLOCATION
+// Lokasi dicari dari IP request, tetapi IP TIDAK disimpan
+// ke database. Jika layanan geolocation gagal, kunjungan
+// tetap dicatat tanpa lokasi.
+// =====================================================
+const GEO_CACHE_TTL = 60 * 60 * 1000; // 1 jam
+const GEO_CACHE_MAX = 500;
+const geoCache = new Map();
+
+function normalizeClientIP(ip) {
+    let value = String(ip || "").trim();
+    if (value.startsWith("::ffff:")) value = value.slice(7);
+    if (value === "::1") return "";
+    if (value === "127.0.0.1") return "";
+    if (value === "unknown") return "";
+    return value;
+}
+
+function fetchJSON(url, timeoutMs = 5000) {
+    return new Promise((resolve, reject) => {
+        const request = https.get(
+            url,
+            { headers: { "User-Agent": "Kick-Station-Analytics/1.0" } },
+            response => {
+                let body = "";
+                response.setEncoding("utf8");
+                response.on("data", chunk => { body += chunk; });
+                response.on("end", () => {
+                    if (response.statusCode < 200 || response.statusCode >= 300) {
+                        reject(new Error(`Geolocation HTTP ${response.statusCode}`));
+                        return;
+                    }
+                    try {
+                        resolve(JSON.parse(body));
+                    } catch {
+                        reject(new Error("Respons geolocation bukan JSON yang valid."));
+                    }
+                });
+            }
+        );
+
+        request.setTimeout(timeoutMs, () => {
+            request.destroy(new Error("Geolocation timeout."));
+        });
+
+        request.on("error", reject);
+    });
+}
+
+function formatLocation(data) {
+    return [data?.city, data?.region, data?.country]
+        .map(value => String(value || "").trim())
+        .filter(Boolean)
+        .join(", ");
+}
+
+async function getVisitorLocation(ip) {
+    const safeIP = normalizeClientIP(ip);
+    if (!safeIP) {
+        return { location: "", city: "", region: "", country: "", country_code: "", latitude: null, longitude: null };
+    }
+
+    const cached = geoCache.get(safeIP);
+    if (cached && cached.expiresAt > Date.now()) {
+        return cached.data;
+    }
+
+    // ipwho.is dipakai tanpa API key untuk lookup IP publik.
+    const url = `https://ipwho.is/${encodeURIComponent(safeIP)}`;
+
+    try {
+        const data = await fetchJSON(url);
+        const result = {
+            location: data?.success === false ? "" : formatLocation(data),
+            city: data?.success === false ? "" : String(data?.city || "").trim(),
+            region: data?.success === false ? "" : String(data?.region || "").trim(),
+            country: data?.success === false ? "" : String(data?.country || "").trim(),
+            country_code: data?.success === false ? "" : String(data?.country_code || "").trim(),
+            latitude: data?.success === false || data?.latitude == null ? null : Number(data.latitude),
+            longitude: data?.success === false || data?.longitude == null ? null : Number(data.longitude),
+        };
+
+        geoCache.set(safeIP, { data: result, expiresAt: Date.now() + GEO_CACHE_TTL });
+        while (geoCache.size > GEO_CACHE_MAX) {
+            const firstKey = geoCache.keys().next().value;
+            if (firstKey === undefined) break;
+            geoCache.delete(firstKey);
+        }
+
+        return result;
+    } catch (error) {
+        console.warn("Geolocation tidak tersedia:", error.message);
+        return { location: "", city: "", region: "", country: "", country_code: "", latitude: null, longitude: null };
+    }
 }
 
 function cleanupAdminSessions() {
@@ -833,18 +931,60 @@ async function ensureAnalyticsTable() {
     `);
 
     await pool.query(`
-    ALTER TABLE public.site_visits
-    ADD COLUMN IF NOT EXISTS location TEXT DEFAULT ''
-`);
+        ALTER TABLE public.site_visits
+        ADD COLUMN IF NOT EXISTS location TEXT DEFAULT ''
+    `);
 
+    await pool.query(`
+        ALTER TABLE public.site_visits
+        ADD COLUMN IF NOT EXISTS city TEXT DEFAULT ''
+    `);
+
+    await pool.query(`
+        ALTER TABLE public.site_visits
+        ADD COLUMN IF NOT EXISTS region TEXT DEFAULT ''
+    `);
+
+    await pool.query(`
+        ALTER TABLE public.site_visits
+        ADD COLUMN IF NOT EXISTS country TEXT DEFAULT ''
+    `);
+
+    await pool.query(`
+        ALTER TABLE public.site_visits
+        ADD COLUMN IF NOT EXISTS country_code TEXT DEFAULT ''
+    `);
+
+    await pool.query(`
+        ALTER TABLE public.site_visits
+        ADD COLUMN IF NOT EXISTS latitude DOUBLE PRECISION
+    `);
+
+    await pool.query(`
+        ALTER TABLE public.site_visits
+        ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION
+    `);
 }
 
-async function recordVisit(visitorId, referral, userAgent) {
+
+async function recordVisit(visitorId, referral, userAgent, locationData = {}) {
     await ensureAnalyticsTable();
 
     const safeVisitor = String(visitorId || '').trim().slice(0, 100);
     const safeReferral = String(referral || '').trim().toLowerCase().slice(0, 100);
     const safeUserAgent = String(userAgent || '').slice(0, 500);
+    const safeLocation = String(locationData.location || '').trim().slice(0, 255);
+    const safeCity = String(locationData.city || '').trim().slice(0, 100);
+    const safeRegion = String(locationData.region || '').trim().slice(0, 100);
+    const safeCountry = String(locationData.country || '').trim().slice(0, 100);
+    const safeCountryCode = String(locationData.country_code || '').trim().slice(0, 10);
+
+    const latitude = Number.isFinite(Number(locationData.latitude))
+        ? Number(locationData.latitude)
+        : null;
+    const longitude = Number.isFinite(Number(locationData.longitude))
+        ? Number(locationData.longitude)
+        : null;
 
     if (!safeVisitor) {
         throw new Error('visitor_id wajib diisi.');
@@ -852,9 +992,20 @@ async function recordVisit(visitorId, referral, userAgent) {
 
     await pool.query(
         `INSERT INTO public.site_visits
-        (visitor_id, referral, user_agent)
-        VALUES ($1, $2, $3)`,
-        [safeVisitor, safeReferral, safeUserAgent]
+        (visitor_id, referral, user_agent, location, city, region, country, country_code, latitude, longitude)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)`,
+        [
+            safeVisitor,
+            safeReferral,
+            safeUserAgent,
+            safeLocation,
+            safeCity,
+            safeRegion,
+            safeCountry,
+            safeCountryCode,
+            latitude,
+            longitude
+        ]
     );
 }
 async function getAnalytics() {
@@ -880,7 +1031,14 @@ async function getRecentVisits(limit = 100) {
             created_at,
             visitor_id,
             referral,
-            user_agent
+            user_agent,
+            location,
+            city,
+            region,
+            country,
+            country_code,
+            latitude,
+            longitude
         FROM public.site_visits
         ORDER BY created_at DESC, id DESC
         LIMIT $1
@@ -891,7 +1049,14 @@ async function getRecentVisits(limit = 100) {
         created_at: row.created_at,
         visitor_id: row.visitor_id,
         referral: row.referral || '',
-        user_agent: row.user_agent || ''
+        user_agent: row.user_agent || '',
+        location: row.location || '',
+        city: row.city || '',
+        region: row.region || '',
+        country: row.country || '',
+        country_code: row.country_code || '',
+        latitude: row.latitude == null ? null : Number(row.latitude),
+        longitude: row.longitude == null ? null : Number(row.longitude)
     }));
 }
 
@@ -928,8 +1093,20 @@ const server = http.createServer(async (req, res) => {
         if (req.method === "POST" && new URL(req.url, "http://localhost").pathname === "/api/analytics/visit") {
             try {
                 const data = await readBody(req);
-                await recordVisit(data?.visitor_id, data?.referral, data?.user_agent);
-                sendJSON(res, 201, { success: true });
+                const clientIP = getClientIP(req);
+                const locationData = await getVisitorLocation(clientIP);
+
+                await recordVisit(
+                    data?.visitor_id,
+                    data?.referral,
+                    data?.user_agent,
+                    locationData
+                );
+
+                sendJSON(res, 201, {
+                    success: true,
+                    location: locationData.location || ''
+                });
             } catch (error) {
                 console.error("Gagal mencatat kunjungan:", error);
                 sendJSON(res, 400, { success: false, message: error.message || "Kunjungan tidak dapat dicatat." });
