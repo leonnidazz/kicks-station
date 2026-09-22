@@ -2238,7 +2238,11 @@
                     visitorId = (crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2)));
                     localStorage.setItem(VISITOR_KEY, visitorId);
                 }
-                const payload = JSON.stringify({ visitor_id: visitorId, referral: ref || "" });
+                const payload = JSON.stringify({
+    visitor_id: visitorId,
+    referral: ref || "",
+    user_agent: navigator.userAgent
+});
                 const analyticsUrl = "https://kicks-station-api.onrender.com/api/analytics/visit";
                 if (navigator.sendBeacon) {
                     const queued = navigator.sendBeacon(analyticsUrl, new Blob([payload], { type: "application/json" }));

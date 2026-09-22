@@ -739,11 +739,18 @@ async function ensureOrdersTable() {
         id BIGSERIAL PRIMARY KEY,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         referral TEXT DEFAULT '',
+        user_agent TEXT DEFAULT '',
         items JSONB NOT NULL DEFAULT '[]'::jsonb,
         total NUMERIC NOT NULL DEFAULT 0,
         status TEXT NOT NULL DEFAULT 'baru',
         keterangan TEXT DEFAULT ''
     )`);
+
+    await pool.query(`
+    ALTER TABLE site_visits
+    ADD COLUMN IF NOT EXISTS user_agent TEXT DEFAULT ''
+`);
+
     await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS keterangan TEXT DEFAULT ''`);
     await pool.query(`ALTER TABLE orders ENABLE ROW LEVEL SECURITY`);
 }
@@ -817,15 +824,16 @@ async function ensureAnalyticsTable() {
     await pool.query(`CREATE INDEX IF NOT EXISTS idx_site_visits_visitor_id ON site_visits(visitor_id)`);
 }
 
-async function recordVisit(visitorId, referral) {
+async function recordVisit(visitorId, referral, userAgent) {
     await ensureAnalyticsTable();
     const safeVisitor = String(visitorId || '').trim().slice(0, 100);
     const safeReferral = String(referral || '').trim().toLowerCase().slice(0, 100);
     if (!safeVisitor) throw new Error('visitor_id wajib diisi.');
     await pool.query(
-        `INSERT INTO site_visits (visitor_id, referral) VALUES ($1, $2)`,
-        [safeVisitor, safeReferral]
-    );
+    `INSERT INTO site_visits (visitor_id, referral, user_agent)
+     VALUES ($1, $2, $3)`,
+    [safeVisitor, safeReferral, String(userAgent || '').slice(0, 500)]
+);
 }
 
 async function getAnalytics() {
@@ -843,7 +851,7 @@ async function getAnalytics() {
 async function getRecentVisits(limit = 100) {
     await ensureAnalyticsTable();
     const result = await pool.query(`
-        SELECT id, created_at, visitor_id, referral
+        SELECT id, created_at, visitor_id, referral, user_agent
         FROM site_visits
         ORDER BY created_at DESC, id DESC
         LIMIT $1
@@ -852,8 +860,35 @@ async function getRecentVisits(limit = 100) {
         id: Number(row.id),
         created_at: row.created_at,
         visitor_id: row.visitor_id,
-        referral: row.referral || ''
+        referral: row.referral || '',
+        user_agent: row.user_agent || ''
     }));
+}
+function parseUserAgent(userAgent) {
+    const ua = String(userAgent || "");
+
+    let device = "Desktop";
+    if (/iPhone|iPad|iPod/i.test(ua)) {
+        device = "iPhone/iPad";
+    } else if (/Android/i.test(ua)) {
+        device = /Mobile/i.test(ua) ? "Android Phone" : "Android Tablet";
+    }
+
+    let os = "Unknown";
+    if (/Windows NT/i.test(ua)) os = "Windows";
+    else if (/Mac OS X/i.test(ua)) os = "macOS";
+    else if (/Android/i.test(ua)) os = "Android";
+    else if (/iPhone|iPad|iPod/i.test(ua)) os = "iOS";
+    else if (/Linux/i.test(ua)) os = "Linux";
+
+    let browser = "Unknown";
+    if (/Edg\//i.test(ua)) browser = "Edge";
+    else if (/OPR\//i.test(ua)) browser = "Opera";
+    else if (/Chrome\//i.test(ua)) browser = "Chrome";
+    else if (/Firefox\//i.test(ua)) browser = "Firefox";
+    else if (/Safari\//i.test(ua)) browser = "Safari";
+
+    return { device, os, browser };
 }
 
 const server = http.createServer(async (req, res) => {
@@ -888,7 +923,7 @@ const server = http.createServer(async (req, res) => {
         if (req.method === "POST" && new URL(req.url, "http://localhost").pathname === "/api/analytics/visit") {
             try {
                 const data = await readBody(req);
-                await recordVisit(data?.visitor_id, data?.referral);
+                await recordVisit(data?.visitor_id, data?.referral, data?.user_agent);
                 sendJSON(res, 201, { success: true });
             } catch (error) {
                 console.error("Gagal mencatat kunjungan:", error);
