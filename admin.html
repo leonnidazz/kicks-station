@@ -5109,7 +5109,19 @@ async function loadAnalytics() {
         document.getElementById("stat-referral-visits").textContent = Number(a.referral_visits || 0).toLocaleString("id-ID");
         const visits = Array.isArray(data.visits) ? data.visits : [];
         if (!visits.length) { visitsBox.innerHTML = '<tr><td colspan="3" class="px-5 py-8 text-center text-gray-400">Belum ada data kunjungan.</td></tr>'; return; }
-        visitsBox.innerHTML = visits.map(v => `<tr class="border-t border-gray-100"><td class="px-5 py-3 text-gray-500 whitespace-nowrap">${escapeOrderText(new Date(v.created_at).toLocaleString("id-ID"))}</td><td class="px-5 py-3 font-mono text-xs text-gray-600">${escapeOrderText(v.visitor_id)}</td><td class="px-5 py-3 font-semibold text-gray-800">${escapeOrderText(formatReferral(v.referral))}</td></tr>`).join("");
+        visitsBox.innerHTML = visits.map((v, index) => `
+    <tr class="border-t border-gray-100">
+        <td class="px-5 py-3 text-gray-500 whitespace-nowrap">
+            ${escapeOrderText(new Date(v.created_at).toLocaleString("id-ID"))}
+        </td>
+        <td class="px-5 py-3 font-semibold text-gray-800">
+            Pengunjung #${visits.length - index}
+        </td>
+        <td class="px-5 py-3 font-semibold text-gray-800">
+            ${escapeOrderText(formatReferral(v.referral))}
+        </td>
+    </tr>
+`).join("");
     } catch (error) {
         document.getElementById("stat-total-visits").textContent = "—";
         document.getElementById("stat-unique-visitors").textContent = "—";
