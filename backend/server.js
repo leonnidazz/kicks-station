@@ -864,32 +864,7 @@ async function getRecentVisits(limit = 100) {
         user_agent: row.user_agent || ''
     }));
 }
-function parseUserAgent(userAgent) {
-    const ua = String(userAgent || "");
 
-    let device = "Desktop";
-    if (/iPhone|iPad|iPod/i.test(ua)) {
-        device = "iPhone/iPad";
-    } else if (/Android/i.test(ua)) {
-        device = /Mobile/i.test(ua) ? "Android Phone" : "Android Tablet";
-    }
-
-    let os = "Unknown";
-    if (/Windows NT/i.test(ua)) os = "Windows";
-    else if (/Mac OS X/i.test(ua)) os = "macOS";
-    else if (/Android/i.test(ua)) os = "Android";
-    else if (/iPhone|iPad|iPod/i.test(ua)) os = "iOS";
-    else if (/Linux/i.test(ua)) os = "Linux";
-
-    let browser = "Unknown";
-    if (/Edg\//i.test(ua)) browser = "Edge";
-    else if (/OPR\//i.test(ua)) browser = "Opera";
-    else if (/Chrome\//i.test(ua)) browser = "Chrome";
-    else if (/Firefox\//i.test(ua)) browser = "Firefox";
-    else if (/Safari\//i.test(ua)) browser = "Safari";
-
-    return { device, os, browser };
-}
 
 const server = http.createServer(async (req, res) => {
     console.log("REQUEST:", req.method, req.url);
