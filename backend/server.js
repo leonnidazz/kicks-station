@@ -831,6 +831,12 @@ async function ensureAnalyticsTable() {
         CREATE INDEX IF NOT EXISTS idx_site_visits_visitor_id
         ON public.site_visits(visitor_id)
     `);
+
+    await pool.query(`
+    ALTER TABLE public.site_visits
+    ADD COLUMN IF NOT EXISTS location TEXT DEFAULT ''
+`);
+
 }
 
 async function recordVisit(visitorId, referral, userAgent) {
@@ -850,6 +856,19 @@ async function recordVisit(visitorId, referral, userAgent) {
         VALUES ($1, $2, $3)`,
         [safeVisitor, safeReferral, safeUserAgent]
     );
+}
+async function getAnalytics() {
+    await ensureAnalyticsTable();
+
+    const result = await pool.query(`
+        SELECT
+            COUNT(*)::int AS total_visits,
+            COUNT(DISTINCT visitor_id)::int AS unique_visitors,
+            COUNT(*) FILTER (WHERE referral <> '')::int AS referral_visits
+        FROM public.site_visits
+    `);
+
+    return result.rows[0];
 }
 
 async function getRecentVisits(limit = 100) {
