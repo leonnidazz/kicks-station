@@ -5074,22 +5074,35 @@ function parseUserAgent(userAgent) {
 
     let device = "Desktop";
 
-    if (/iPhone|iPad|iPod/i.test(ua)) {
-        device = "iPhone/iPad";
-    } else if (/Android/i.test(ua)) {
-        device = /Mobile/i.test(ua) ? "Android Phone" : "Android Tablet";
+    // iPhone / iPad / iPod
+    if (/iPhone/i.test(ua)) {
+        device = "iPhone";
+    } else if (/iPad/i.test(ua)) {
+        device = "iPad";
+    } else if (/iPod/i.test(ua)) {
+        device = "iPod";
+    }
+
+    // Android
+    else if (/Android/i.test(ua)) {
+        device = /Mobile/i.test(ua)
+            ? "Android Phone"
+            : "Android Tablet";
     }
 
     let os = "Unknown";
 
-    if (/Windows NT/i.test(ua)) {
-        os = "Windows";
-    } else if (/Mac OS X/i.test(ua)) {
-        os = "macOS";
-    } else if (/Android/i.test(ua)) {
+    // Urutan penting:
+    // Android UA biasanya juga mengandung kata "Linux",
+    // jadi Android harus diperiksa SEBELUM Linux.
+    if (/Android/i.test(ua)) {
         os = "Android";
     } else if (/iPhone|iPad|iPod/i.test(ua)) {
         os = "iOS";
+    } else if (/Windows NT/i.test(ua)) {
+        os = "Windows";
+    } else if (/Mac OS X/i.test(ua)) {
+        os = "macOS";
     } else if (/Linux/i.test(ua)) {
         os = "Linux";
     }
@@ -5108,9 +5121,12 @@ function parseUserAgent(userAgent) {
         browser = "Safari";
     }
 
-    return { device, os, browser };
+    return {
+        device,
+        os,
+        browser
+    };
 }
-
 
 async function loadAnalytics() {
     const visitsBox = document.getElementById("visits-list");
