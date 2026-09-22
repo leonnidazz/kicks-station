@@ -554,8 +554,17 @@ textarea:focus {
                                     <option value="running">Running</option>
                                     <option value="sandal">Sandal</option>
                                     <option value="tas">Tas</option>
+                                    <option value="lainnya">Lainnya</option>
 
                                 </select>
+
+                                <input
+                                    id="tipe-lainnya"
+                                    type="text"
+                                    placeholder="Ketik tipe produk lainnya..."
+                                    class="hidden w-full border border-gray-200 rounded-xl px-4 py-3.5 mt-3"
+                                    maxlength="50"
+                                >
 
                             </div>
 
@@ -1019,8 +1028,17 @@ textarea:focus {
                         <option value="running">Running</option>
                         <option value="sandal">Sandal</option>
                         <option value="tas">Tas</option>
+                        <option value="lainnya">Lainnya</option>
 
                     </select>
+
+                    <input
+                        id="edit-tipe-lainnya"
+                        type="text"
+                        placeholder="Ketik tipe produk lainnya..."
+                        class="hidden w-full border border-gray-200 rounded-xl px-4 py-3 mt-3"
+                        maxlength="50"
+                    >
 
                     <button
                         onclick="refreshProducts()"
@@ -2853,6 +2871,21 @@ async function saveProduct() {
                 selectedImageFiles
             );
 
+        const selectedTipe =
+            document.getElementById("tipe").value;
+
+        const customTipe =
+            document.getElementById("tipe-lainnya").value.trim();
+
+        const finalTipe =
+            selectedTipe === "lainnya"
+                ? customTipe
+                : selectedTipe;
+
+        if (!finalTipe) {
+            throw new Error("Silakan isi tipe produk.");
+        }
+
         const productData = {
 
             nama:
@@ -2880,9 +2913,7 @@ async function saveProduct() {
                 ) || 0,
 
             tipe:
-                document.getElementById(
-                    "tipe"
-                ).value,
+                finalTipe,
 
             asal:
                 document.getElementById(
@@ -3009,6 +3040,12 @@ document.getElementById(
         "tipe"
     ).value =
         "kasual";
+
+    document.getElementById(
+        "tipe-lainnya"
+    ).value = "";
+
+    toggleCustomTipeInput();
 
     document.getElementById(
         "asal"
@@ -3811,6 +3848,50 @@ document.getElementById(
     renderProducts
 );
 
+// =========================================================
+// CUSTOM PRODUCT TYPE ("LAINNYA")
+// =========================================================
+
+function toggleCustomTipeInput() {
+    const select = document.getElementById("tipe");
+    const input = document.getElementById("tipe-lainnya");
+    if (!select || !input) return;
+
+    const isCustom = select.value === "lainnya";
+    input.classList.toggle("hidden", !isCustom);
+
+    if (isCustom) {
+        input.focus();
+    } else {
+        input.value = "";
+    }
+}
+
+function toggleCustomEditTipeInput() {
+    const select = document.getElementById("edit-tipe");
+    const input = document.getElementById("edit-tipe-lainnya");
+    if (!select || !input) return;
+
+    const isCustom = select.value === "lainnya";
+    input.classList.toggle("hidden", !isCustom);
+
+    if (isCustom) {
+        input.focus();
+    } else {
+        input.value = "";
+    }
+}
+
+document.getElementById("tipe")?.addEventListener(
+    "change",
+    toggleCustomTipeInput
+);
+
+document.getElementById("edit-tipe")?.addEventListener(
+    "change",
+    toggleCustomEditTipeInput
+);
+
 
 // =========================================================
 // EDIT SYSTEM
@@ -4308,11 +4389,35 @@ function openEditModal(id) {
     ).value =
         product.brand || "";
 
-    document.getElementById(
-        "edit-tipe"
-    ).value =
-        product.tipe ||
-        "kasual";
+    const standardTipes = [
+        "kasual",
+        "running",
+        "sandal",
+        "tas"
+    ];
+
+    const productTipe =
+        String(product.tipe || "kasual").trim();
+
+    if (standardTipes.includes(productTipe)) {
+        document.getElementById(
+            "edit-tipe"
+        ).value = productTipe;
+
+        document.getElementById(
+            "edit-tipe-lainnya"
+        ).value = "";
+    } else {
+        document.getElementById(
+            "edit-tipe"
+        ).value = "lainnya";
+
+        document.getElementById(
+            "edit-tipe-lainnya"
+        ).value = productTipe;
+    }
+
+    toggleCustomEditTipeInput();
 
     document.getElementById(
         "edit-harga"
@@ -4473,6 +4578,21 @@ async function updateProduct() {
             );
         }
 
+        const selectedEditTipe =
+            document.getElementById("edit-tipe").value;
+
+        const customEditTipe =
+            document.getElementById("edit-tipe-lainnya").value.trim();
+
+        const finalEditTipe =
+            selectedEditTipe === "lainnya"
+                ? customEditTipe
+                : selectedEditTipe;
+
+        if (!finalEditTipe) {
+            throw new Error("Silakan isi tipe produk.");
+        }
+
         const data = {
 
             nama:
@@ -4500,9 +4620,7 @@ async function updateProduct() {
                 ) || 0,
 
             tipe:
-                document.getElementById(
-                    "edit-tipe"
-                ).value,
+                finalEditTipe,
 
             asal:
                 document.getElementById(
