@@ -1092,10 +1092,11 @@ const server = http.createServer(async (req, res) => {
 
         if (req.method === "POST" && new URL(req.url, "http://localhost").pathname === "/api/analytics/visit") {
             try {
-                const data = await readBody(req);
                 const clientIP = getClientIP(req);
 console.log("KICKSTATION VISITOR IP:", clientIP);
-                const locationData = await getVisitorLocation(clientIP);
+
+const locationData = await getVisitorLocation(clientIP);
+console.log("KICKSTATION LOCATION DATA:", JSON.stringify(locationData));
 
                 await recordVisit(
                     data?.visitor_id,
