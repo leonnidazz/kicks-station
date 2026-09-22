@@ -815,13 +815,24 @@ async function deleteAllOrders() {
 
 async function ensureAnalyticsTable() {
     if (!pool) throw new Error("DATABASE_URL belum diset di Render.");
+
     await pool.query(`CREATE TABLE IF NOT EXISTS site_visits (
         id BIGSERIAL PRIMARY KEY,
         created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
         visitor_id TEXT NOT NULL,
-        referral TEXT DEFAULT ''
+        referral TEXT DEFAULT '',
+        user_agent TEXT DEFAULT ''
     )`);
-    await pool.query(`CREATE INDEX IF NOT EXISTS idx_site_visits_visitor_id ON site_visits(visitor_id)`);
+
+    await pool.query(`
+        ALTER TABLE site_visits
+        ADD COLUMN IF NOT EXISTS user_agent TEXT DEFAULT ''
+    `);
+
+    await pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_site_visits_visitor_id
+        ON site_visits(visitor_id)
+    `);
 }
 
 async function recordVisit(visitorId, referral, userAgent) {
