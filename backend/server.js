@@ -1094,6 +1094,7 @@ const server = http.createServer(async (req, res) => {
             try {
                 const data = await readBody(req);
                 const clientIP = getClientIP(req);
+console.log("KICKSTATION VISITOR IP:", clientIP);
                 const locationData = await getVisitorLocation(clientIP);
 
                 await recordVisit(
