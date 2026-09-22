@@ -746,11 +746,7 @@ async function ensureOrdersTable() {
         keterangan TEXT DEFAULT ''
     )`);
 
-    await pool.query(`
-    ALTER TABLE site_visits
-    ADD COLUMN IF NOT EXISTS user_agent TEXT DEFAULT ''
-`);
-
+    
     await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS keterangan TEXT DEFAULT ''`);
     await pool.query(`ALTER TABLE orders ENABLE ROW LEVEL SECURITY`);
 }
@@ -816,57 +812,61 @@ async function deleteAllOrders() {
 async function ensureAnalyticsTable() {
     if (!pool) throw new Error("DATABASE_URL belum diset di Render.");
 
-    await pool.query(`CREATE TABLE IF NOT EXISTS site_visits (
-        id BIGSERIAL PRIMARY KEY,
-        created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-        visitor_id TEXT NOT NULL,
-        referral TEXT DEFAULT '',
-        user_agent TEXT DEFAULT ''
-    )`);
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS public.site_visits (
+            id BIGSERIAL PRIMARY KEY,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            visitor_id TEXT NOT NULL,
+            referral TEXT DEFAULT '',
+            user_agent TEXT DEFAULT ''
+        )
+    `);
 
     await pool.query(`
-        ALTER TABLE site_visits
+        ALTER TABLE public.site_visits
         ADD COLUMN IF NOT EXISTS user_agent TEXT DEFAULT ''
     `);
 
     await pool.query(`
         CREATE INDEX IF NOT EXISTS idx_site_visits_visitor_id
-        ON site_visits(visitor_id)
+        ON public.site_visits(visitor_id)
     `);
 }
 
 async function recordVisit(visitorId, referral, userAgent) {
     await ensureAnalyticsTable();
+
     const safeVisitor = String(visitorId || '').trim().slice(0, 100);
     const safeReferral = String(referral || '').trim().toLowerCase().slice(0, 100);
-    if (!safeVisitor) throw new Error('visitor_id wajib diisi.');
-    await pool.query(
-    `INSERT INTO site_visits (visitor_id, referral, user_agent)
-     VALUES ($1, $2, $3)`,
-    [safeVisitor, safeReferral, String(userAgent || '').slice(0, 500)]
-);
-}
+    const safeUserAgent = String(userAgent || '').slice(0, 500);
 
-async function getAnalytics() {
-    await ensureAnalyticsTable();
-    const result = await pool.query(`
-        SELECT
-            COUNT(*)::int AS total_visits,
-            COUNT(DISTINCT visitor_id)::int AS unique_visitors,
-            COUNT(*) FILTER (WHERE referral <> '')::int AS referral_visits
-        FROM site_visits
-    `);
-    return result.rows[0];
+    if (!safeVisitor) {
+        throw new Error('visitor_id wajib diisi.');
+    }
+
+    await pool.query(
+        `INSERT INTO public.site_visits
+        (visitor_id, referral, user_agent)
+        VALUES ($1, $2, $3)`,
+        [safeVisitor, safeReferral, safeUserAgent]
+    );
 }
 
 async function getRecentVisits(limit = 100) {
     await ensureAnalyticsTable();
+
     const result = await pool.query(`
-        SELECT id, created_at, visitor_id, referral, user_agent
-        FROM site_visits
+        SELECT
+            id,
+            created_at,
+            visitor_id,
+            referral,
+            user_agent
+        FROM public.site_visits
         ORDER BY created_at DESC, id DESC
         LIMIT $1
     `, [Math.min(Math.max(Number(limit) || 100, 1), 500)]);
+
     return result.rows.map(row => ({
         id: Number(row.id),
         created_at: row.created_at,
