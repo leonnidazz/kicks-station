@@ -1826,34 +1826,82 @@ const selectedSizes =
     new Set();
 
 
-function renderSizes() {
+function sortSizes(a, b) {
+    const na = Number(a);
+    const nb = Number(b);
 
-    const container =
-        document.getElementById(
-            "size-container"
-        );
+    if (Number.isFinite(na) && Number.isFinite(nb)) {
+        return na - nb;
+    }
+
+    if (Number.isFinite(na)) return -1;
+    if (Number.isFinite(nb)) return 1;
+
+    return String(a).localeCompare(String(b), "id", {
+        numeric: true,
+        sensitivity: "base"
+    });
+}
+
+function addCustomSize(targetSet, renderFunction, afterAdd) {
+    const value = prompt(
+        "Masukkan ukuran custom (contoh: 40.5, 41.5, 42.5):",
+        ""
+    );
+
+    if (value === null) return;
+
+    const size = String(value).trim().replace(",", ".");
+
+    if (!size) return;
+
+    if (size.length > 20) {
+        alert("Ukuran terlalu panjang.");
+        return;
+    }
+
+    if (targetSet.has(size)) {
+        targetSet.delete(size);
+    } else {
+        targetSet.add(size);
+    }
+
+    renderFunction();
+
+    if (typeof afterAdd === "function") {
+        afterAdd();
+    }
+}
+
+function createCustomSizeButton(targetSet, renderFunction, afterAdd) {
+    const button = document.createElement("button");
+
+    button.type = "button";
+    button.textContent = "Lainnya";
+    button.className =
+        "border border-dashed border-gray-400 rounded-xl py-3 text-sm font-bold hover:border-black hover:bg-gray-50 transition";
+
+    button.addEventListener("click", () => {
+        addCustomSize(targetSet, renderFunction, afterAdd);
+    });
+
+    return button;
+}
+
+function renderSizes() {
+    const container = document.getElementById("size-container");
 
     container.innerHTML = "";
 
     sizes.forEach(size => {
-
-        const button =
-            document.createElement(
-                "button"
-            );
+        const button = document.createElement("button");
 
         button.type = "button";
-
-        button.textContent =
-            size;
-
+        button.textContent = size;
         button.className =
             "size-button border border-gray-200 rounded-xl py-3 text-sm font-bold hover:border-black transition";
 
-        if (
-            selectedSizes.has(size)
-        ) {
-
+        if (selectedSizes.has(size)) {
             button.classList.add(
                 "bg-black",
                 "text-white",
@@ -1861,37 +1909,50 @@ function renderSizes() {
             );
         }
 
-        button.addEventListener(
-            "click",
-            () => {
-
-                if (
-                    selectedSizes.has(
-                        size
-                    )
-                ) {
-
-                    selectedSizes.delete(
-                        size
-                    );
-
-                } else {
-
-                    selectedSizes.add(
-                        size
-                    );
-                }
-
-                renderSizes();
-
-                updatePreview();
+        button.addEventListener("click", () => {
+            if (selectedSizes.has(size)) {
+                selectedSizes.delete(size);
+            } else {
+                selectedSizes.add(size);
             }
-        );
 
-        container.appendChild(
-            button
-        );
+            renderSizes();
+            updatePreview();
+        });
+
+        container.appendChild(button);
     });
+
+    const customSizes = [...selectedSizes].filter(
+        size => !sizes.includes(size)
+    );
+
+    customSizes.forEach(size => {
+        const button = document.createElement("button");
+
+        button.type = "button";
+        button.textContent = size;
+        button.className =
+            "border border-black bg-black text-white rounded-xl py-3 text-sm font-bold hover:bg-gray-800 transition";
+
+        button.title = "Klik untuk menghapus ukuran custom ini";
+
+        button.addEventListener("click", () => {
+            selectedSizes.delete(size);
+            renderSizes();
+            updatePreview();
+        });
+
+        container.appendChild(button);
+    });
+
+    container.appendChild(
+        createCustomSizeButton(
+            selectedSizes,
+            renderSizes,
+            updatePreview
+        )
+    );
 }
 
 
@@ -3885,72 +3946,67 @@ let editNewImageFiles = [];
 // =========================================================
 
 function renderEditSizes() {
-
     const container =
-        document.getElementById(
-            "edit-size-container"
-        );
+        document.getElementById("edit-size-container");
 
     container.innerHTML = "";
 
-    sizes.forEach(
-        size => {
+    sizes.forEach(size => {
+        const button = document.createElement("button");
 
-            const button =
-                document.createElement(
-                    "button"
-                );
+        button.type = "button";
+        button.textContent = size;
+        button.className =
+            "border border-gray-200 rounded-xl py-3 text-sm font-bold hover:border-black transition";
 
-            button.type = "button";
-
-            button.textContent =
-                size;
-
-            button.className =
-                "border border-gray-200 rounded-xl py-3 text-sm font-bold hover:border-black transition";
-
-            if (
-                editSelectedSizes.has(
-                    size
-                )
-            ) {
-
-                button.classList.add(
-                    "bg-black",
-                    "text-white",
-                    "border-black"
-                );
-            }
-
-            button.addEventListener(
-                "click",
-                () => {
-
-                    if (
-                        editSelectedSizes.has(
-                            size
-                        )
-                    ) {
-
-                        editSelectedSizes.delete(
-                            size
-                        );
-
-                    } else {
-
-                        editSelectedSizes.add(
-                            size
-                        );
-                    }
-
-                    renderEditSizes();
-                }
-            );
-
-            container.appendChild(
-                button
+        if (editSelectedSizes.has(size)) {
+            button.classList.add(
+                "bg-black",
+                "text-white",
+                "border-black"
             );
         }
+
+        button.addEventListener("click", () => {
+            if (editSelectedSizes.has(size)) {
+                editSelectedSizes.delete(size);
+            } else {
+                editSelectedSizes.add(size);
+            }
+
+            renderEditSizes();
+        });
+
+        container.appendChild(button);
+    });
+
+    const customSizes = [...editSelectedSizes].filter(
+        size => !sizes.includes(size)
+    );
+
+    customSizes.forEach(size => {
+        const button = document.createElement("button");
+
+        button.type = "button";
+        button.textContent = size;
+        button.className =
+            "border border-black bg-black text-white rounded-xl py-3 text-sm font-bold hover:bg-gray-800 transition";
+
+        button.title = "Klik untuk menghapus ukuran custom ini";
+
+        button.addEventListener("click", () => {
+            editSelectedSizes.delete(size);
+            renderEditSizes();
+        });
+
+        container.appendChild(button);
+    });
+
+    container.appendChild(
+        createCustomSizeButton(
+            editSelectedSizes,
+            renderEditSizes
+        )
     );
 }
 
@@ -5236,5 +5292,14 @@ checkAdminAuth()
 
 </script>
 
+<script>
+    // Perangkat admin ini tidak dihitung sebagai pengunjung website.
+    // index.html akan membaca flag yang sama sebelum mengirim analytics.
+    try {
+        localStorage.setItem("kickstation_admin_device", "1");
+    } catch (error) {
+        console.warn("Tidak dapat menyimpan status perangkat admin.", error);
+    }
+</script>
 </body>
 </html>
