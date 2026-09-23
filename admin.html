@@ -490,6 +490,249 @@ main > .hidden.lg\\:flex {
     }
 }
 
+
+/* =========================================================
+   KICK STATION ADMIN UI v2 — CLEAN / SPACIOUS / CONSISTENT
+   ========================================================= */
+:root{
+  --ui-bg:#f6f7f9;
+  --ui-card:#ffffff;
+  --ui-line:#e8eaee;
+  --ui-text:#171a21;
+  --ui-muted:#737b89;
+  --ui-soft:#f9fafb;
+  --ui-radius:18px;
+}
+
+html{background:var(--ui-bg);}
+body{background:var(--ui-bg)!important;color:var(--ui-text)!important;}
+
+/* content shell */
+main.lg\\:ml-72{background:var(--ui-bg)!important;}
+main.lg\\:ml-72 > .max-w-7xl{
+  width:100%!important;
+  max-width:1600px!important;
+  padding:28px 34px 56px!important;
+}
+
+/* top bar */
+main.lg\\:ml-72 > .hidden.lg\\:flex{
+  min-height:78px;
+  padding:18px 34px!important;
+  background:rgba(255,255,255,.96)!important;
+  border-bottom:1px solid var(--ui-line)!important;
+}
+
+/* global stats */
+main.lg\\:ml-72 > .max-w-7xl > section.grid.grid-cols-1.sm\\:grid-cols-2.lg\\:grid-cols-3{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:16px!important;
+  margin-bottom:34px!important;
+}
+main.lg\\:ml-72 > .max-w-7xl > section.grid.grid-cols-1.sm\\:grid-cols-2.lg\\:grid-cols-3 > div{
+  min-height:108px;
+  padding:22px 24px!important;
+  border:1px solid var(--ui-line)!important;
+  border-radius:var(--ui-radius)!important;
+  background:#fff!important;
+  box-shadow:0 2px 10px rgba(17,24,39,.025)!important;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+
+/* all page headings */
+#page-pesanan > div:first-child,
+#page-pengunjung > div:first-child{
+  margin-bottom:24px!important;
+  padding:0!important;
+  align-items:flex-end!important;
+}
+#page-pesanan > div:first-child h2,
+#page-pengunjung > div:first-child h2{
+  font-size:32px!important;
+  line-height:1.12!important;
+  letter-spacing:-.035em!important;
+  margin:0!important;
+}
+#page-pesanan > div:first-child p:last-child,
+#page-pengunjung > div:first-child p:last-child{
+  margin-top:7px!important;
+  color:#7b8492!important;
+  line-height:1.5!important;
+}
+#page-pesanan > div:first-child > div:last-child,
+#page-pengunjung > div:first-child > div:last-child{
+  gap:8px!important;
+}
+#page-pesanan > div:first-child button,
+#page-pengunjung > div:first-child button{
+  height:42px!important;
+  padding:0 15px!important;
+  border-radius:11px!important;
+  font-size:13px!important;
+  box-shadow:none!important;
+}
+
+/* visitor stat cards */
+#page-pengunjung > div.grid{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:14px!important;
+  margin-bottom:22px!important;
+}
+#page-pengunjung > div.grid > div{
+  min-height:105px;
+  padding:19px 20px!important;
+  border:1px solid var(--ui-line)!important;
+  border-radius:16px!important;
+  background:#fff!important;
+  box-shadow:0 2px 10px rgba(17,24,39,.025)!important;
+}
+#page-pengunjung > div.grid > div p:first-child{
+  color:#8a92a0!important;
+  font-size:10px!important;
+  font-weight:800!important;
+  letter-spacing:.08em!important;
+}
+#page-pengunjung > div.grid > div p:last-child{
+  margin-top:8px!important;
+  font-size:26px!important;
+  line-height:1!important;
+}
+
+/* main panels */
+#page-pesanan > div.bg-white.admin-panel,
+#page-pengunjung > div.bg-white.admin-panel{
+  border:1px solid var(--ui-line)!important;
+  border-radius:var(--ui-radius)!important;
+  background:#fff!important;
+  box-shadow:0 3px 18px rgba(17,24,39,.035)!important;
+  overflow:hidden!important;
+}
+
+#page-pesanan > div.admin-panel > div:first-child,
+#page-pengunjung > div.admin-panel > div:first-child{
+  padding:19px 22px!important;
+  min-height:74px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  background:#fff!important;
+  border-bottom:1px solid #eef0f3!important;
+}
+#page-pesanan > div.admin-panel > div:first-child h3,
+#page-pengunjung > div.admin-panel > div:first-child h3{
+  font-size:15px!important;
+  line-height:1.25!important;
+}
+#page-pesanan > div.admin-panel > div:first-child p,
+#page-pengunjung > div.admin-panel > div:first-child p{
+  margin-top:4px!important;
+  color:#9aa1ad!important;
+}
+
+/* orders list */
+#orders-list{
+  padding:18px!important;
+  background:#fafbfc!important;
+}
+#orders-list > article{
+  padding:20px!important;
+  margin:0 0 12px!important;
+  border:1px solid #e7e9ed!important;
+  border-radius:15px!important;
+  background:#fff!important;
+  box-shadow:none!important;
+}
+#orders-list > article:last-child{margin-bottom:0!important;}
+#orders-list > article:hover{border-color:#d9dde4!important;box-shadow:0 5px 16px rgba(17,24,39,.04)!important;}
+#orders-list .text-sm,#orders-list .text-xs{line-height:1.5!important;}
+#orders-list button,#orders-list select{border-radius:9px!important;}
+
+/* visitor table */
+#page-pengunjung .overflow-x-auto{
+  background:#fff!important;
+  overflow-x:auto!important;
+}
+#page-pengunjung table{
+  width:100%!important;
+  min-width:1060px!important;
+  border-collapse:collapse!important;
+}
+#page-pengunjung thead th{
+  height:46px!important;
+  padding:0 16px!important;
+  background:#f8f9fb!important;
+  border-bottom:1px solid #e9ebef!important;
+  color:#858e9d!important;
+  font-size:10px!important;
+  font-weight:800!important;
+  letter-spacing:.075em!important;
+  text-transform:uppercase!important;
+  text-align:left!important;
+  white-space:nowrap!important;
+}
+#page-pengunjung tbody td{
+  min-height:60px!important;
+  padding:13px 16px!important;
+  border-bottom:1px solid #f0f1f3!important;
+  color:#4f5867!important;
+  font-size:12px!important;
+  vertical-align:middle!important;
+}
+#page-pengunjung tbody tr:last-child td{border-bottom:0!important;}
+#page-pengunjung tbody tr:hover td{background:#fafbfc!important;}
+#page-pengunjung tbody td:nth-child(1){white-space:nowrap;color:#7b8492!important;}
+#page-pengunjung tbody td:nth-child(2){font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px!important;color:#626b79!important;}
+#page-pengunjung tbody td:nth-child(3){min-width:180px!important;}
+#page-pengunjung tbody td:nth-child(4){min-width:190px!important;font-weight:700!important;color:#303744!important;}
+#page-pengunjung tbody td:nth-child(5),#page-pengunjung tbody td:nth-child(6){white-space:nowrap;}
+#page-pengunjung tbody td:nth-child(7){color:#6b7280!important;}
+#page-pengunjung tbody td:last-child{text-align:right!important;white-space:nowrap;}
+#page-pengunjung tbody td:last-child button{
+  height:32px!important;
+  min-width:58px!important;
+  padding:0 10px!important;
+  border-radius:8px!important;
+  font-size:11px!important;
+}
+
+/* product page */
+#page-semua > div:first-child{margin-bottom:24px!important;}
+#page-semua > div:first-child h1,
+#page-tambah > section:first-child h1{
+  font-size:32px!important;
+  line-height:1.12!important;
+  letter-spacing:-.035em!important;
+}
+#page-semua > section,
+#page-tambah > .grid > section,
+#page-tambah > .grid > div{
+  border:1px solid var(--ui-line)!important;
+  box-shadow:0 3px 18px rgba(17,24,39,.03)!important;
+}
+#product-list{gap:16px!important;}
+
+/* sidebar */
+#sidebar{width:260px!important;border-color:var(--ui-line)!important;box-shadow:2px 0 14px rgba(17,24,39,.025)!important;}
+#sidebar nav{padding:14px!important;}
+.sidebar-item{min-height:44px!important;border-radius:11px!important;font-size:14px!important;}
+main.lg\\:ml-72{margin-left:260px!important;}
+
+/* mobile */
+@media(max-width:1023px){
+  main.lg\\:ml-72{margin-left:0!important;}
+  main.lg\\:ml-72 > .max-w-7xl{padding:22px 18px 40px!important;}
+  main.lg\\:ml-72 > .max-w-7xl > section.grid.grid-cols-1.sm\\:grid-cols-2.lg\\:grid-cols-3{grid-template-columns:1fr!important;}
+  #page-pengunjung > div.grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;}
+}
+@media(max-width:640px){
+  #page-pengunjung > div.grid{grid-template-columns:1fr!important;}
+  #page-pesanan > div:first-child h2,#page-pengunjung > div:first-child h2,#page-semua > div:first-child h1,#page-tambah > section:first-child h1{font-size:27px!important;}
+}
+
 </style>
 </head>
 
