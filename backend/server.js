@@ -299,6 +299,11 @@ function toStoragePath(imagePath) {
         return value.slice("product-images/".length);
     }
 
+    // Path relatif langsung dari bucket, misalnya: products/51/foto.jpg
+    if (value.startsWith("products/")) {
+        return value;
+    }
+
     // URL Supabase Storage public.
     if (SUPABASE_URL) {
         try {
