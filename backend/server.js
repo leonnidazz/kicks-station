@@ -974,17 +974,12 @@ async function deleteAllVisits() {
     await pool.query(`DELETE FROM public.site_visits`);
 }
 
-async function deleteVisitById(id) {
+async function deleteVisit(id) {
     await ensureAnalyticsTable();
-
-    const result = await pool.query(
-        `DELETE FROM public.site_visits WHERE id = $1 RETURNING id`,
-        [id]
-    );
-
-    if (!result.rowCount) {
-        throw new Error("Kunjungan tidak ditemukan.");
-    }
+    const visitId = Number(id);
+    if (!Number.isInteger(visitId) || visitId <= 0) throw new Error("ID kunjungan tidak valid.");
+    const result = await pool.query(`DELETE FROM public.site_visits WHERE id=$1 RETURNING id`, [visitId]);
+    if (!result.rows.length) throw new Error("Kunjungan tidak ditemukan.");
 }
 
 async function ensureAnalyticsTable() {
@@ -1681,36 +1676,21 @@ const server = http.createServer(async (req, res) => {
             return;
         }
 
-        // =====================================================
-        // HAPUS SATU KUNJUNGAN - ADMIN
-        // =====================================================
-        if (req.method === "DELETE" && new URL(req.url, "http://localhost").pathname.startsWith("/api/analytics/visits/") && new URL(req.url, "http://localhost").pathname !== "/api/analytics/visits") {
-            if (!requireAdmin(req, res)) return;
-
-            try {
-                const pathname = new URL(req.url, "http://localhost").pathname;
-                const id = Number(pathname.split("/").pop());
-
-                if (!Number.isInteger(id) || id <= 0) {
-                    throw new Error("ID kunjungan tidak valid.");
+        if (req.method === "DELETE") {
+            const pathname = new URL(req.url, "http://localhost").pathname;
+            const match = pathname.match(/^\/api\/analytics\/visits\/(\d+)$/);
+            if (match) {
+                if (!requireAdmin(req, res)) return;
+                try {
+                    await deleteVisit(Number(match[1]));
+                    sendJSON(res, 200, { success: true, message: "Kunjungan berhasil dihapus." });
+                } catch (error) {
+                    console.error("Gagal menghapus kunjungan:", error);
+                    const status = error.message === "Kunjungan tidak ditemukan." ? 404 : 500;
+                    sendJSON(res, status, { success: false, message: error.message || "Kunjungan tidak dapat dihapus." });
                 }
-
-                await deleteVisitById(id);
-
-                sendJSON(res, 200, {
-                    success: true,
-                    message: "Kunjungan berhasil dihapus."
-                });
-            } catch (error) {
-                console.error("Gagal menghapus kunjungan:", error);
-
-                sendJSON(res, 400, {
-                    success: false,
-                    message: error.message || "Kunjungan tidak dapat dihapus."
-                });
+                return;
             }
-
-            return;
         }
 
         if (req.method === "DELETE" && new URL(req.url, "http://localhost").pathname === "/api/analytics/visits") {
