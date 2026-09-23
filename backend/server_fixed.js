@@ -1668,6 +1668,30 @@ const server = http.createServer(async (req, res) => {
             return;
         }
 
+        if (req.method === "DELETE" && new URL(req.url, "http://localhost").pathname === "/api/analytics/visits") {
+    if (!requireAdmin(req, res)) return;
+
+    try {
+        await deleteAllVisits();
+
+        sendJSON(res, 200, {
+            success: true,
+            message: "Seluruh riwayat kunjungan berhasil dihapus."
+        });
+    } catch (error) {
+        console.error("Gagal menghapus riwayat kunjungan:", error);
+
+        sendJSON(res, 500, {
+            success: false,
+            message:
+                error.message ||
+                "Riwayat kunjungan tidak dapat dihapus."
+        });
+    }
+
+    return;
+}
+
         // =====================================================
         // HAPUS SATU PESANAN - ADMIN
         // =====================================================
