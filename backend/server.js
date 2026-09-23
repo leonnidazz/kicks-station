@@ -969,6 +969,11 @@ async function deleteAllOrders() {
     await pool.query(`DELETE FROM orders`);
 }
 
+async function deleteAllVisits() {
+    await ensureAnalyticsTable();
+    await pool.query(`DELETE FROM public.site_visits`);
+}
+
 async function ensureAnalyticsTable() {
     if (!pool) throw new Error("DATABASE_URL belum diset di Render.");
 
