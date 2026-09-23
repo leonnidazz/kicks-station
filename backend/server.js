@@ -974,6 +974,19 @@ async function deleteAllVisits() {
     await pool.query(`DELETE FROM public.site_visits`);
 }
 
+async function deleteVisitById(id) {
+    await ensureAnalyticsTable();
+
+    const result = await pool.query(
+        `DELETE FROM public.site_visits WHERE id = $1 RETURNING id`,
+        [id]
+    );
+
+    if (!result.rowCount) {
+        throw new Error("Kunjungan tidak ditemukan.");
+    }
+}
+
 async function ensureAnalyticsTable() {
     if (!pool) throw new Error("DATABASE_URL belum diset di Render.");
 
@@ -1665,6 +1678,38 @@ const server = http.createServer(async (req, res) => {
                 console.error("Gagal menghapus riwayat pesanan:", error);
                 sendJSON(res, 500, { success:false, message:error.message || "Riwayat pesanan tidak dapat dihapus." });
             }
+            return;
+        }
+
+        // =====================================================
+        // HAPUS SATU KUNJUNGAN - ADMIN
+        // =====================================================
+        if (req.method === "DELETE" && new URL(req.url, "http://localhost").pathname.startsWith("/api/analytics/visits/") && new URL(req.url, "http://localhost").pathname !== "/api/analytics/visits") {
+            if (!requireAdmin(req, res)) return;
+
+            try {
+                const pathname = new URL(req.url, "http://localhost").pathname;
+                const id = Number(pathname.split("/").pop());
+
+                if (!Number.isInteger(id) || id <= 0) {
+                    throw new Error("ID kunjungan tidak valid.");
+                }
+
+                await deleteVisitById(id);
+
+                sendJSON(res, 200, {
+                    success: true,
+                    message: "Kunjungan berhasil dihapus."
+                });
+            } catch (error) {
+                console.error("Gagal menghapus kunjungan:", error);
+
+                sendJSON(res, 400, {
+                    success: false,
+                    message: error.message || "Kunjungan tidak dapat dihapus."
+                });
+            }
+
             return;
         }
 
