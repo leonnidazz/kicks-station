@@ -2232,6 +2232,15 @@
         // Analytics anonim: satu ID acak per browser, tanpa nama/nomor WhatsApp.
         (function trackKicksVisit() {
             try {
+                // Perangkat admin/pemilik tidak dihitung sebagai pengunjung.
+                // admin.html memberi flag ini pada perangkat yang digunakan untuk admin.
+                const isAdminDevice =
+                    localStorage.getItem("kickstation_admin_device") === "1";
+
+                if (isAdminDevice) {
+                    return;
+                }
+
                 const VISITOR_KEY = "kicks_station_visitor_id";
                 let visitorId = localStorage.getItem(VISITOR_KEY);
                 if (!visitorId) {
