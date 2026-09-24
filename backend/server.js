@@ -1138,7 +1138,7 @@ async function getRecentVisits(limit = 100) {
 
 const server = http.createServer(async (req, res) => {
     console.log("REQUEST:", req.method, req.url);
-    res.setHeader("Access-Control-Allow-Origin", "https://leonnidazz.github.io");
+    res.setHeader("Access-Control-Allow-Origin", "*");
     res.setHeader("Access-Control-Allow-Credentials", "true");
     res.setHeader(
         "Access-Control-Allow-Methods",
