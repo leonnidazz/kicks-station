@@ -1335,7 +1335,7 @@ function showToast(message, type = "success") {
 }
 
 // LOGIKA PESANAN DAN PENGUNJUNG TETAP SAMA PERSIS.
-const referralNames = { hsn: "Hasan AU", mrm: "Rosyad AU", amr: "Ammar GE", ajn: "Juna CTAF", roy: "Roy CTAF", king: "Risky CTAF", zkr: "Zaka UNDIP", udn: "Udin CTAF", amu: "Amru UNDIP", zni: "Zaini CTAF", anm: "Anam CTAF", rhn: "Rihan CTAF", bri: "Bara CTAF", ali: "Ali jogja", fth: "hahan", fiq: "faiq undip", eka: "Dhani CTAF", ky: "Fathan" };
+const referralNames = { hsn: "Hasan AU", mrm: "Rosyad AU", amr: "Ammar GE", ajn: "Juna CTAF", roy: "Roy CTAF", king: "Risky CTAF", zkr: "Zaka UNDIP", udn: "Udin CTAF", amu: "Amru UNDIP", zni: "Zaini CTAF", anm: "Anam CTAF", rhn: "Rihan CTAF", bri: "Bara CTAF", ali: "Ali jogja", fth: "hahan", fiq: "faiq undip", eka: "Dhani CTAF", ky: "Fathan", wld: "Wildan CTAF" };
 function formatReferral(referral) { const code = String(referral || "").trim().toLowerCase(); if (!code) return "-"; return referralNames[code] ? `${referralNames[code]} (${code.toUpperCase()})` : code.toUpperCase(); }
 function escapeOrderText(value) { return String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c])); }
 function statusLabel(status) { return ({ baru: "Menunggu", diproses: "Diproses", selesai: "Sukses", batal: "Batal" }[status] || status || "Menunggu"); }
