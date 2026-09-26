@@ -10,7 +10,7 @@ tailwind.config = {
     theme: {
         extend: {
             fontFamily: {
-                sans: ["Inter", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "Roboto", "sans-serif"]
+                sans: ["Plus Jakarta Sans", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"]
             },
             colors: {
                 brand: {
@@ -29,24 +29,28 @@ tailwind.config = {
     }
 }
 </script>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <style>
 /* =====================================================
    AESTHETIC & MODERN UI REFRESH
    ===================================================== */
 :root {
-    --bg-mesh: radial-gradient(at 0% 0%, hsla(210, 100%, 97%, 1) 0, transparent 50%), 
-               radial-gradient(at 100% 0%, hsla(0, 0%, 100%, 1) 0, transparent 50%),
-               radial-gradient(at 100% 100%, hsla(210, 50%, 95%, 1) 0, transparent 50%);
+    --ink: #10233f;
+    --muted: #6b7a90;
+    --accent: #157a78;
+    --accent-soft: #e3f3f0;
+    --bg-mesh: radial-gradient(circle at 5% 0%, rgba(210, 239, 238, 0.72), transparent 32%),
+               radial-gradient(circle at 100% 8%, rgba(255, 239, 216, 0.72), transparent 28%),
+               linear-gradient(135deg, #f7faf9 0%, #eef3f7 100%);
 }
 
 body {
-    background-color: #f8fafc;
+    background-color: #f7faf9;
     background-image: var(--bg-mesh);
     background-attachment: fixed;
-    color: #0f172a;
-    font-family: 'Inter', sans-serif;
+    color: var(--ink);
+    font-family: 'Plus Jakarta Sans', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
@@ -58,17 +62,17 @@ body {
 
 /* Glassmorphism Panels */
 .glass-panel {
-    background: rgba(255, 255, 255, 0.65);
-    backdrop-filter: blur(24px);
+    background: rgba(255, 255, 255, 0.76);
+    backdrop-filter: blur(18px);
     -webkit-backdrop-filter: blur(24px);
-    border: 1px solid rgba(255, 255, 255, 0.8);
-    box-shadow: 0 8px 32px 0 rgba(15, 23, 42, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.92);
+    box-shadow: 0 14px 34px rgba(16, 35, 63, 0.06);
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .glass-panel:hover {
-    box-shadow: 0 12px 48px 0 rgba(15, 23, 42, 0.06);
-    background: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 18px 42px rgba(16, 35, 63, 0.1);
+    background: rgba(255, 255, 255, 0.9);
 }
 
 /* Sidebar Active State */
@@ -80,9 +84,9 @@ body {
     transform: translateX(4px);
 }
 .sidebar-item.active {
-    background: #0f172a;
+    background: var(--ink);
     color: #ffffff;
-    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.15);
+    box-shadow: 0 10px 24px rgba(16, 35, 63, 0.18);
 }
 
 /* Inputs & Textareas */
@@ -94,8 +98,8 @@ input, select, textarea {
 input:focus, select:focus, textarea:focus {
     background: #ffffff !important;
     outline: none;
-    border-color: #0f172a !important;
-    box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.08) !important;
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 4px rgba(21, 122, 120, 0.12) !important;
     transform: translateY(-1px);
 }
 
@@ -123,8 +127,8 @@ input:focus, select:focus, textarea:focus {
 
 /* Upload Dropzone */
 .drop-active {
-    border-color: #0f172a !important;
-    background: rgba(241, 245, 249, 0.8) !important;
+    border-color: var(--accent) !important;
+    background: var(--accent-soft) !important;
     transform: scale(1.02);
 }
 
@@ -157,7 +161,6 @@ button {
 button:active {
     transform: scale(0.97);
 }
-</button>
 </style>
 </head>
 
@@ -1335,7 +1338,7 @@ function showToast(message, type = "success") {
 }
 
 // LOGIKA PESANAN DAN PENGUNJUNG TETAP SAMA PERSIS.
-const referralNames = { hsn: "Hasan AU", mrm: "Rosyad AU", amr: "Ammar GE", ajn: "Juna CTAF", roy: "Roy CTAF", king: "Risky CTAF", zkr: "Zaka UNDIP", udn: "Udin CTAF", amu: "Amru UNDIP", zni: "Zaini CTAF", anm: "Anam CTAF", rhn: "Rihan CTAF", bri: "Bara CTAF", ali: "Ali jogja", fth: "hahan", fiq: "faiq undip", eka: "Dhani CTAF", ky: "Fathan", wld: "Wildan CTAF" };
+const referralNames = { hsn: "Hasan AU", mrm: "Rosyad AU", amr: "Ammar GE", ajn: "Juna CTAF", roy: "Roy CTAF", king: "Risky CTAF", zkr: "Zaka UNDIP", udn: "Udin CTAF", amu: "Amru UNDIP", zni: "Zaini CTAF", anm: "Anam CTAF", rhn: "Rihan CTAF", bri: "Bara CTAF", ali: "Ali jogja", fth: "hahan", fiq: "faiq undip", eka: "Dhani CTAF", ky: "Fathan", wld: "Wildan CTAF", jmk: "Fadel UNDIP" };
 function formatReferral(referral) { const code = String(referral || "").trim().toLowerCase(); if (!code) return "-"; return referralNames[code] ? `${referralNames[code]} (${code.toUpperCase()})` : code.toUpperCase(); }
 function escapeOrderText(value) { return String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c])); }
 function statusLabel(status) { return ({ baru: "Menunggu", diproses: "Diproses", selesai: "Sukses", batal: "Batal" }[status] || status || "Menunggu"); }
