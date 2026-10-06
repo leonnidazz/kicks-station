@@ -197,16 +197,16 @@
     </button>
 
     <!-- =========================
-         TOMBOL WHATSAPP
+         TOMBOL CHAT WEBSITE
     ========================== -->
-    <a
-        id="whatsapp-float"
-        href="#"
-        target="_blank"
-        class="whatsapp-float-anim fixed bottom-6 right-6 z-40 bg-green-500 hover:bg-green-600 text-white p-4 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110">
-
-        <ion-icon name="logo-whatsapp" class="text-3xl"></ion-icon>
-    </a>
+    <button
+        id="chat-float"
+        onclick="openChat()"
+        aria-label="Buka chat Kicks Station"
+        class="fixed bottom-6 right-6 z-40 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110">
+        <ion-icon name="chatbubbles-outline" class="text-3xl"></ion-icon>
+        <span id="chat-unread-badge" class="hidden absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold min-w-6 h-6 px-1 rounded-full flex items-center justify-center border-2 border-white dark:border-gray-900">0</span>
+    </button>
 
     <!-- =========================
          HEADER
@@ -614,7 +614,7 @@
                     </div>
 
                     <h3 class="font-bold text-xl text-gray-900 dark:text-white mb-2">
-                        Respon Cepat via WhatsApp
+                        Respon Cepat via Chat Website
                     </h3>
 
                     <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
@@ -646,7 +646,7 @@
                 </span>
 
                 <h2 class="text-3xl font-black text-gray-900 dark:text-white mt-2">
-                    Alur Pemesanan via WhatsApp
+                    Alur Pemesanan via Chat Website
                 </h2>
 
                 <p class="text-gray-500 dark:text-gray-400 mt-2">
@@ -691,7 +691,7 @@
                                 <strong class="text-gray-700 dark:text-gray-300">
                                     Klik Tombol Beli:
                                 </strong>
-                                Masukkan keranjang atau langsung klik tombol WhatsApp.
+                                Masukkan keranjang lalu lanjutkan pesanan melalui chat website.
                             </li>
 
                         </ul>
@@ -724,7 +724,7 @@
                                 <strong class="text-gray-700 dark:text-gray-300">
                                     Pesan Otomatis:
                                 </strong>
-                                Terhubung ke WhatsApp dengan format pesanan instan.
+                                Terhubung ke chat website dengan format pesanan instan.
                             </li>
 
                             <li>
@@ -746,7 +746,7 @@
                     </div>
 
                     <div class="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700 text-xs font-semibold text-green-600 dark:text-green-400 uppercase tracking-wider">
-                        Fase WhatsApp
+                        Fase Chat Website
                     </div>
 
                 </div>
@@ -927,6 +927,42 @@
 
     </footer>
 
+
+    <!-- =====================================================
+         CHAT WEBSITE — PELANGGAN
+    ====================================================== -->
+    <div id="chat-modal" class="hidden fixed inset-0 z-[70] bg-gray-950/60 backdrop-blur-sm items-end sm:items-center justify-center">
+        <div class="w-full sm:max-w-md sm:mx-4 h-[88vh] sm:h-[680px] bg-white dark:bg-gray-900 rounded-t-3xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col">
+            <div class="px-5 py-4 bg-blue-600 text-white flex items-center justify-between">
+                <div>
+                    <div class="font-black text-lg flex items-center gap-2">
+                        <span class="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center">💬</span>
+                        Kicks Station Chat
+                    </div>
+                    <p class="text-xs text-blue-100 mt-0.5">Admin akan membalas langsung di sini.</p>
+                </div>
+                <button onclick="closeChat()" class="w-10 h-10 rounded-full hover:bg-white/15 text-2xl">&times;</button>
+            </div>
+
+            <div id="chat-messages" class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 dark:bg-gray-950"></div>
+
+            <div class="px-4 pt-3 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800">
+                <div id="chat-quick-replies" class="flex gap-2 overflow-x-auto pb-3">
+                    <button onclick="sendQuickChat('Halo, saya mau tanya stok produk.')" class="shrink-0 px-3 py-2 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-200 text-xs font-bold">📦 Tanya stok</button>
+                    <button onclick="sendQuickChat('Apakah ada ukuran 42?')" class="shrink-0 px-3 py-2 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-200 text-xs font-bold">👟 Tanya ukuran</button>
+                    <button onclick="sendQuickChat('Saya ingin memesan produk.')" class="shrink-0 px-3 py-2 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-200 text-xs font-bold">🛒 Mau pesan</button>
+                    <button onclick="sendQuickChat('Bisa bantu rekomendasikan sepatu?')" class="shrink-0 px-3 py-2 rounded-full bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-200 text-xs font-bold">✨ Rekomendasi</button>
+                </div>
+                <form onsubmit="sendChatMessage(event)" class="flex gap-2 pb-4">
+                    <input id="chat-input" maxlength="2000" autocomplete="off" placeholder="Tulis pesan..." class="min-w-0 flex-1 rounded-2xl border border-gray-200 dark:border-gray-700 px-4 py-3 bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white">
+                    <button id="chat-send-button" class="w-12 h-12 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shrink-0">
+                        <ion-icon name="send-outline" class="text-xl"></ion-icon>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <!-- =====================================================
          LIGHTBOX / GALERI FOTO
     ====================================================== -->
@@ -1063,12 +1099,12 @@
                 </div>
 
                 <button
-                    onclick="checkoutWA()"
-                    class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-green-500/30">
+                    onclick="checkoutChat()"
+                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-blue-500/30">
 
-                    <ion-icon name="logo-whatsapp" class="text-xl"></ion-icon>
+                    <ion-icon name="chatbubbles-outline" class="text-xl"></ion-icon>
 
-                    Pesan Sekarang (WhatsApp)
+                    Pesan Sekarang via Chat
 
                 </button>
 
@@ -2207,140 +2243,307 @@
 
 
         /* =====================================================
-           WHATSAPP AFFILIATE
+           CHAT WEBSITE
         ===================================================== */
+        const CHAT_API = 'https://kicks-station-api.onrender.com';
+        const CHAT_VISITOR_KEY = 'kicks_station_visitor_id';
+        const CHAT_TOKEN_KEY = 'kicks_station_chat_token';
+        const CHAT_REF_KEY = 'kicks_station_referral';
 
-        const defaultWA =
-            "6285931100080";
+        const params = new URLSearchParams(window.location.search);
+        const ref = (params.get("ref") || "").trim().toLowerCase();
+        if (ref) sessionStorage.setItem(CHAT_REF_KEY, ref);
+        const referral = ref || sessionStorage.getItem(CHAT_REF_KEY) || "";
 
-
-        const params =
-            new URLSearchParams(
-                window.location.search
-            );
-
-
-        const ref =
-            (params.get("ref") || "").trim().toLowerCase();
-
-        // Referral hanya untuk pencatatan. Semua checkout tetap ke WA utama.
-        if (ref) {
-            sessionStorage.setItem("kicks_station_referral", ref);
+        function getChatVisitorId() {
+            let id = localStorage.getItem(CHAT_VISITOR_KEY);
+            if (!id) {
+                id = (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2));
+                localStorage.setItem(CHAT_VISITOR_KEY, id);
+            }
+            return id;
         }
 
-        const referral =
-            ref || sessionStorage.getItem("kicks_station_referral") || "";
+        function getChatToken() {
+            let token = localStorage.getItem(CHAT_TOKEN_KEY);
+            if (!token) {
+                const bytes = new Uint8Array(24);
+                crypto.getRandomValues(bytes);
+                token = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+                localStorage.setItem(CHAT_TOKEN_KEY, token);
+            }
+            return token;
+        }
 
-        const targetWA = defaultWA;
+        let chatConversation = null;
+        let chatLastMessageId = 0;
+        let chatPollTimer = null;
+        let chatOpenState = false;
 
-        // Analytics anonim: satu ID acak per browser, tanpa nama/nomor WhatsApp.
+        function escapeChatHTML(value) {
+            return String(value ?? '').replace(/[&<>"']/g, c => ({
+                '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;'
+            }[c]));
+        }
+
+        function formatChatTime(value) {
+            try {
+                return new Date(value).toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit' });
+            } catch (_) { return ''; }
+        }
+
+        function renderChatMessage(message) {
+            const isMine = message.sender === 'customer';
+            const isBot = message.sender === 'bot';
+            const bubbleClass = isMine
+                ? 'bg-blue-600 text-white rounded-br-md'
+                : isBot
+                    ? 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-200 border border-gray-200 dark:border-gray-700 rounded-bl-md'
+                    : 'bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-100 border border-gray-200 dark:border-gray-700 rounded-bl-md';
+
+            return `<div class="flex ${isMine ? 'justify-end' : 'justify-start'}">
+                <div class="max-w-[86%] ${bubbleClass} rounded-2xl px-4 py-3 shadow-sm">
+                    ${isBot ? '<div class="text-[10px] font-black uppercase tracking-wider opacity-60 mb-1">Kicks Station Bot</div>' : ''}
+                    <div class="text-sm whitespace-pre-wrap break-words">${escapeChatHTML(message.message)}</div>
+                    <div class="text-[10px] mt-1 opacity-60 text-right">${formatChatTime(message.created_at)}</div>
+                </div>
+            </div>`;
+        }
+
+        function appendChatMessages(messages) {
+            const box = document.getElementById('chat-messages');
+            if (!box || !Array.isArray(messages) || !messages.length) return;
+            const empty = box.querySelector('[data-chat-empty]');
+            if (empty) empty.remove();
+
+            messages.forEach(message => {
+                if (Number(message.id) <= chatLastMessageId) return;
+                box.insertAdjacentHTML('beforeend', renderChatMessage(message));
+                chatLastMessageId = Number(message.id);
+            });
+            box.scrollTop = box.scrollHeight;
+        }
+
+        async function ensureChatConversation() {
+            if (chatConversation) return chatConversation;
+
+            const response = await fetch(`${CHAT_API}/api/chat/conversations`, {
+                method:'POST',
+                headers:{'Content-Type':'application/json'},
+                body:JSON.stringify({
+                    visitor_id:getChatVisitorId(),
+                    conversation_token:getChatToken(),
+                    referral
+                })
+            });
+
+            const data = await response.json();
+            if (!response.ok || !data.success) throw new Error(data.message || 'Chat tidak dapat dibuka.');
+
+            chatConversation = data.conversation;
+            chatLastMessageId = 0;
+            appendChatMessages(data.messages || []);
+            return chatConversation;
+        }
+
+        async function pollCustomerChat() {
+            if (!chatConversation) return;
+            try {
+                const query = new URLSearchParams({
+                    visitor_id:getChatVisitorId(),
+                    conversation_token:getChatToken(),
+                    after_id:String(chatLastMessageId)
+                });
+                const response = await fetch(`${CHAT_API}/api/chat/messages?${query.toString()}`, { cache:'no-store' });
+                if (!response.ok) return;
+                const data = await response.json();
+                if (data.success) {
+                    const hadNew = Array.isArray(data.messages) && data.messages.length > 0;
+                    appendChatMessages(data.messages || []);
+                    if (hadNew && !chatOpenState) {
+                        updateCustomerUnread(1);
+                    }
+                }
+            } catch (_) {}
+        }
+
+        function startCustomerChatPolling() {
+            clearInterval(chatPollTimer);
+            chatPollTimer = setInterval(pollCustomerChat, 3000);
+        }
+
+        function updateCustomerUnread(value) {
+            const badge = document.getElementById('chat-unread-badge');
+            if (!badge) return;
+            const count = Math.max(Number(value) || 0, 0);
+            badge.textContent = count > 9 ? '9+' : String(count);
+            badge.classList.toggle('hidden', count === 0);
+        }
+
+        async function openChat(prefill = '') {
+            const modal = document.getElementById('chat-modal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            chatOpenState = true;
+
+            const box = document.getElementById('chat-messages');
+            if (!chatConversation && box) {
+                box.innerHTML = '<div data-chat-empty class="text-center text-gray-400 text-sm py-10">Menghubungkan ke chat...</div>';
+            }
+
+            try {
+                await ensureChatConversation();
+                updateCustomerUnread(0);
+                if (prefill) {
+                    const input = document.getElementById('chat-input');
+                    input.value = prefill;
+                    input.focus();
+                } else {
+                    document.getElementById('chat-input')?.focus();
+                }
+                startCustomerChatPolling();
+            } catch (error) {
+                if (box) box.innerHTML = `<div class="text-center text-red-500 font-semibold text-sm py-10">${escapeChatHTML(error.message)}</div>`;
+            }
+        }
+
+        function closeChat() {
+            const modal = document.getElementById('chat-modal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            chatOpenState = false;
+        }
+
+        async function sendChatMessage(event) {
+            if (event) event.preventDefault();
+            const input = document.getElementById('chat-input');
+            const button = document.getElementById('chat-send-button');
+            const message = String(input?.value || '').trim();
+            if (!message) return;
+
+            button.disabled = true;
+            try {
+                await ensureChatConversation();
+                const response = await fetch(`${CHAT_API}/api/chat/messages`, {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({
+                        visitor_id:getChatVisitorId(),
+                        conversation_token:getChatToken(),
+                        message
+                    })
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) throw new Error(data.message || 'Pesan gagal dikirim.');
+                input.value = '';
+                appendChatMessages([data.message]);
+                startCustomerChatPolling();
+            } catch (error) {
+                alert(error.message || 'Pesan gagal dikirim.');
+            } finally {
+                button.disabled = false;
+                input.focus();
+            }
+        }
+
+        async function sendQuickChat(message) {
+            try {
+                await ensureChatConversation();
+                const response = await fetch(`${CHAT_API}/api/chat/messages`, {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({
+                        visitor_id:getChatVisitorId(),
+                        conversation_token:getChatToken(),
+                        message
+                    })
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) throw new Error(data.message || 'Pesan gagal dikirim.');
+                appendChatMessages([data.message]);
+                startCustomerChatPolling();
+            } catch (error) {
+                alert(error.message || 'Pesan gagal dikirim.');
+            }
+        }
+
+        async function checkoutChat() {
+            if (cart.length === 0) {
+                alert('Keranjang belanja Anda kosong!');
+                return;
+            }
+
+            let total = 0;
+            const lines = ['Halo Kicks Station, saya ingin memesan:', ''];
+
+            cart.forEach((item, index) => {
+                const subtotal = item.price * item.qty;
+                total += subtotal;
+                lines.push(
+                    `${index + 1}. ${item.name}`,
+                    `   • Size: ${item.size}`,
+                    `   • Jumlah: ${item.qty} pcs`,
+                    `   • Harga: Rp ${subtotal.toLocaleString('id-ID')}`,
+                    ''
+                );
+            });
+
+            lines.push(`Total Pembayaran: Rp ${total.toLocaleString('id-ID')}`, '', 'Mohon dibantu cek ketersediaan dan proses pesanannya. Terima kasih!');
+
+            try {
+                await ensureChatConversation();
+
+                const response = await fetch(`${CHAT_API}/api/chat/messages`, {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({
+                        visitor_id:getChatVisitorId(),
+                        conversation_token:getChatToken(),
+                        message:lines.join('\n')
+                    })
+                });
+                const data = await response.json();
+                if (!response.ok || !data.success) throw new Error(data.message || 'Pesanan gagal dikirim ke chat.');
+
+                // Tetap catat order ke database lama agar riwayat Pesanan Masuk admin tidak hilang.
+                fetch(`${CHAT_API}/api/orders`, {
+                    method:'POST',
+                    headers:{'Content-Type':'application/json'},
+                    body:JSON.stringify({
+                        referral,
+                        items:cart.map(item => ({
+                            name:item.name, size:item.size, qty:item.qty, price:item.price
+                        })),
+                        total
+                    }),
+                    keepalive:true
+                }).catch(error => console.error('Gagal mencatat pesanan:', error));
+
+                cart = [];
+                updateCartUI();
+                toggleCart();
+                await openChat();
+            } catch (error) {
+                alert(error.message || 'Pesanan gagal dikirim ke chat.');
+            }
+        }
+
+        // Analytics anonim tetap dipertahankan.
         (function trackKicksVisit() {
             try {
-                // Perangkat admin/pemilik tidak dihitung sebagai pengunjung.
-                // admin.html memberi flag ini pada perangkat yang digunakan untuk admin.
-                const isAdminDevice =
-                    localStorage.getItem("kickstation_admin_device") === "1";
-
-                if (isAdminDevice) {
-                    return;
-                }
-
-                const VISITOR_KEY = "kicks_station_visitor_id";
-                let visitorId = localStorage.getItem(VISITOR_KEY);
-                if (!visitorId) {
-                    visitorId = (crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2)));
-                    localStorage.setItem(VISITOR_KEY, visitorId);
-                }
-                const payload = JSON.stringify({
-    visitor_id: visitorId,
-    referral: ref || "",
-    user_agent: navigator.userAgent
-});
-                const analyticsUrl = "https://kicks-station-api.onrender.com/api/analytics/visit";
+                const isAdminDevice = localStorage.getItem("kickstation_admin_device") === "1";
+                if (isAdminDevice) return;
+                const visitorId = getChatVisitorId();
+                const payload = JSON.stringify({ visitor_id:visitorId, referral:ref || "", user_agent:navigator.userAgent });
+                const analyticsUrl = `${CHAT_API}/api/analytics/visit`;
                 if (navigator.sendBeacon) {
-                    const queued = navigator.sendBeacon(analyticsUrl, new Blob([payload], { type: "application/json" }));
-                    if (!queued) {
-                        fetch(analyticsUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: payload, keepalive: true }).catch(() => {});
-                    }
+                    const queued = navigator.sendBeacon(analyticsUrl, new Blob([payload], { type:"application/json" }));
+                    if (!queued) fetch(analyticsUrl, { method:"POST", headers:{"Content-Type":"application/json"}, body:payload, keepalive:true }).catch(()=>{});
                 } else {
-                    fetch(analyticsUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: payload, keepalive: true }).catch(() => {});
+                    fetch(analyticsUrl, { method:"POST", headers:{"Content-Type":"application/json"}, body:payload, keepalive:true }).catch(()=>{});
                 }
             } catch (_) {}
         })();
-
-
-        function checkoutWA() {
-
-            if (cart.length === 0) {
-
-                alert(
-                    'Keranjang belanja Anda kosong!'
-                );
-
-                return;
-
-            }
-
-
-            let text =
-                "Halo Kicks Station, saya ingin memesan:\n\n";
-
-            let total = 0;
-
-
-            cart.forEach((item, index) => {
-
-                const subtotal =
-                    item.price * item.qty;
-
-                total += subtotal;
-
-
-                text +=
-                    `${index + 1}. *${item.name}*\n` +
-                    `   • Size: ${item.size}\n` +
-                    `   • Jumlah: ${item.qty} pcs\n` +
-                    `   • Harga: Rp ${subtotal.toLocaleString('id-ID')}\n\n`;
-
-            });
-
-
-            text +=
-                `*Total Pembayaran: Rp ${total.toLocaleString('id-ID')}*\n\n` +
-                `Terima kasih!`;
-
-
-            fetch("https://kicks-station-api.onrender.com/api/orders", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    referral,
-                    items: cart.map(item => ({
-                        name: item.name,
-                        size: item.size,
-                        qty: item.qty,
-                        price: item.price
-                    })),
-                    total
-                }),
-                keepalive: true
-            }).catch(error => console.error("Gagal mencatat pesanan:", error));
-
-            window.open(
-                `https://wa.me/${defaultWA}?text=${encodeURIComponent(text)}`,
-                '_blank'
-            );
-
-        }
-
-
-        document.getElementById(
-            "whatsapp-float"
-        ).href =
-            `https://wa.me/${targetWA}?text=${encodeURIComponent(
-                "Halo Kicks Station, saya mau bertanya tentang produk."
-            )}`;
-
 
         /* =====================================================
            RENDER PRODUCTS

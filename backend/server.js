@@ -865,6 +865,7 @@ async function initializeDatabase() {
 
     migrationPromise = (async () => {
         await migrateProductsFromJSONIfNeeded();
+        await ensureChatTables();
         databaseReady = true;
         console.log("Database Supabase siap digunakan.");
     })().catch((error) => {
@@ -1057,6 +1058,307 @@ async function deleteAllVisits() {
     await pool.query(`DELETE FROM public.site_visits`);
 }
 
+
+// =========================================================
+// CHAT WEB — PELANGGAN ↔ ADMIN + BOT PESAN CEPAT
+// =========================================================
+async function ensureChatTablesOnce() {
+    if (!pool) throw new Error("DATABASE_URL belum diset di Render.");
+
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS public.chat_conversations (
+            id BIGSERIAL PRIMARY KEY,
+            visitor_id TEXT NOT NULL,
+            conversation_token TEXT NOT NULL UNIQUE,
+            referral TEXT DEFAULT '',
+            customer_name TEXT DEFAULT '',
+            status TEXT NOT NULL DEFAULT 'open',
+            unread_admin INTEGER NOT NULL DEFAULT 0,
+            unread_customer INTEGER NOT NULL DEFAULT 0,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            last_message_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+    `);
+
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS public.chat_messages (
+            id BIGSERIAL PRIMARY KEY,
+            conversation_id BIGINT NOT NULL REFERENCES public.chat_conversations(id) ON DELETE CASCADE,
+            sender TEXT NOT NULL CHECK (sender IN ('customer','admin','bot')),
+            message TEXT NOT NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            read_at TIMESTAMPTZ
+        )
+    `);
+
+    await pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_chat_conversations_last_message
+        ON public.chat_conversations(last_message_at DESC)
+    `);
+
+    await pool.query(`
+        CREATE INDEX IF NOT EXISTS idx_chat_messages_conversation
+        ON public.chat_messages(conversation_id, id)
+    `);
+
+    await pool.query(`ALTER TABLE public.chat_conversations ENABLE ROW LEVEL SECURITY`);
+    await pool.query(`ALTER TABLE public.chat_messages ENABLE ROW LEVEL SECURITY`);
+}
+
+function sanitizeChatMessage(value) {
+    const message = String(value ?? "").replace(/\u0000/g, "").trim();
+    if (!message) throw new Error("Pesan tidak boleh kosong.");
+    if (message.length > 2000) throw new Error("Pesan terlalu panjang (maksimal 2000 karakter).");
+    return message;
+}
+
+function sanitizeVisitorId(value) {
+    const id = String(value ?? "").trim();
+    if (!/^[a-zA-Z0-9_-]{12,120}$/.test(id)) {
+        throw new Error("Identitas pengunjung tidak valid.");
+    }
+    return id;
+}
+
+function sanitizeChatToken(value) {
+    const token = String(value ?? "").trim();
+    if (!/^[a-f0-9]{32,128}$/i.test(token)) {
+        throw new Error("Token chat tidak valid.");
+    }
+    return token;
+}
+
+function mapChatMessage(row) {
+    return {
+        id: Number(row.id),
+        conversation_id: Number(row.conversation_id),
+        sender: row.sender,
+        message: row.message,
+        created_at: row.created_at,
+    };
+}
+
+function mapChatConversation(row) {
+    return {
+        id: Number(row.id),
+        visitor_id: row.visitor_id,
+        conversation_token: row.conversation_token,
+        referral: row.referral || "",
+        customer_name: row.customer_name || "",
+        status: row.status || "open",
+        unread_admin: Number(row.unread_admin || 0),
+        unread_customer: Number(row.unread_customer || 0),
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        last_message_at: row.last_message_at,
+        last_message: row.last_message || "",
+        last_sender: row.last_sender || "",
+    };
+}
+
+async function getChatConversationByToken(visitorId, token) {
+    await ensureChatTables();
+    const result = await pool.query(
+        `SELECT id, visitor_id, conversation_token, referral, customer_name, status,
+                unread_admin, unread_customer, created_at, updated_at, last_message_at
+         FROM public.chat_conversations
+         WHERE visitor_id=$1 AND conversation_token=$2
+         LIMIT 1`,
+        [visitorId, token]
+    );
+    return result.rows[0] || null;
+}
+
+async function createChatConversation(visitorId, token, referral = "") {
+    await ensureChatTables();
+
+    const safeVisitor = sanitizeVisitorId(visitorId);
+    const safeToken = sanitizeChatToken(token);
+    const safeReferral = String(referral || "").trim().toLowerCase().slice(0, 100);
+
+    const result = await pool.query(
+        `INSERT INTO public.chat_conversations
+            (visitor_id, conversation_token, referral)
+         VALUES ($1,$2,$3)
+         RETURNING id, visitor_id, conversation_token, referral, customer_name, status,
+                   unread_admin, unread_customer, created_at, updated_at, last_message_at`,
+        [safeVisitor, safeToken, safeReferral]
+    );
+
+    const conversation = result.rows[0];
+
+    await pool.query(
+        `INSERT INTO public.chat_messages (conversation_id, sender, message)
+         VALUES ($1, 'bot', $2)`,
+        [
+            conversation.id,
+            "Halo! 👋 Selamat datang di Kicks Station. Saya bot bantuan. Pilih pesan cepat di bawah atau tulis pertanyaan Anda. Admin akan membalas langsung melalui chat ini."
+        ]
+    );
+
+    await pool.query(
+        `UPDATE public.chat_conversations
+         SET updated_at=NOW(), last_message_at=NOW()
+         WHERE id=$1`,
+        [conversation.id]
+    );
+
+    return conversation;
+}
+
+async function ensureChatConversation(visitorId, token, referral = "") {
+    const existing = await getChatConversationByToken(visitorId, token);
+    if (existing) return existing;
+    return createChatConversation(visitorId, token, referral);
+}
+
+async function getChatMessages(conversationId, afterId = 0) {
+    await ensureChatTables();
+    const safeAfter = Math.max(Number(afterId) || 0, 0);
+    const result = await pool.query(
+        `SELECT id, conversation_id, sender, message, created_at
+         FROM public.chat_messages
+         WHERE conversation_id=$1 AND id>$2
+         ORDER BY id ASC
+         LIMIT 200`,
+        [conversationId, safeAfter]
+    );
+    return result.rows.map(mapChatMessage);
+}
+
+async function appendChatMessage(conversationId, sender, message) {
+    await ensureChatTables();
+    const safeMessage = sanitizeChatMessage(message);
+    const allowedSenders = ["customer", "admin", "bot"];
+    if (!allowedSenders.includes(sender)) throw new Error("Pengirim chat tidak valid.");
+
+    const client = await pool.connect();
+    try {
+        await client.query("BEGIN");
+
+        const inserted = await client.query(
+            `INSERT INTO public.chat_messages (conversation_id, sender, message)
+             VALUES ($1,$2,$3)
+             RETURNING id, conversation_id, sender, message, created_at`,
+            [conversationId, sender, safeMessage]
+        );
+
+        if (sender === "customer") {
+            await client.query(
+                `UPDATE public.chat_conversations
+                 SET unread_admin=unread_admin+1,
+                     unread_customer=0,
+                     updated_at=NOW(),
+                     last_message_at=NOW(),
+                     status='open'
+                 WHERE id=$1`,
+                [conversationId]
+            );
+        } else if (sender === "admin") {
+            await client.query(
+                `UPDATE public.chat_conversations
+                 SET unread_customer=unread_customer+1,
+                     updated_at=NOW(),
+                     last_message_at=NOW(),
+                     status='open'
+                 WHERE id=$1`,
+                [conversationId]
+            );
+        } else {
+            await client.query(
+                `UPDATE public.chat_conversations
+                 SET updated_at=NOW(), last_message_at=NOW()
+                 WHERE id=$1`,
+                [conversationId]
+            );
+        }
+
+        await client.query("COMMIT");
+        return mapChatMessage(inserted.rows[0]);
+    } catch (error) {
+        await client.query("ROLLBACK");
+        throw error;
+    } finally {
+        client.release();
+    }
+}
+
+async function markChatRead(conversationId, reader) {
+    await ensureChatTables();
+    if (reader === "admin") {
+        await pool.query(
+            `UPDATE public.chat_conversations
+             SET unread_admin=0, updated_at=NOW()
+             WHERE id=$1`,
+            [conversationId]
+        );
+    } else if (reader === "customer") {
+        await pool.query(
+            `UPDATE public.chat_conversations
+             SET unread_customer=0, updated_at=NOW()
+             WHERE id=$1`,
+            [conversationId]
+        );
+    }
+}
+
+async function listChatConversations() {
+    await ensureChatTables();
+    const result = await pool.query(`
+        SELECT
+            c.id, c.visitor_id, c.conversation_token, c.referral, c.customer_name,
+            c.status, c.unread_admin, c.unread_customer,
+            c.created_at, c.updated_at, c.last_message_at,
+            COALESCE(lm.message, '') AS last_message,
+            COALESCE(lm.sender, '') AS last_sender
+        FROM public.chat_conversations c
+        LEFT JOIN LATERAL (
+            SELECT message, sender
+            FROM public.chat_messages
+            WHERE conversation_id=c.id
+            ORDER BY id DESC
+            LIMIT 1
+        ) lm ON TRUE
+        ORDER BY c.last_message_at DESC, c.id DESC
+        LIMIT 200
+    `);
+    return result.rows.map(mapChatConversation);
+}
+
+async function getChatConversationForAdmin(id) {
+    await ensureChatTables();
+    const result = await pool.query(
+        `SELECT id, visitor_id, conversation_token, referral, customer_name, status,
+                unread_admin, unread_customer, created_at, updated_at, last_message_at
+         FROM public.chat_conversations
+         WHERE id=$1`,
+        [id]
+    );
+    return result.rows[0] || null;
+}
+
+async function updateChatConversation(id, data = {}) {
+    await ensureChatTables();
+    const allowedStatuses = ["open", "closed"];
+    const status = String(data.status || "open").trim();
+    if (!allowedStatuses.includes(status)) throw new Error("Status chat tidak valid.");
+
+    const customerName = String(data.customer_name || "").trim().slice(0, 100);
+
+    const result = await pool.query(
+        `UPDATE public.chat_conversations
+         SET status=$2, customer_name=$3, updated_at=NOW()
+         WHERE id=$1
+         RETURNING id, visitor_id, conversation_token, referral, customer_name, status,
+                   unread_admin, unread_customer, created_at, updated_at, last_message_at`,
+        [id, status, customerName]
+    );
+    if (!result.rows.length) throw new Error("Percakapan tidak ditemukan.");
+    return mapChatConversation(result.rows[0]);
+}
+
+
 async function deleteVisit(id) {
     await ensureAnalyticsTable();
     const visitId = Number(id);
@@ -1239,6 +1541,7 @@ function runOnce(fn) {
 const ensureDatabase = runOnce(ensureDatabaseOnce);
 const ensureOrdersTable = runOnce(ensureOrdersTableOnce);
 const ensureAnalyticsTable = runOnce(ensureAnalyticsTableOnce);
+const ensureChatTables = runOnce(ensureChatTablesOnce);
 
 const server = http.createServer(async (req, res) => {
     console.log("REQUEST:", req.method, req.url);
@@ -1343,6 +1646,150 @@ const server = http.createServer(async (req, res) => {
             } catch (error) {
                 console.error("Gagal menyimpan pesanan:", error);
                 sendJSON(res, 400, { success:false, message:error.message || "Pesanan tidak dapat disimpan." });
+            }
+            return;
+        }
+
+
+        // =====================================================
+        // CHAT PUBLIK
+        // =====================================================
+        if (req.method === "POST" && pathname === "/api/chat/conversations") {
+            try {
+                const clientIP = getClientIP(req);
+                if (isRateLimited(`chat-conversation:${clientIP}`, 20, TEN_MINUTES) ||
+                    isRateLimited("chat-conversation:global", 500, TEN_MINUTES)) {
+                    sendJSON(res, 429, { success:false, message:"Terlalu banyak permintaan. Coba lagi nanti." });
+                    return;
+                }
+                const data = await readBody(req, 10 * 1024);
+                const visitorId = sanitizeVisitorId(data?.visitor_id);
+                const token = sanitizeChatToken(data?.conversation_token);
+                const conversation = await ensureChatConversation(visitorId, token, data?.referral);
+                const messages = await getChatMessages(Number(conversation.id), 0);
+                sendJSON(res, 200, {
+                    success:true,
+                    conversation:{
+                        id:Number(conversation.id),
+                        conversation_token:conversation.conversation_token,
+                        status:conversation.status || "open",
+                        customer_name:conversation.customer_name || "",
+                        unread_customer:Number(conversation.unread_customer || 0)
+                    },
+                    messages
+                });
+            } catch (error) {
+                sendJSON(res, 400, { success:false, message:error.message || "Chat tidak dapat dibuka." });
+            }
+            return;
+        }
+
+        if (req.method === "GET" && pathname === "/api/chat/messages") {
+            try {
+                const query = new URL(req.url, "http://localhost").searchParams;
+                const visitorId = sanitizeVisitorId(query.get("visitor_id"));
+                const token = sanitizeChatToken(query.get("conversation_token"));
+                const afterId = Number(query.get("after_id") || 0);
+                const conversation = await getChatConversationByToken(visitorId, token);
+                if (!conversation) {
+                    sendJSON(res, 404, { success:false, message:"Percakapan tidak ditemukan." });
+                    return;
+                }
+                const messages = await getChatMessages(Number(conversation.id), afterId);
+                await markChatRead(Number(conversation.id), "customer");
+                sendJSON(res, 200, { success:true, messages });
+            } catch (error) {
+                sendJSON(res, 400, { success:false, message:error.message || "Pesan tidak dapat diambil." });
+            }
+            return;
+        }
+
+        if (req.method === "POST" && pathname === "/api/chat/messages") {
+            try {
+                const clientIP = getClientIP(req);
+                if (isRateLimited(`chat-message:${clientIP}`, 60, 10 * 60 * 1000) ||
+                    isRateLimited("chat-message:global", 3000, 10 * 60 * 1000)) {
+                    sendJSON(res, 429, { success:false, message:"Terlalu banyak pesan. Coba lagi sebentar." });
+                    return;
+                }
+                const data = await readBody(req, 32 * 1024);
+                const visitorId = sanitizeVisitorId(data?.visitor_id);
+                const token = sanitizeChatToken(data?.conversation_token);
+                const conversation = await getChatConversationByToken(visitorId, token);
+                if (!conversation) {
+                    sendJSON(res, 404, { success:false, message:"Percakapan tidak ditemukan." });
+                    return;
+                }
+                const saved = await appendChatMessage(Number(conversation.id), "customer", data?.message);
+                sendJSON(res, 201, { success:true, message:saved });
+            } catch (error) {
+                sendJSON(res, 400, { success:false, message:error.message || "Pesan gagal dikirim." });
+            }
+            return;
+        }
+
+        // =====================================================
+        // CHAT ADMIN
+        // =====================================================
+        if (req.method === "GET" && pathname === "/api/admin/chat/conversations") {
+            if (!requireAdmin(req, res)) return;
+            try {
+                sendJSON(res, 200, { success:true, conversations:await listChatConversations() });
+            } catch (error) {
+                sendJSON(res, 500, { success:false, message:error.message || "Daftar chat tidak dapat diambil." });
+            }
+            return;
+        }
+
+        if (req.method === "GET" && pathname === "/api/admin/chat/messages") {
+            if (!requireAdmin(req, res)) return;
+            try {
+                const query = new URL(req.url, "http://localhost").searchParams;
+                const id = Number(query.get("conversation_id"));
+                const afterId = Number(query.get("after_id") || 0);
+                if (!Number.isInteger(id) || id <= 0) throw new Error("ID percakapan tidak valid.");
+                const conversation = await getChatConversationForAdmin(id);
+                if (!conversation) {
+                    sendJSON(res, 404, { success:false, message:"Percakapan tidak ditemukan." });
+                    return;
+                }
+                const messages = await getChatMessages(id, afterId);
+                await markChatRead(id, "admin");
+                sendJSON(res, 200, { success:true, conversation:mapChatConversation({...conversation,last_message:"",last_sender:""}), messages });
+            } catch (error) {
+                sendJSON(res, 400, { success:false, message:error.message || "Pesan chat tidak dapat diambil." });
+            }
+            return;
+        }
+
+        if (req.method === "POST" && pathname === "/api/admin/chat/messages") {
+            if (!requireAdmin(req, res)) return;
+            try {
+                const data = await readBody(req, 32 * 1024);
+                const id = Number(data?.conversation_id);
+                if (!Number.isInteger(id) || id <= 0) throw new Error("ID percakapan tidak valid.");
+                if (!(await getChatConversationForAdmin(id))) {
+                    sendJSON(res, 404, { success:false, message:"Percakapan tidak ditemukan." });
+                    return;
+                }
+                const saved = await appendChatMessage(id, "admin", data?.message);
+                sendJSON(res, 201, { success:true, message:saved });
+            } catch (error) {
+                sendJSON(res, 400, { success:false, message:error.message || "Balasan gagal dikirim." });
+            }
+            return;
+        }
+
+        if (req.method === "PATCH" && pathname === "/api/admin/chat/conversations") {
+            if (!requireAdmin(req, res)) return;
+            try {
+                const data = await readBody(req, 10 * 1024);
+                const id = Number(data?.conversation_id);
+                if (!Number.isInteger(id) || id <= 0) throw new Error("ID percakapan tidak valid.");
+                const conversation = await updateChatConversation(id, data);
+                sendJSON(res, 200, { success:true, conversation });
+            } catch (error) {
+                sendJSON(res, 400, { success:false, message:error.message || "Chat gagal diperbarui." });
             }
             return;
         }
