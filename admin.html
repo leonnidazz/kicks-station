@@ -245,12 +245,7 @@ button:active {
             <span class="text-lg opacity-80">🛒</span> Pesanan Masuk
         </button>
 
-        <button id="menu-chat" onclick="showPage('chat')" class="sidebar-item w-full text-left px-4 py-3.5 rounded-2xl flex items-center gap-3.5 font-semibold text-slate-600 text-sm relative">
-            <span class="text-lg opacity-80">💬</span> Chat Pelanggan
-            <span id="admin-chat-badge" class="hidden ml-auto bg-red-500 text-white text-[10px] font-black min-w-6 h-6 px-1 rounded-full items-center justify-center">0</span>
-        </button>
-
-        <button id="menu-pengunjung" onclick="showPage('pengunjung') class="sidebar-item w-full text-left px-4 py-3.5 rounded-2xl flex items-center gap-3.5 font-semibold text-slate-600 text-sm">
+        <button id="menu-pengunjung" onclick="showPage('pengunjung')" class="sidebar-item w-full text-left px-4 py-3.5 rounded-2xl flex items-center gap-3.5 font-semibold text-slate-600 text-sm">
             <span class="text-lg opacity-80">👥</span> Data Pengunjung
         </button>
 
@@ -585,50 +580,6 @@ button:active {
         </section>
 
         <!-- ==============================================
-             PAGE: CHAT PELANGGAN
-             ============================================== -->
-        <section id="page-chat" class="hidden fade-in">
-            <div class="mb-8 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
-                <div>
-                    <h2 class="text-3xl md:text-4xl font-black tracking-tight text-slate-900">Chat Pelanggan</h2>
-                    <p class="text-slate-500 mt-2 font-medium">Balas pertanyaan pelanggan langsung dari website tanpa WhatsApp.</p>
-                </div>
-                <div class="flex gap-3">
-                    <button onclick="requestChatNotifications()" class="px-5 py-3 rounded-2xl bg-white border border-slate-200 font-bold text-slate-700 hover:bg-slate-50 shadow-sm transition">🔔 Aktifkan Notifikasi</button>
-                    <button onclick="loadChatConversations(true)" class="px-5 py-3 rounded-2xl bg-slate-900 text-white font-bold hover:bg-slate-800 shadow-sm transition">↻ Segarkan</button>
-                </div>
-            </div>
-
-            <div class="grid lg:grid-cols-[340px_1fr] gap-5 min-h-[650px]">
-                <div class="glass-panel rounded-[2rem] overflow-hidden flex flex-col">
-                    <div class="px-5 py-4 border-b border-white/50 bg-white/30">
-                        <div class="flex items-center justify-between">
-                            <h3 class="font-black text-lg text-slate-900">Percakapan</h3>
-                            <span id="chat-total-unread" class="text-xs font-black text-red-500"></span>
-                        </div>
-                    </div>
-                    <div id="chat-conversations-list" class="flex-1 overflow-y-auto p-3 space-y-2">
-                        <div class="text-center py-12 text-slate-400 font-medium">Memuat chat...</div>
-                    </div>
-                </div>
-
-                <div class="glass-panel rounded-[2rem] overflow-hidden flex flex-col">
-                    <div id="chat-admin-header" class="px-6 py-5 border-b border-white/50 bg-white/30">
-                        <p class="font-black text-slate-900">Pilih percakapan</p>
-                        <p class="text-xs text-slate-400 mt-1">Pesan pelanggan akan muncul di sini.</p>
-                    </div>
-                    <div id="chat-admin-messages" class="flex-1 overflow-y-auto p-6 space-y-3 bg-white/30">
-                        <div class="h-full min-h-[400px] flex items-center justify-center text-slate-400 font-medium">Belum ada percakapan yang dipilih.</div>
-                    </div>
-                    <form onsubmit="sendAdminChat(event)" class="p-4 border-t border-slate-200/70 bg-white/50 flex gap-3">
-                        <input id="chat-admin-input" maxlength="2000" disabled autocomplete="off" placeholder="Pilih chat terlebih dahulu..." class="flex-1 border border-slate-200 rounded-2xl px-4 py-3 font-medium">
-                        <button id="chat-admin-send" disabled class="px-6 rounded-2xl bg-slate-900 text-white font-bold hover:bg-slate-800 disabled:opacity-40">Kirim</button>
-                    </form>
-                </div>
-            </div>
-        </section>
-
-        <!-- ==============================================
              PAGE: DATA PENGUNJUNG
              ============================================== -->
         <section id="page-pengunjung" class="hidden fade-in">
@@ -907,50 +858,15 @@ function toggleSidebar() {
 }
 
 function showPage(page) {
-    const tambah = document.getElementById("page-tambah");
-    const semua = document.getElementById("page-semua");
-    const pesanan = document.getElementById("page-pesanan");
-    const chat = document.getElementById("page-chat");
-    const pengunjung = document.getElementById("page-pengunjung");
-
-    const menuTambah = document.getElementById("menu-tambah");
-    const menuSemua = document.getElementById("menu-semua");
-    const menuPesanan = document.getElementById("menu-pesanan");
-    const menuChat = document.getElementById("menu-chat");
-    const menuPengunjung = document.getElementById("menu-pengunjung");
-
-    [tambah, semua, pesanan, chat, pengunjung].forEach(el => el && el.classList.add("hidden"));
-    [menuTambah, menuSemua, menuPesanan, menuChat, menuPengunjung].forEach(el => {
-        if (el) {
-            el.classList.remove("active");
-            el.classList.add("text-slate-600");
-        }
-    });
-
-    if (page === "tambah") {
-        tambah.classList.remove("hidden"); menuTambah.classList.add("active"); menuTambah.classList.remove("text-slate-600");
-        document.getElementById("top-title").textContent = "Tambah Produk";
-    }
-    if (page === "semua") {
-        semua.classList.remove("hidden"); menuSemua.classList.add("active"); menuSemua.classList.remove("text-slate-600");
-        document.getElementById("top-title").textContent = "Semua Produk"; loadProducts();
-    }
-    if (page === "pesanan") {
-        pesanan.classList.remove("hidden"); menuPesanan.classList.add("active"); menuPesanan.classList.remove("text-slate-600");
-        document.getElementById("top-title").textContent = "Pesanan Masuk"; loadOrders();
-    }
-    if (page === "chat") {
-        chat.classList.remove("hidden"); menuChat.classList.add("active"); menuChat.classList.remove("text-slate-600");
-        document.getElementById("top-title").textContent = "Chat Pelanggan"; loadChatConversations(true);
-    }
-    if (page === "pengunjung") {
-        pengunjung.classList.remove("hidden"); menuPengunjung.classList.add("active"); menuPengunjung.classList.remove("text-slate-600");
-        document.getElementById("top-title").textContent = "Data Pengunjung"; loadAnalytics();
-    }
-    if (window.innerWidth < 1024) {
-        document.getElementById("sidebar").classList.add("-translate-x-full");
-        document.getElementById("sidebar-overlay").classList.add("hidden");
-    }
+    const tambah = document.getElementById("page-tambah"), semua = document.getElementById("page-semua"), pesanan = document.getElementById("page-pesanan"), pengunjung = document.getElementById("page-pengunjung");
+    const menuTambah = document.getElementById("menu-tambah"), menuSemua = document.getElementById("menu-semua"), menuPesanan = document.getElementById("menu-pesanan"), menuPengunjung = document.getElementById("menu-pengunjung");
+    [tambah, semua, pesanan, pengunjung].forEach(el => el && el.classList.add("hidden"));
+    [menuTambah, menuSemua, menuPesanan, menuPengunjung].forEach(el => { if (el) { el.classList.remove("active"); el.classList.add("text-slate-600"); } });
+    if (page === "tambah") { tambah.classList.remove("hidden"); menuTambah.classList.add("active"); menuTambah.classList.remove("text-slate-600"); document.getElementById("top-title").textContent = "Tambah Produk"; }
+    if (page === "semua") { semua.classList.remove("hidden"); menuSemua.classList.add("active"); menuSemua.classList.remove("text-slate-600"); document.getElementById("top-title").textContent = "Semua Produk"; loadProducts(); }
+    if (page === "pesanan") { pesanan.classList.remove("hidden"); menuPesanan.classList.add("active"); menuPesanan.classList.remove("text-slate-600"); document.getElementById("top-title").textContent = "Pesanan Masuk"; loadOrders(); }
+    if (page === "pengunjung") { pengunjung.classList.remove("hidden"); menuPengunjung.classList.add("active"); menuPengunjung.classList.remove("text-slate-600"); document.getElementById("top-title").textContent = "Data Pengunjung"; loadAnalytics(); }
+    if (window.innerWidth < 1024) { document.getElementById("sidebar").classList.add("-translate-x-full"); document.getElementById("sidebar-overlay").classList.add("hidden"); }
 }
 
 const sizes = ["35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46"];
@@ -1506,259 +1422,7 @@ async function deleteOrder(id) { if (!confirm(`Hapus pesanan #${id}?`)) return; 
 async function deleteOrderHistory() { if (!confirm("Hapus semua riwayat?")) return; try { await authFetch(`${API_URL}/api/orders`, { method: "DELETE" }); showToast("Dihapus.", "success"); loadOrders(); } catch (error) { showToast("Gagal.", "error"); } }
 
 renderSizes(); renderImagePreviews(); updatePreview();
-
-/* =====================================================
-   CHAT ADMIN — POLLING + NOTIFIKASI
-===================================================== */
-let adminChatConversations = [];
-let selectedChatConversationId = null;
-let adminChatLastMessageId = 0;
-let adminChatPollTimer = null;
-let adminChatNotificationReady = false;
-
-function chatAdminEscape(value) {
-    return String(value ?? "").replace(/[&<>"']/g, c => ({
-        "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;"
-    }[c]));
-}
-
-function chatAdminTime(value) {
-    try {
-        return new Date(value).toLocaleString("id-ID", {
-            day:"2-digit", month:"short", hour:"2-digit", minute:"2-digit"
-        });
-    } catch (_) { return ""; }
-}
-
-async function requestChatNotifications() {
-    if (!("Notification" in window)) {
-        showToast("Browser ini tidak mendukung notifikasi.", "error");
-        return;
-    }
-    const permission = await Notification.requestPermission();
-    adminChatNotificationReady = permission === "granted";
-    showToast(
-        adminChatNotificationReady ? "Notifikasi chat aktif." : "Notifikasi tidak diizinkan browser.",
-        adminChatNotificationReady ? "success" : "error"
-    );
-}
-
-function updateAdminChatBadge(total) {
-    const badge = document.getElementById("admin-chat-badge");
-    const totalEl = document.getElementById("chat-total-unread");
-    const count = Math.max(Number(total) || 0, 0);
-    if (badge) {
-        badge.textContent = count > 99 ? "99+" : String(count);
-        badge.classList.toggle("hidden", count === 0);
-        badge.classList.toggle("flex", count > 0);
-    }
-    if (totalEl) totalEl.textContent = count ? `${count} belum dibalas` : "Semua terbaca";
-}
-
-function renderAdminChatConversations() {
-    const box = document.getElementById("chat-conversations-list");
-    if (!box) return;
-
-    if (!adminChatConversations.length) {
-        box.innerHTML = `<div class="text-center py-14 text-slate-400 font-medium">Belum ada chat pelanggan.</div>`;
-        updateAdminChatBadge(0);
-        return;
-    }
-
-    let unreadTotal = 0;
-    box.innerHTML = adminChatConversations.map(c => {
-        const unread = Number(c.unread_admin || 0);
-        unreadTotal += unread;
-        const active = Number(c.id) === Number(selectedChatConversationId);
-        return `<button onclick="selectAdminChat(${Number(c.id)})"
-            class="w-full text-left p-4 rounded-2xl border transition ${active ? "bg-slate-900 text-white border-slate-900" : "bg-white/70 border-slate-200 hover:bg-white"}">
-            <div class="flex items-start justify-between gap-2">
-                <div class="min-w-0">
-                    <p class="font-black text-sm truncate">${chatAdminEscape(c.customer_name || "Pengunjung")}</p>
-                    <p class="text-[10px] ${active ? "text-slate-300" : "text-slate-400"} mt-1">Chat #${Number(c.id)} • ${chatAdminTime(c.last_message_at)}</p>
-                </div>
-                ${unread ? `<span class="shrink-0 min-w-6 h-6 px-1 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center">${unread > 9 ? "9+" : unread}</span>` : ""}
-            </div>
-            <p class="text-xs mt-2 line-clamp-2 ${active ? "text-slate-200" : "text-slate-500"}">${chatAdminEscape(c.last_message || "Percakapan baru")}</p>
-        </button>`;
-    }).join("");
-
-    updateAdminChatBadge(unreadTotal);
-}
-
-function renderAdminMessages(messages, append = false) {
-    const box = document.getElementById("chat-admin-messages");
-    if (!box || !Array.isArray(messages)) return;
-
-    if (!append) box.innerHTML = "";
-
-    messages.forEach(message => {
-        if (Number(message.id) <= adminChatLastMessageId) return;
-        const mine = message.sender === "admin";
-        const bot = message.sender === "bot";
-        box.insertAdjacentHTML("beforeend", `<div class="flex ${mine ? "justify-end" : "justify-start"}">
-            <div class="max-w-[78%] rounded-2xl px-4 py-3 shadow-sm ${mine ? "bg-slate-900 text-white rounded-br-md" : "bg-white border border-slate-200 text-slate-800 rounded-bl-md"}">
-                <div class="text-[10px] font-black uppercase tracking-wider opacity-50 mb-1">${mine ? "Anda" : bot ? "Bot" : "Pelanggan"}</div>
-                <div class="text-sm whitespace-pre-wrap break-words">${chatAdminEscape(message.message)}</div>
-                <div class="text-[10px] mt-1 opacity-50 text-right">${chatAdminTime(message.created_at)}</div>
-            </div>
-        </div>`);
-        adminChatLastMessageId = Number(message.id);
-    });
-    box.scrollTop = box.scrollHeight;
-}
-
-async function loadChatConversations(selectFirst = false) {
-    if (!adminToken) return;
-    try {
-        const response = await authFetch(`${API_URL}/api/admin/chat/conversations`, { cache:"no-store" });
-        const data = await response.json();
-        if (!response.ok || !data.success) throw new Error(data.message || "Gagal memuat chat.");
-
-        const previousIds = new Set(adminChatConversations.map(c => `${c.id}:${c.unread_admin}`));
-        adminChatConversations = Array.isArray(data.conversations) ? data.conversations : [];
-        renderAdminChatConversations();
-
-        const newUnread = adminChatConversations.filter(c =>
-            Number(c.unread_admin) > 0 &&
-            !previousIds.has(`${c.id}:${c.unread_admin}`)
-        );
-
-        if (newUnread.length && adminChatNotificationReady) {
-            const first = newUnread[0];
-            new Notification("Kicks Station — Pesan baru", {
-                body: first.last_message || "Ada pelanggan baru yang menghubungi chat.",
-                tag: `kickstation-chat-${first.id}`
-            });
-        }
-
-        if (selectFirst && !selectedChatConversationId && adminChatConversations[0]) {
-            await selectAdminChat(adminChatConversations[0].id);
-        } else if (selectedChatConversationId) {
-            const exists = adminChatConversations.some(c => Number(c.id) === Number(selectedChatConversationId));
-            if (!exists) selectedChatConversationId = null;
-        }
-    } catch (error) {
-        console.error("Gagal memuat chat:", error);
-    }
-}
-
-async function selectAdminChat(id) {
-    selectedChatConversationId = Number(id);
-    adminChatLastMessageId = 0;
-    renderAdminChatConversations();
-
-    const header = document.getElementById("chat-admin-header");
-    const input = document.getElementById("chat-admin-input");
-    const send = document.getElementById("chat-admin-send");
-    const conversation = adminChatConversations.find(c => Number(c.id) === Number(id));
-
-    if (header) {
-        header.innerHTML = `<div class="flex items-center justify-between gap-3">
-            <div>
-                <p class="font-black text-slate-900">${chatAdminEscape(conversation?.customer_name || "Pengunjung")}</p>
-                <p class="text-xs text-slate-400 mt-1">Chat #${Number(id)} • ${chatAdminEscape(conversation?.status || "open")}</p>
-            </div>
-            <button onclick="toggleSelectedChatStatus()" class="px-3 py-2 rounded-xl border border-slate-200 bg-white text-xs font-bold">${conversation?.status === "closed" ? "Buka Chat" : "Tutup Chat"}</button>
-        </div>`;
-    }
-    if (input) { input.disabled = false; input.placeholder = "Tulis balasan untuk pelanggan..."; }
-    if (send) send.disabled = false;
-
-    try {
-        const response = await authFetch(`${API_URL}/api/admin/chat/messages?conversation_id=${Number(id)}`, { cache:"no-store" });
-        const data = await response.json();
-        if (!response.ok || !data.success) throw new Error(data.message || "Gagal memuat percakapan.");
-        renderAdminMessages(data.messages || [], false);
-        await loadChatConversations(false);
-    } catch (error) {
-        document.getElementById("chat-admin-messages").innerHTML =
-            `<div class="text-center py-16 text-red-500 font-bold">${chatAdminEscape(error.message)}</div>`;
-    }
-}
-
-async function pollSelectedAdminChat() {
-    if (!selectedChatConversationId || !adminToken) return;
-    try {
-        const response = await authFetch(`${API_URL}/api/admin/chat/messages?conversation_id=${selectedChatConversationId}&after_id=${adminChatLastMessageId}`, { cache:"no-store" });
-        if (!response.ok) return;
-        const data = await response.json();
-        if (data.success && Array.isArray(data.messages) && data.messages.length) {
-            const customerMessages = data.messages.filter(m => m.sender === "customer");
-            renderAdminMessages(data.messages, true);
-            if (customerMessages.length && adminChatNotificationReady) {
-                new Notification("Kicks Station — Pesan baru", {
-                    body: customerMessages[customerMessages.length - 1].message,
-                    tag: `kickstation-chat-${selectedChatConversationId}`
-                });
-            }
-            loadChatConversations(false);
-        }
-    } catch (_) {}
-}
-
-async function sendAdminChat(event) {
-    event.preventDefault();
-    if (!selectedChatConversationId) return;
-    const input = document.getElementById("chat-admin-input");
-    const button = document.getElementById("chat-admin-send");
-    const message = String(input?.value || "").trim();
-    if (!message) return;
-
-    button.disabled = true;
-    try {
-        const response = await authFetch(`${API_URL}/api/admin/chat/messages`, {
-            method:"POST",
-            headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({ conversation_id:selectedChatConversationId, message })
-        });
-        const data = await response.json();
-        if (!response.ok || !data.success) throw new Error(data.message || "Balasan gagal dikirim.");
-        input.value = "";
-        renderAdminMessages([data.message], true);
-        loadChatConversations(false);
-    } catch (error) {
-        showToast(error.message || "Balasan gagal dikirim.", "error");
-    } finally {
-        button.disabled = false;
-        input.focus();
-    }
-}
-
-async function toggleSelectedChatStatus() {
-    if (!selectedChatConversationId) return;
-    const current = adminChatConversations.find(c => Number(c.id) === Number(selectedChatConversationId));
-    const next = current?.status === "closed" ? "open" : "closed";
-    try {
-        await authFetch(`${API_URL}/api/admin/chat/conversations`, {
-            method:"PATCH",
-            headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({ conversation_id:selectedChatConversationId, status:next, customer_name:current?.customer_name || "" })
-        });
-        showToast(next === "closed" ? "Chat ditutup." : "Chat dibuka kembali.", "success");
-        await loadChatConversations(false);
-        await selectAdminChat(selectedChatConversationId);
-    } catch (error) {
-        showToast(error.message || "Status chat gagal diperbarui.", "error");
-    }
-}
-
-function startAdminChatPolling() {
-    clearInterval(adminChatPollTimer);
-    adminChatPollTimer = setInterval(async () => {
-        await loadChatConversations(false);
-        await pollSelectedAdminChat();
-    }, 4000);
-}
-
-checkAdminAuth().then(authenticated => {
-    if (authenticated) {
-        loadProducts();
-        startAdminChatPolling();
-        if ("Notification" in window && Notification.permission === "granted") adminChatNotificationReady = true;
-        loadChatConversations(false);
-    }
-});
+checkAdminAuth().then(authenticated => { if (authenticated) loadProducts(); });
 </script>
 
 <script>
