@@ -216,10 +216,27 @@ function cleanupAdminSessions() {
     for (const [token, session] of adminSessions) {
         if (session.expiresAt <= now) adminSessions.delete(token);
     }
+    for (const [ip, attempts] of loginAttempts) {
+        if (now - attempts.windowStart >= LOGIN_WINDOW) loginAttempts.delete(ip);
+    }
+}
+
+// Batas global: tetap melindungi PIN walaupun header IP dipalsukan penyerang.
+const MAX_GLOBAL_LOGIN_FAILURES = 30;
+const globalLoginAttempts = { windowStart: 0, failures: 0 };
+
+function resetGlobalLoginWindowIfNeeded(now) {
+    if (now - globalLoginAttempts.windowStart >= LOGIN_WINDOW) {
+        globalLoginAttempts.windowStart = now;
+        globalLoginAttempts.failures = 0;
+    }
 }
 
 function canAttemptLogin(ip) {
     const now = Date.now();
+    resetGlobalLoginWindowIfNeeded(now);
+    if (globalLoginAttempts.failures >= MAX_GLOBAL_LOGIN_FAILURES) return false;
+
     const attempts = loginAttempts.get(ip);
     if (!attempts || now - attempts.windowStart >= LOGIN_WINDOW) {
         loginAttempts.delete(ip);
@@ -230,6 +247,9 @@ function canAttemptLogin(ip) {
 
 function recordLoginFailure(ip) {
     const now = Date.now();
+    resetGlobalLoginWindowIfNeeded(now);
+    globalLoginAttempts.failures++;
+
     const attempts = loginAttempts.get(ip);
     if (!attempts || now - attempts.windowStart >= LOGIN_WINDOW) {
         loginAttempts.set(ip, { windowStart: now, failures: 1 });
@@ -237,6 +257,34 @@ function recordLoginFailure(ip) {
         attempts.failures++;
     }
 }
+
+function pinMatches(pin) {
+    const a = crypto.createHash("sha256").update(String(pin)).digest();
+    const b = crypto.createHash("sha256").update(ADMIN_PIN).digest();
+    return crypto.timingSafeEqual(a, b);
+}
+
+// Rate limit sederhana untuk endpoint publik (pesanan & kunjungan).
+const TEN_MINUTES = 10 * 60 * 1000;
+const rateBuckets = new Map();
+
+function isRateLimited(key, limit, windowMs) {
+    const now = Date.now();
+    const bucket = rateBuckets.get(key);
+    if (!bucket || now - bucket.start >= windowMs) {
+        rateBuckets.set(key, { start: now, windowMs, count: 1 });
+        return false;
+    }
+    bucket.count++;
+    return bucket.count > limit;
+}
+
+setInterval(() => {
+    const now = Date.now();
+    for (const [key, bucket] of rateBuckets) {
+        if (now - bucket.start >= bucket.windowMs) rateBuckets.delete(key);
+    }
+}, 5 * 60 * 1000).unref();
 
 function getAdminToken(req) {
     const header = String(req.headers.authorization || "");
@@ -424,32 +472,38 @@ function validateProductData(data) {
     }
 }
 
-function readBody(req) {
+function readBody(req, maxBytes = MAX_REQUEST_SIZE) {
     return new Promise((resolve, reject) => {
-        let body = "";
+        const chunks = [];
+        let size = 0;
         let rejected = false;
 
         req.on("data", (chunk) => {
             if (rejected) return;
 
-            body += chunk.toString();
+            size += chunk.length;
 
-            if (Buffer.byteLength(body, "utf8") > MAX_REQUEST_SIZE) {
+            if (size > maxBytes) {
                 rejected = true;
                 reject(
                     new Error(
-                        "Total ukuran upload terlalu besar. Maksimal 60 MB."
+                        maxBytes === MAX_REQUEST_SIZE
+                            ? "Total ukuran upload terlalu besar. Maksimal 60 MB."
+                            : "Data yang dikirim terlalu besar."
                     )
                 );
                 req.destroy();
+                return;
             }
+
+            chunks.push(chunk);
         });
 
         req.on("end", () => {
             if (rejected) return;
 
             try {
-                resolve(JSON.parse(body));
+                resolve(JSON.parse(Buffer.concat(chunks).toString("utf8")));
             } catch {
                 reject(new Error("Format data tidak valid."));
             }
@@ -465,9 +519,11 @@ function legacyImageFilePath(imagePath) {
     const value = imagePath.trim();
     if (!value.startsWith("images/")) return null;
 
-    const filename = path.basename(value);
     const resolvedFolder = path.resolve(imagesFolder);
-    const resolvedFile = path.resolve(imagesFolder, filename);
+    const resolvedFile = path.resolve(
+        imagesFolder,
+        value.slice("images/".length)
+    );
 
     if (!resolvedFile.startsWith(resolvedFolder + path.sep)) return null;
     return resolvedFile;
@@ -600,7 +656,7 @@ async function migrateLegacyImage(imagePath) {
     return finalName;
 }
 
-async function ensureDatabase() {
+async function ensureDatabaseOnce() {
     if (!pool) {
         throw new Error("DATABASE_URL belum diset di Render.");
     }
@@ -623,6 +679,7 @@ async function ensureDatabase() {
     `);
 
     await pool.query(`ALTER TABLE products DROP COLUMN IF EXISTS stok`);
+    await pool.query(`ALTER TABLE products ENABLE ROW LEVEL SECURITY`);
 
     databaseReady = true;
 }
@@ -893,7 +950,33 @@ function validateOrderData(data) {
     return { referral, items, total };
 }
 
-async function ensureOrdersTable() {
+// Harga dari browser tidak dipercaya: jika nama produk ada di katalog,
+// pakai harga dari database.
+async function applyCatalogPrices(order) {
+    let products;
+    try {
+        products = await getProducts();
+    } catch (error) {
+        console.warn("Katalog tidak tersedia untuk validasi harga:", error.message);
+        return order;
+    }
+
+    const priceByName = new Map(
+        products.map((product) => [String(product.nama).trim(), product.harga])
+    );
+
+    order.items = order.items.map((item) => {
+        const realPrice = priceByName.get(item.name);
+        return realPrice === undefined ? item : { ...item, price: realPrice };
+    });
+    order.total = order.items.reduce(
+        (sum, item) => sum + item.price * item.qty,
+        0
+    );
+    return order;
+}
+
+async function ensureOrdersTableOnce() {
     if (!pool) throw new Error("DATABASE_URL belum diset di Render.");
     await pool.query(`CREATE TABLE IF NOT EXISTS orders (
         id BIGSERIAL PRIMARY KEY,
@@ -982,7 +1065,7 @@ async function deleteVisit(id) {
     if (!result.rows.length) throw new Error("Kunjungan tidak ditemukan.");
 }
 
-async function ensureAnalyticsTable() {
+async function ensureAnalyticsTableOnce() {
     if (!pool) throw new Error("DATABASE_URL belum diset di Render.");
 
     await pool.query(`
@@ -1039,6 +1122,8 @@ async function ensureAnalyticsTable() {
         ALTER TABLE public.site_visits
         ADD COLUMN IF NOT EXISTS longitude DOUBLE PRECISION
     `);
+
+    await pool.query(`ALTER TABLE public.site_visits ENABLE ROW LEVEL SECURITY`);
 }
 
 
@@ -1136,6 +1221,25 @@ async function getRecentVisits(limit = 100) {
 }
 
 
+// Jalankan pembuatan/migrasi tabel hanya sekali per proses (bukan di tiap request).
+// Jika gagal, percobaan berikutnya akan mengulang.
+function runOnce(fn) {
+    let promise = null;
+    return () => {
+        if (!promise) {
+            promise = fn().catch((error) => {
+                promise = null;
+                throw error;
+            });
+        }
+        return promise;
+    };
+}
+
+const ensureDatabase = runOnce(ensureDatabaseOnce);
+const ensureOrdersTable = runOnce(ensureOrdersTableOnce);
+const ensureAnalyticsTable = runOnce(ensureAnalyticsTableOnce);
+
 const server = http.createServer(async (req, res) => {
     console.log("REQUEST:", req.method, req.url);
     res.setHeader("Access-Control-Allow-Origin", "https://leonnidazz.github.io");
@@ -1156,7 +1260,9 @@ const server = http.createServer(async (req, res) => {
     }
 
     try {
-        if (req.method === "GET" && req.url === "/") {
+        const pathname = new URL(req.url, "http://localhost").pathname;
+
+        if (req.method === "GET" && pathname === "/") {
             sendJSON(res, 200, {
                 status: "online",
                 message: "Kicks Station Backend berhasil berjalan!",
@@ -1167,10 +1273,20 @@ const server = http.createServer(async (req, res) => {
 
         if (req.method === "POST" && new URL(req.url, "http://localhost").pathname === "/api/analytics/visit") {
     try {
-        const data = await readBody(req);
         const clientIP = getClientIP(req);
 
-        console.log("KICKSTATION VISITOR IP:", clientIP);
+        if (
+            isRateLimited(`visit:${clientIP}`, 30, TEN_MINUTES) ||
+            isRateLimited("visit:global", 3000, TEN_MINUTES)
+        ) {
+            sendJSON(res, 429, {
+                success: false,
+                message: "Terlalu banyak permintaan. Coba lagi nanti."
+            });
+            return;
+        }
+
+        const data = await readBody(req, 10 * 1024);
 
         const locationData = await getVisitorLocation(clientIP);
 
@@ -1207,9 +1323,21 @@ const server = http.createServer(async (req, res) => {
         // =====================================================
         // POST PESANAN / CHECKOUT
         // =====================================================
-        if (req.method === "POST" && req.url === "/api/orders") {
+        if (req.method === "POST" && pathname === "/api/orders") {
             try {
-                const order = validateOrderData(await readBody(req));
+                const clientIP = getClientIP(req);
+
+                if (
+                    isRateLimited(`order:${clientIP}`, 10, TEN_MINUTES) ||
+                    isRateLimited("order:global", 100, TEN_MINUTES)
+                ) {
+                    sendJSON(res, 429, { success:false, message:"Terlalu banyak permintaan. Coba lagi nanti." });
+                    return;
+                }
+
+                const order = await applyCatalogPrices(
+                    validateOrderData(await readBody(req, 100 * 1024))
+                );
                 const savedOrder = await createOrder(order);
                 sendJSON(res, 201, { success:true, message:"Checkout berhasil dicatat.", order:{ id:Number(savedOrder.id), created_at:savedOrder.created_at, referral:savedOrder.referral || "", total:Number(savedOrder.total || 0), status:savedOrder.status } });
             } catch (error) {
@@ -1219,7 +1347,7 @@ const server = http.createServer(async (req, res) => {
             return;
         }
 
-        if (req.method === "POST" && req.url === "/api/admin/login") {
+        if (req.method === "POST" && pathname === "/api/admin/login") {
             const ip = getClientIP(req);
 
             if (!ADMIN_PIN) {
@@ -1239,10 +1367,10 @@ const server = http.createServer(async (req, res) => {
                 return;
             }
 
-            const data = await readBody(req);
+            const data = await readBody(req, 1024);
             const pin = String(data?.pin || "").trim();
 
-            if (!/^\d{6}$/.test(pin) || pin !== ADMIN_PIN) {
+            if (!/^\d{6}$/.test(pin) || !pinMatches(pin)) {
                 recordLoginFailure(ip);
                 sendJSON(res, 401, {
                     success: false,
@@ -1268,7 +1396,7 @@ const server = http.createServer(async (req, res) => {
             return;
         }
 
-        if (req.method === "GET" && req.url === "/api/admin/check") {
+        if (req.method === "GET" && pathname === "/api/admin/check") {
             if (!isAdminAuthenticated(req)) {
                 sendJSON(res, 401, {
                     success: false,
@@ -1281,7 +1409,7 @@ const server = http.createServer(async (req, res) => {
             return;
         }
 
-        if (req.method === "POST" && req.url === "/api/admin/logout") {
+        if (req.method === "POST" && pathname === "/api/admin/logout") {
             const token = getAdminToken(req);
             if (token) adminSessions.delete(token);
 
@@ -1292,7 +1420,7 @@ const server = http.createServer(async (req, res) => {
             return;
         }
 
-        if (req.method === "GET" && req.url === "/api/products") {
+        if (req.method === "GET" && pathname === "/api/products") {
             const products = await getProducts();
 
             sendJSON(res, 200, {
@@ -1302,7 +1430,7 @@ const server = http.createServer(async (req, res) => {
             return;
         }
 
-        if (req.method === "POST" && req.url === "/api/products") {
+        if (req.method === "POST" && pathname === "/api/products") {
             if (!requireAdmin(req, res)) return;
 
             await initializeDatabase();
@@ -1456,6 +1584,18 @@ const server = http.createServer(async (req, res) => {
                         const storagePath = toStoragePath(image);
 
                         if (!storagePath) {
+                            // Foto lama yang belum dipindah ke Supabase
+                            // (mis. "images/a/a (1).jpeg") boleh dipertahankan
+                            // selama memang milik produk ini.
+                            const legacy = image.trim();
+
+                            if (legacy && oldImages.includes(legacy)) {
+                                if (!keptExistingImages.includes(legacy)) {
+                                    keptExistingImages.push(legacy);
+                                }
+                                continue;
+                            }
+
                             throw new Error("Path foto tidak valid.");
                         }
 
@@ -1610,8 +1750,10 @@ const server = http.createServer(async (req, res) => {
 
             const deletedProduct = products[index];
 
-            await deleteStorageImages(deletedProduct.gambar);
             await deleteProductRow(id);
+            await deleteStorageImages(deletedProduct.gambar).catch((error) => {
+                console.error("Gagal menghapus foto dari storage:", error.message);
+            });
 
             // Pertahankan perilaku lama: ID dirapikan menjadi 1..N.
             const remaining = products
@@ -1638,7 +1780,7 @@ const server = http.createServer(async (req, res) => {
         // =====================================================
         // ANALYTICS - ADMIN
         // =====================================================
-        if (req.method === "GET" && req.url === "/api/analytics") {
+        if (req.method === "GET" && pathname === "/api/analytics") {
             if (!requireAdmin(req, res)) return;
             try {
                 const analytics = await getAnalytics();
@@ -1654,7 +1796,7 @@ const server = http.createServer(async (req, res) => {
         // =====================================================
         // GET SEMUA PESANAN - ADMIN
         // =====================================================
-        if (req.method === "GET" && req.url === "/api/orders") {
+        if (req.method === "GET" && pathname === "/api/orders") {
             if (!requireAdmin(req, res)) return;
             try { sendJSON(res, 200, { success:true, orders:await getOrders() }); }
             catch (error) { console.error("Gagal mengambil pesanan:", error); sendJSON(res, 500, { success:false, message:error.message || "Pesanan tidak dapat diambil." }); }
@@ -1664,7 +1806,7 @@ const server = http.createServer(async (req, res) => {
         // =====================================================
         // HAPUS SEMUA RIWAYAT PESANAN - ADMIN
         // =====================================================
-        if (req.method === "DELETE" && req.url === "/api/orders") {
+        if (req.method === "DELETE" && pathname === "/api/orders") {
             if (!requireAdmin(req, res)) return;
             try {
                 await deleteAllOrders();

@@ -872,25 +872,5 @@
       "36",
       "38.5"
     ]
-  },
-  {
-    "id": 51,
-    "nama": "YAZID MUHAMMAD AL KAUTSAR",
-    "brand": "Adidas",
-    "harga": 1,
-    "harga_coret": 2,
-    "tipe": "kasual",
-    "asal": "internasional",
-    "pengguna": "pria",
-    "stok": 1,
-    "sizes": [
-      "46"
-    ],
-    "gambar": [
-      "images/twibbon.JPG",
-      "images/WhatsApp Image 2026-09-09 at 20.57.00.jpeg"
-    ],
-    "deskripsi": "",
-    "upload_order": 51
   }
 ]
