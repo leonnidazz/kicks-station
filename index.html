@@ -2502,7 +2502,7 @@
                         <!-- FOTO UTAMA -->
 
                         <div
-                            onclick='openLightbox(${JSON.stringify(images)}, ${JSON.stringify(product.upload_order)}, 0)'
+                            onclick="openLightbox(${escapeHTML(JSON.stringify(images))}, ${escapeHTML(JSON.stringify(product.upload_order))}, 0)"
                             class="relative rounded-xl overflow-hidden mb-1 h-60 bg-gray-200 dark:bg-gray-700 cursor-pointer">
 
                             ${
@@ -2628,7 +2628,7 @@
 
 
                             <button
-                                onclick='addToCart(this, ${JSON.stringify(product.nama)}, ${price})'
+                                onclick="addToCart(this, ${escapeHTML(JSON.stringify(product.nama))}, ${price})"
                                 class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-xl text-xs font-bold shadow-md">
 
                                 + Keranjang
