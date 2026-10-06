@@ -2450,7 +2450,7 @@
 
                                 <button
                                     type="button"
-                                    onclick="openLightbox(${JSON.stringify(images)}, ${JSON.stringify(product.upload_order)}, ${index})"
+                                    onclick="openLightbox(${escapeHTML(JSON.stringify(images))}, ${escapeHTML(JSON.stringify(product.upload_order))}, ${index})"
                                     class="product-thumbnail ${index === 0 ? 'active' : ''} flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 border-transparent bg-gray-200 dark:bg-gray-700">
 
                                     <img
