@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0f172a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Kicks Station">
+<link rel="apple-touch-icon" href="./icons/icon-192.png">
+<link rel="icon" href="./favicon.ico" sizes="any">
+<link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png">
 <link rel="manifest" href="./manifest.webmanifest">
 <title>AL KAUTSAR — Admin Dashboard</title>
 <script src="https://cdn.tailwindcss.com"></script>
@@ -1463,6 +1470,9 @@ const KS_CHAT_API = API_URL;
 let ksChatTimer = null;
 let ksChatActiveId = '';
 let ksChatKnownUnread = 0;
+let ksChatConversationSignature = '';
+let ksChatMessagesSignature = '';
+let ksChatPolling = false;
 let ksChatHasInitialUnreadSnapshot = false;
 let ksChatAudioContext = null;
 let ksChatNotificationsEnabled = false;
@@ -1537,6 +1547,9 @@ async function refreshAdminConversations() {
     }
     ksChatKnownUnread = unread;
     ksChatHasInitialUnreadSnapshot = true;
+    const signature = JSON.stringify({ activeId: ksChatActiveId, list: list.map(item => [item.id, item.visitor_name, item.customer_name, item.last_message, item.last_message_at, item.unread_admin, item.status]) });
+    if (signature === ksChatConversationSignature) return;
+    ksChatConversationSignature = signature;
     if (!list.length) { box.innerHTML = '<p class="p-4 text-sm text-slate-500">Belum ada chat dari pelanggan.</p>'; return; }
     box.innerHTML = list.map(item => {
       const id = String(item.id);
@@ -1555,7 +1568,9 @@ document.getElementById('admin-chat-conversations').addEventListener('click', ev
 });
 async function selectAdminConversation(id, name) {
   ksChatActiveId = String(id);
-  document.getElementById('admin-chat-active-title').textContent = name || 'Pelanggan';
+  ksChatMessagesSignature = '';
+  ksChatConversationSignature = '';
+  document.getElementById('admin-chat-active-title') .textContent = name || 'Pelanggan';
   document.getElementById('admin-chat-input').disabled = false;
   document.getElementById('admin-chat-send').disabled = false;
   await loadAdminChatMessages();
@@ -1569,6 +1584,9 @@ async function loadAdminChatMessages() {
     if (!response.ok || !data.success) throw new Error(data.message || 'Gagal memuat pesan.');
     const box = document.getElementById('admin-chat-messages');
     const messages = Array.isArray(data.messages) ? data.messages : [];
+    const signature = JSON.stringify(messages);
+    if (signature === ksChatMessagesSignature) return;
+    ksChatMessagesSignature = signature;
     box.innerHTML = messages.map(message => `<div class="flex ${message.sender === 'admin' ? 'justify-end' : 'justify-start'}"><div class="max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap break-words ${message.sender === 'admin' ? 'bg-slate-900 text-white' : 'bg-white border'}">${ksChatEsc(message.message)}<div class="text-[10px] opacity-60 mt-1">${ksChatEsc(new Date(message.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }))}</div></div></div>`).join('') || '<p class="text-sm text-slate-500">Belum ada pesan.</p>';
     box.scrollTop = box.scrollHeight;
   } catch (error) { console.error('Isi chat gagal dimuat:', error); }
@@ -1579,7 +1597,12 @@ async function openAdminChat() {
   modal.classList.remove('hidden'); modal.classList.add('flex');
   await refreshAdminConversations();
   if (ksChatTimer) clearInterval(ksChatTimer);
-  ksChatTimer = setInterval(async () => { if (!document.hidden) { await refreshAdminConversations(); await loadAdminChatMessages(); } }, 3000);
+  ksChatTimer = setInterval(async () => {
+    if (document.hidden || ksChatPolling) return;
+    ksChatPolling = true;
+    try { await refreshAdminConversations(); await loadAdminChatMessages(); }
+    finally { ksChatPolling = false; }
+  }, 5000);
 }
 function closeAdminChat() {
   const modal = document.getElementById('admin-chat-modal');
@@ -1604,7 +1627,10 @@ document.getElementById('admin-chat-form').addEventListener('submit', async even
   } catch (error) { showToast(error.message || 'Gagal mengirim pesan.', 'error'); }
   finally { input.disabled = false; send.disabled = false; input.focus(); }
 });
-setInterval(() => { if (adminToken && !document.hidden) refreshAdminConversations(); }, 10000);
+setInterval(() => {
+  const chatModal = document.getElementById('admin-chat-modal');
+  if (adminToken && !document.hidden && (!chatModal || chatModal.classList.contains('hidden')) && !ksChatPolling) refreshAdminConversations();
+}, 15000);
 </script>
 
 
@@ -1648,6 +1674,16 @@ async function enableAdminPush() {
     if (button) button.textContent = originalText || '📲 Push latar';
     showToast(error.message || 'Notifikasi gagal diaktifkan.', 'error');
   } finally { if (button) button.disabled = false; }
+}
+</script>
+
+<script>
+// Daftarkan service worker otomatis agar browser mengenali admin sebagai PWA.
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js', { scope: './' })
+      .catch(error => console.warn('PWA service worker gagal didaftarkan:', error));
+  });
 }
 </script>
 
