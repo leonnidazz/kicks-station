@@ -2086,13 +2086,16 @@ const server = http.createServer(async (req, res) => {
                 const tokenHash = hashVisitorToken(visitorToken);
                 const name = String(data?.name || "Pelanggan").trim().slice(0, 60) || "Pelanggan";
                 const referral = String(data?.referral || "").slice(0, 100);
+                // Existing Supabase schemas may require visitor_id NOT NULL.
+                // Prefer the site's stable visitor ID; fall back to this public conversation ID.
+                const visitorId = String(data?.visitor_id || publicId).trim().slice(0, 128) || publicId;
 
                 await pool.query(
                     `INSERT INTO public.chat_conversations
-                        (conversation_token, visitor_name, customer_name, referral, visitor_token_hash)
-                     VALUES ($1, $2, $2, $3, $4)
+                        (visitor_id, conversation_token, visitor_name, customer_name, referral, visitor_token_hash)
+                     VALUES ($1, $2, $3, $3, $4, $5)
                      ON CONFLICT (conversation_token) DO NOTHING`,
-                    [publicId, name, referral, tokenHash]
+                    [visitorId, publicId, name, referral, tokenHash]
                 );
                 const owner = await pool.query(
                     `SELECT visitor_token_hash FROM public.chat_conversations WHERE conversation_token = $1`,
