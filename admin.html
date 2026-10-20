@@ -747,7 +747,7 @@ button:active {
 <!-- PANEL LIVE CHAT ADMIN -->
 <div id="admin-chat-modal" class="hidden fixed inset-0 z-[800] bg-slate-950/40 backdrop-blur-sm p-3 sm:p-6 items-center justify-center">
  <section class="w-full max-w-5xl h-[min(88vh,760px)] bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col">
-  <header class="px-5 py-4 border-b flex items-center justify-between"><div><h2 class="font-extrabold text-lg">Chat Pelanggan</h2><p class="text-xs text-slate-500">Pesan pelanggan masuk di sini; balasan dikirim langsung ke website.</p></div><button type="button" onclick="closeAdminChat()" class="text-2xl px-2" aria-label="Tutup chat">×</button></header>
+  <header class="px-5 py-4 border-b flex items-center justify-between gap-3"><div><h2 class="font-extrabold text-lg">Chat Pelanggan</h2><p class="text-xs text-slate-500">Pesan pelanggan masuk di sini; balasan dikirim langsung ke website.</p><p id="ks-chat-notify-status" class="text-xs text-slate-500 mt-1">Notifikasi belum diaktifkan di browser ini.</p></div><div class="flex items-center gap-2"><button type="button" onclick="enableAdminChatNotifications()" class="text-xs sm:text-sm font-bold rounded-xl bg-blue-50 text-blue-700 px-3 py-2">🔔 Aktifkan dering/getar</button><button type="button" onclick="closeAdminChat()" class="text-2xl px-2" aria-label="Tutup chat">×</button></div></header>
   <div class="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-[280px_1fr]">
    <aside class="border-r overflow-y-auto" id="admin-chat-conversations"><p class="p-4 text-sm text-slate-500">Memuat percakapan…</p></aside>
    <div class="min-h-0 flex flex-col"><div id="admin-chat-active-title" class="p-4 border-b text-sm font-bold text-slate-500">Pilih percakapan</div><div id="admin-chat-messages" class="flex-1 min-h-0 overflow-y-auto p-4 space-y-3 bg-slate-50"><p class="text-sm text-slate-500">Belum ada percakapan dipilih.</p></div><form id="admin-chat-form" class="p-3 border-t flex gap-2"><input id="admin-chat-input" maxlength="2000" placeholder="Balas pelanggan…" class="min-w-0 flex-1 border rounded-xl px-3 py-3 text-sm" disabled><button id="admin-chat-send" type="submit" class="bg-slate-900 text-white font-bold px-4 rounded-xl disabled:opacity-50" disabled>Kirim</button></form></div>
@@ -1451,6 +1451,53 @@ const KS_CHAT_API = API_URL;
 let ksChatTimer = null;
 let ksChatActiveId = '';
 let ksChatKnownUnread = 0;
+let ksChatHasInitialUnreadSnapshot = false;
+let ksChatAudioContext = null;
+let ksChatNotificationsEnabled = false;
+
+function ksChatPlaySound() {
+  if (!ksChatNotificationsEnabled) return;
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (!AudioCtx) return;
+    if (!ksChatAudioContext) ksChatAudioContext = new AudioCtx();
+    if (ksChatAudioContext.state === "suspended") ksChatAudioContext.resume();
+    const now = ksChatAudioContext.currentTime;
+    [0, 0.22].forEach((delay) => {
+      const oscillator = ksChatAudioContext.createOscillator();
+      const gain = ksChatAudioContext.createGain();
+      oscillator.type = "sine"; oscillator.frequency.value = 880;
+      gain.gain.setValueAtTime(0.0001, now + delay);
+      gain.gain.exponentialRampToValueAtTime(0.18, now + delay + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + delay + 0.16);
+      oscillator.connect(gain); gain.connect(ksChatAudioContext.destination);
+      oscillator.start(now + delay); oscillator.stop(now + delay + 0.17);
+    });
+  } catch (error) { console.warn("Bunyi notifikasi tidak dapat diputar:", error); }
+}
+
+async function enableAdminChatNotifications() {
+  try {
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    if (AudioCtx) {
+      if (!ksChatAudioContext) ksChatAudioContext = new AudioCtx();
+      if (ksChatAudioContext.state === "suspended") await ksChatAudioContext.resume();
+    }
+    if ("Notification" in window && Notification.permission === "default") await Notification.requestPermission();
+    ksChatNotificationsEnabled = true;
+    const status = document.getElementById("ks-chat-notify-status");
+    if (status) status.textContent = "Dering aktif" + ("vibrate" in navigator ? " • getar dicoba pada perangkat yang mendukung" : " • getar tidak didukung browser ini");
+    ksChatPlaySound();
+    if ("vibrate" in navigator) navigator.vibrate([100, 60, 100]);
+    if ("Notification" in window && Notification.permission === "granted") {
+      try { new Notification("Notifikasi Kicks Station aktif", { body: "Dering chat sudah diaktifkan pada browser ini." }); } catch (_) {}
+    }
+  } catch (error) {
+    console.warn("Gagal mengaktifkan notifikasi chat:", error);
+    const status = document.getElementById("ks-chat-notify-status");
+    if (status) status.textContent = "Tidak bisa mengaktifkan audio. Coba klik tombol ini lagi.";
+  }
+}
 function ksChatEsc(value) {
   const node = document.createElement('span');
   node.textContent = String(value ?? '');
@@ -1469,10 +1516,15 @@ async function refreshAdminConversations() {
     const badge = document.getElementById('chat-unread-badge');
     badge.textContent = String(unread);
     badge.classList.toggle('hidden', unread < 1);
-    if (unread > ksChatKnownUnread && document.getElementById('admin-chat-modal').classList.contains('hidden')) {
-      try { if ('Notification' in window && Notification.permission === 'granted') new Notification('Pesan baru di Kicks Station', { body: 'Ada pesan pelanggan yang belum dibaca.' }); } catch (_) {}
+    if (ksChatHasInitialUnreadSnapshot && unread > ksChatKnownUnread) {
+      ksChatPlaySound();
+      try { if ('vibrate' in navigator && ksChatNotificationsEnabled) navigator.vibrate([180, 80, 180]); } catch (_) {}
+      if (document.getElementById('admin-chat-modal').classList.contains('hidden')) {
+        try { if ('Notification' in window && Notification.permission === 'granted') new Notification('Pesan baru di Kicks Station', { body: 'Ada pesan pelanggan yang belum dibaca.' }); } catch (_) {}
+      }
     }
     ksChatKnownUnread = unread;
+    ksChatHasInitialUnreadSnapshot = true;
     if (!list.length) { box.innerHTML = '<p class="p-4 text-sm text-slate-500">Belum ada chat dari pelanggan.</p>'; return; }
     box.innerHTML = list.map(item => {
       const id = String(item.id);
@@ -1513,7 +1565,6 @@ async function openAdminChat() {
   if (!adminToken) { showAdminLogin('Silakan login sebagai admin terlebih dahulu.'); return; }
   const modal = document.getElementById('admin-chat-modal');
   modal.classList.remove('hidden'); modal.classList.add('flex');
-  try { if ('Notification' in window && Notification.permission === 'default') await Notification.requestPermission(); } catch (_) {}
   await refreshAdminConversations();
   if (ksChatTimer) clearInterval(ksChatTimer);
   ksChatTimer = setInterval(async () => { if (!document.hidden) { await refreshAdminConversations(); await loadAdminChatMessages(); } }, 3000);
