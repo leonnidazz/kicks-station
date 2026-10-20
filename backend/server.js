@@ -29,6 +29,11 @@ const ADMIN_PIN = String(process.env.ADMIN_PIN || "").trim();
 const VAPID_PUBLIC_KEY = String(process.env.VAPID_PUBLIC_KEY || "").trim();
 const VAPID_PRIVATE_KEY = String(process.env.VAPID_PRIVATE_KEY || "").trim();
 const VAPID_SUBJECT = String(process.env.VAPID_SUBJECT || "").trim();
+console.log("[WEB PUSH CONFIG]", {
+  publicKeyPresent: Boolean(VAPID_PUBLIC_KEY),
+  privateKeyPresent: Boolean(VAPID_PRIVATE_KEY),
+  subjectPresent: Boolean(VAPID_SUBJECT)
+});
 let webPushConfigured = false;
 if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY && VAPID_SUBJECT) {
     try {
