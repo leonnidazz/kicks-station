@@ -953,21 +953,22 @@ function validateOrderData(data) {
 // Harga dari browser tidak dipercaya: jika nama produk ada di katalog,
 // pakai harga dari database.
 async function applyCatalogPrices(order) {
-    let products;
-    try {
-        products = await getProducts();
-    } catch (error) {
-        console.warn("Katalog tidak tersedia untuk validasi harga:", error.message);
-        return order;
+    // Harga checkout harus selalu diverifikasi oleh server; jangan fallback ke harga browser.
+    const products = await getProducts();
+    if (!Array.isArray(products) || products.length === 0) {
+        throw new Error("Katalog produk belum tersedia. Checkout sementara dinonaktifkan.");
     }
-
     const priceByName = new Map(
-        products.map((product) => [String(product.nama).trim(), product.harga])
+        products.map((product) => [String(product.nama).trim().toLocaleLowerCase("id-ID"), Number(product.harga)])
     );
 
     order.items = order.items.map((item) => {
-        const realPrice = priceByName.get(item.name);
-        return realPrice === undefined ? item : { ...item, price: realPrice };
+        const key = item.name.trim().toLocaleLowerCase("id-ID");
+        const realPrice = priceByName.get(key);
+        if (realPrice === undefined || !Number.isFinite(realPrice) || realPrice < 0) {
+            throw new Error(`Produk "${item.name}" tidak ditemukan di katalog. Muat ulang toko sebelum checkout.`);
+        }
+        return { ...item, price: realPrice };
     });
     order.total = order.items.reduce(
         (sum, item) => sum + item.price * item.qty,
@@ -1254,6 +1255,10 @@ async function ensureChatTableOnce() {
         )
     `);
     await pool.query(`
+        ALTER TABLE public.chat_conversations
+        ADD COLUMN IF NOT EXISTS visitor_token_hash TEXT
+    `);
+    await pool.query(`
         CREATE TABLE IF NOT EXISTS public.chat_messages (
             id BIGSERIAL PRIMARY KEY,
             conversation_id TEXT NOT NULL REFERENCES public.chat_conversations(id) ON DELETE CASCADE,
@@ -1287,7 +1292,7 @@ const server = http.createServer(async (req, res) => {
     );
     res.setHeader(
         "Access-Control-Allow-Headers",
-        "Content-Type, Authorization"
+        "Content-Type, Authorization, X-Chat-Token"
     );
 
     if (req.method === "OPTIONS") {
@@ -1951,15 +1956,25 @@ const server = http.createServer(async (req, res) => {
                 }
                 const data = await readBody(req, 4096);
                 const id = String(data?.conversation_id || "").trim();
-                if (!/^[a-zA-Z0-9_-]{12,100}$/.test(id)) {
-                    sendJSON(res, 400, { success: false, message: "ID percakapan tidak valid." });
+                const visitorToken = String(data?.visitor_token || "").trim();
+                if (!/^[a-zA-Z0-9_-]{12,100}$/.test(id) || !/^[a-f0-9]{64}$/i.test(visitorToken)) {
+                    sendJSON(res, 400, { success: false, message: "ID atau token percakapan tidak valid." });
                     return;
                 }
+                const tokenHash = crypto.createHash("sha256").update(visitorToken).digest("hex");
                 await pool.query(
-                    `INSERT INTO public.chat_conversations (id, visitor_name, referral)
-                     VALUES ($1, $2, $3) ON CONFLICT (id) DO NOTHING`,
-                    [id, String(data?.name || "Pelanggan").trim().slice(0, 60) || "Pelanggan", String(data?.referral || "").slice(0, 100)]
+                    `INSERT INTO public.chat_conversations (id, visitor_name, referral, visitor_token_hash)
+                     VALUES ($1, $2, $3, $4) ON CONFLICT (id) DO NOTHING`,
+                    [id, String(data?.name || "Pelanggan").trim().slice(0, 60) || "Pelanggan", String(data?.referral || "").slice(0, 100), tokenHash]
                 );
+                const owner = await pool.query(`SELECT visitor_token_hash FROM public.chat_conversations WHERE id = $1`, [id]);
+                const storedHash = String(owner.rows[0]?.visitor_token_hash || "");
+                const a = Buffer.from(storedHash, "hex");
+                const b = Buffer.from(tokenHash, "hex");
+                if (a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+                    sendJSON(res, 403, { success: false, message: "Percakapan ini tidak dapat diakses dari perangkat ini." });
+                    return;
+                }
                 sendJSON(res, 200, { success: true, conversation_id: id });
                 return;
             }
@@ -1968,6 +1983,19 @@ const server = http.createServer(async (req, res) => {
                 const id = String(new URL(req.url, "http://localhost").searchParams.get("conversation_id") || "").trim();
                 if (!/^[a-zA-Z0-9_-]{12,100}$/.test(id)) {
                     sendJSON(res, 400, { success: false, message: "ID percakapan tidak valid." });
+                    return;
+                }
+                const visitorToken = String(req.headers["x-chat-token"] || "").trim();
+                if (!/^[a-f0-9]{64}$/i.test(visitorToken)) {
+                    sendJSON(res, 401, { success: false, message: "Token percakapan diperlukan." });
+                    return;
+                }
+                const tokenHash = crypto.createHash("sha256").update(visitorToken).digest("hex");
+                const owner = await pool.query(`SELECT visitor_token_hash FROM public.chat_conversations WHERE id = $1`, [id]);
+                const storedHash = String(owner.rows[0]?.visitor_token_hash || "");
+                const a = Buffer.from(storedHash, "hex"), b = Buffer.from(tokenHash, "hex");
+                if (!owner.rowCount || a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+                    sendJSON(res, 403, { success: false, message: "Akses percakapan ditolak." });
                     return;
                 }
                 const result = await pool.query(
@@ -1997,6 +2025,21 @@ const server = http.createServer(async (req, res) => {
                     return;
                 }
                 if (sender === "admin" && !requireAdmin(req, res)) return;
+                if (sender === "customer") {
+                    const visitorToken = String(data?.visitor_token || "").trim();
+                    if (!/^[a-f0-9]{64}$/i.test(visitorToken)) {
+                        sendJSON(res, 401, { success: false, message: "Token percakapan diperlukan." });
+                        return;
+                    }
+                    const tokenHash = crypto.createHash("sha256").update(visitorToken).digest("hex");
+                    const owner = await pool.query(`SELECT visitor_token_hash FROM public.chat_conversations WHERE id = $1`, [id]);
+                    const storedHash = String(owner.rows[0]?.visitor_token_hash || "");
+                    const a = Buffer.from(storedHash, "hex"), b = Buffer.from(tokenHash, "hex");
+                    if (!owner.rowCount || a.length !== b.length || !crypto.timingSafeEqual(a, b)) {
+                        sendJSON(res, 403, { success: false, message: "Akses percakapan ditolak." });
+                        return;
+                    }
+                }
 
                 const client = await pool.connect();
                 try {

@@ -2778,25 +2778,30 @@
 (() => {
  const API='https://kicks-station-api.onrender.com';
  const KEY='ks_chat_conversation_id';
+ const TOKEN_KEY='ks_chat_visitor_token';
  let conversationId=localStorage.getItem(KEY)||'';
+ let visitorToken=localStorage.getItem(TOKEN_KEY)||'';
+ if(!/^[a-f0-9]{64}$/i.test(visitorToken)){visitorToken='';conversationId='';localStorage.removeItem(KEY);}
  let timer=null;
  let sending=false;
  let startPromise=null;
  function newId(){return 'ks_'+(crypto.randomUUID?crypto.randomUUID().replaceAll('-',''):Date.now().toString(36)+Math.random().toString(36).slice(2));}
+ function newToken(){const bytes=new Uint8Array(32);crypto.getRandomValues(bytes);return Array.from(bytes,b=>b.toString(16).padStart(2,'0')).join('');}
  async function ensure(){
    if(!conversationId){conversationId=newId();localStorage.setItem(KEY,conversationId);}
+   if(!visitorToken){visitorToken=newToken();localStorage.setItem(TOKEN_KEY,visitorToken);}
    if(startPromise)return startPromise;
    startPromise=(async()=>{
-     const r=await fetch(API+'/api/chat/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({conversation_id:conversationId,referral:sessionStorage.getItem('kicks_station_referral')||''})});
+     const r=await fetch(API+'/api/chat/start',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({conversation_id:conversationId,visitor_token:visitorToken,referral:sessionStorage.getItem('kicks_station_referral')||''})});
      const d=await r.json().catch(()=>({}));
-     if(!r.ok||!d.success)throw new Error(d.message||`Chat tidak tersedia (HTTP ${r.status}).`);
+     if(!r.ok||!d.success){if(r.status===403){localStorage.removeItem(KEY);localStorage.removeItem(TOKEN_KEY);conversationId='';visitorToken='';throw new Error('Sesi chat lama tidak cocok. Tutup lalu buka chat kembali untuk memulai percakapan baru.');}throw new Error(d.message||`Chat tidak tersedia (HTTP ${r.status}).`);}
    })();
    try{await startPromise;}finally{startPromise=null;}
  }
  function escapeText(v){const e=document.createElement('div');e.textContent=v;return e.innerHTML;}
  function showError(message){const box=document.getElementById('kick-chat-messages');if(box){const p=document.createElement('p');p.className='text-red-500 text-sm';p.textContent=message;box.appendChild(p);}}
  function render(messages){const box=document.getElementById('kick-chat-messages');if(!box)return;if(!messages.length){box.innerHTML='<p class="text-sm text-gray-500 text-center py-4">Halo kak! Ada yang bisa kami bantu?</p>';return;}box.innerHTML=messages.map(m=>{const mine=m.sender==='customer';return `<div class="flex ${mine?'justify-end':'justify-start'}"><div class="max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap break-words ${mine?'bg-blue-600 text-white':'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700'}">${escapeText(m.message)}<div class="text-[10px] opacity-60 mt-1">${new Date(m.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</div></div></div>`}).join('');box.scrollTop=box.scrollHeight;}
- async function load(){if(!conversationId)return;try{const r=await fetch(API+'/api/chat/messages?conversation_id='+encodeURIComponent(conversationId));const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.message||`Gagal memuat chat (HTTP ${r.status}).`);if(d.success)render(Array.isArray(d.messages)?d.messages:[]);}catch(e){console.warn('Chat refresh gagal',e);}}
+ async function load(){if(!conversationId)return;try{const r=await fetch(API+'/api/chat/messages?conversation_id='+encodeURIComponent(conversationId),{headers:{'X-Chat-Token':visitorToken}});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.message||`Gagal memuat chat (HTTP ${r.status}).`);if(d.success)render(Array.isArray(d.messages)?d.messages:[]);}catch(e){console.warn('Chat refresh gagal',e);}}
  window.openKickChat=async function(){const panel=document.getElementById('kick-chat-panel');panel.classList.remove('hidden');panel.classList.add('flex');try{await ensure();await load();document.getElementById('kick-chat-input').focus();if(timer)clearInterval(timer);timer=setInterval(()=>{if(!document.hidden)load();},3000);}catch(e){document.getElementById('kick-chat-messages').innerHTML='<p class="text-red-500 text-sm">'+escapeText(e.message)+'</p>';}};
  window.closeKickChat=function(){const panel=document.getElementById('kick-chat-panel');panel.classList.add('hidden');panel.classList.remove('flex');if(timer)clearInterval(timer);timer=null;};
  window.sendKickChatMessage=async function(message){
@@ -2804,7 +2809,7 @@
    if(!text||sending)return false;
    if(text.length>2000){showError('Pesan maksimal 2000 karakter.');return false;}
    sending=true;if(button)button.disabled=true;
-   try{await ensure();const r=await fetch(API+'/api/chat/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({conversation_id:conversationId,message:text,sender:'customer'})});const d=await r.json().catch(()=>({}));if(!r.ok||!d.success)throw new Error(d.message||`Pesan gagal dikirim (HTTP ${r.status}).`);if(input)input.value='';await load();return true;}
+   try{await ensure();const r=await fetch(API+'/api/chat/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({conversation_id:conversationId,visitor_token:visitorToken,message:text,sender:'customer'})});const d=await r.json().catch(()=>({}));if(!r.ok||!d.success)throw new Error(d.message||`Pesan gagal dikirim (HTTP ${r.status}).`);if(input)input.value='';await load();return true;}
    catch(e){showError(e.message||'Pesan gagal dikirim. Coba lagi.');console.warn('Kirim chat gagal',e);return false;}
    finally{sending=false;if(button)button.disabled=false;}
  };
