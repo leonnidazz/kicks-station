@@ -4,6 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const { Pool } = require("pg");
+const webpush = require("web-push");
 
 const PORT = process.env.PORT || 3000;
 const PUBLIC_BASE_URL =
@@ -25,6 +26,18 @@ const MAX_IMAGES = 10;
 const MAX_REQUEST_SIZE = 60 * 1024 * 1024;
 
 const ADMIN_PIN = String(process.env.ADMIN_PIN || "").trim();
+const VAPID_PUBLIC_KEY = String(process.env.VAPID_PUBLIC_KEY || "").trim();
+const VAPID_PRIVATE_KEY = String(process.env.VAPID_PRIVATE_KEY || "").trim();
+const VAPID_SUBJECT = String(process.env.VAPID_SUBJECT || "").trim();
+let webPushConfigured = false;
+if (VAPID_PUBLIC_KEY && VAPID_PRIVATE_KEY && VAPID_SUBJECT) {
+    try {
+        webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
+        webPushConfigured = true;
+    } catch (error) {
+        console.error("Konfigurasi Web Push/VAPID tidak valid:", error.message);
+    }
+}
 const SESSION_DURATION = 12 * 60 * 60 * 1000;
 const adminSessions = new Map();
 const loginAttempts = new Map();
@@ -1282,8 +1295,46 @@ async function ensureChatTableOnce() {
         )
     `);
     await pool.query(`CREATE INDEX IF NOT EXISTS chat_messages_conversation_idx ON public.chat_messages(conversation_id, id)`);
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS public.chat_push_subscriptions (
+            id BIGSERIAL PRIMARY KEY,
+            endpoint TEXT NOT NULL UNIQUE,
+            subscription JSONB NOT NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+    `);
 }
 const ensureChatTable = runOnce(ensureChatTableOnce);
+
+async function notifyAdminOfCustomerMessage(publicConversationId, message) {
+    if (!webPushConfigured || !pool) return;
+    await ensureChatTable();
+    const [conversationResult, subscriptionsResult] = await Promise.all([
+        pool.query(`SELECT visitor_name, customer_name FROM public.chat_conversations WHERE conversation_token = $1`, [publicConversationId]),
+        pool.query(`SELECT id, endpoint, subscription FROM public.chat_push_subscriptions`)
+    ]);
+    if (!subscriptionsResult.rowCount) return;
+    const name = String(conversationResult.rows[0]?.visitor_name || conversationResult.rows[0]?.customer_name || "Pelanggan").slice(0, 60);
+    const payload = JSON.stringify({
+        title: "Pesan baru — Kicks Station",
+        body: `${name}: ${String(message || "").slice(0, 140)}`,
+        url: "./admin.html?openChat=1",
+        tag: `kicks-chat-${publicConversationId}`
+    });
+    await Promise.all(subscriptionsResult.rows.map(async row => {
+        try {
+            await webpush.sendNotification(row.subscription, payload, { TTL: 60, urgency: "high" });
+        } catch (error) {
+            const statusCode = Number(error.statusCode || error.status || 0);
+            if (statusCode === 404 || statusCode === 410) {
+                await pool.query(`DELETE FROM public.chat_push_subscriptions WHERE id = $1`, [row.id]).catch(() => {});
+            } else {
+                console.warn("Pengiriman Web Push gagal:", statusCode || error.message);
+            }
+        }
+    }));
+}
 
 const server = http.createServer(async (req, res) => {
     console.log("REQUEST:", req.method, req.url);
@@ -1321,6 +1372,48 @@ const server = http.createServer(async (req, res) => {
                 message: "Kicks Station Backend berhasil berjalan!",
                 database: databaseReady ? "supabase" : "not-ready",
             });
+            return;
+        }
+
+        if (req.method === "GET" && pathname === "/api/push/vapid-public-key") {
+            if (!webPushConfigured) {
+                sendJSON(res, 503, { success: false, message: "Web Push belum dikonfigurasi di Render. Atur VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, dan VAPID_SUBJECT." });
+                return;
+            }
+            sendJSON(res, 200, { success: true, publicKey: VAPID_PUBLIC_KEY });
+            return;
+        }
+
+        if (pathname === "/api/admin/push/subscribe" || pathname === "/api/admin/push/unsubscribe") {
+            if (!requireAdmin(req, res)) return;
+            await ensureChatTable();
+            if (req.method === "POST" && pathname === "/api/admin/push/subscribe") {
+                const subscription = await readBody(req, 20000);
+                const endpoint = String(subscription?.endpoint || "").trim();
+                const p256dh = String(subscription?.keys?.p256dh || "").trim();
+                const auth = String(subscription?.keys?.auth || "").trim();
+                if (!/^https:\/\//i.test(endpoint) || !p256dh || !auth) {
+                    sendJSON(res, 400, { success: false, message: "Data langganan push tidak valid." });
+                    return;
+                }
+                await pool.query(
+                    `INSERT INTO public.chat_push_subscriptions (endpoint, subscription, updated_at)
+                     VALUES ($1, $2::jsonb, NOW())
+                     ON CONFLICT (endpoint) DO UPDATE SET subscription = EXCLUDED.subscription, updated_at = NOW()`,
+                    [endpoint, JSON.stringify(subscription)]
+                );
+                sendJSON(res, 200, { success: true, message: "Notifikasi push aktif di perangkat ini." });
+                return;
+            }
+            if (req.method === "POST" && pathname === "/api/admin/push/unsubscribe") {
+                const data = await readBody(req, 4000);
+                const endpoint = String(data?.endpoint || "").trim();
+                if (!endpoint) { sendJSON(res, 400, { success: false, message: "Endpoint diperlukan." }); return; }
+                await pool.query(`DELETE FROM public.chat_push_subscriptions WHERE endpoint = $1`, [endpoint]);
+                sendJSON(res, 200, { success: true });
+                return;
+            }
+            sendJSON(res, 405, { success: false, message: "Metode tidak diizinkan." });
             return;
         }
 
@@ -2203,6 +2296,9 @@ const server = http.createServer(async (req, res) => {
                          WHERE id = $1`, [internalId, sender]
                     );
                     await client.query("COMMIT");
+                    if (sender === "customer") {
+                        notifyAdminOfCustomerMessage(publicId, message).catch(error => console.warn("Notifikasi chat tidak terkirim:", error.message));
+                    }
                     sendJSON(res, 201, { success: true, message: result.rows[0] });
                 } catch (error) {
                     try { await client.query("ROLLBACK"); } catch {}

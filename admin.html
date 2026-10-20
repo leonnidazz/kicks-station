@@ -3,6 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0f172a">
+<link rel="manifest" href="./manifest.webmanifest">
 <title>AL KAUTSAR — Admin Dashboard</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
@@ -747,7 +749,7 @@ button:active {
 <!-- PANEL LIVE CHAT ADMIN -->
 <div id="admin-chat-modal" class="hidden fixed inset-0 z-[800] bg-slate-950/40 backdrop-blur-sm p-3 sm:p-6 items-center justify-center">
  <section class="w-full max-w-5xl h-[min(88vh,760px)] bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col">
-  <header class="px-5 py-4 border-b flex items-center justify-between gap-3"><div><h2 class="font-extrabold text-lg">Chat Pelanggan</h2><p class="text-xs text-slate-500">Pesan pelanggan masuk di sini; balasan dikirim langsung ke website.</p><p id="ks-chat-notify-status" class="text-xs text-slate-500 mt-1">Notifikasi belum diaktifkan di browser ini.</p></div><div class="flex items-center gap-2"><button type="button" onclick="enableAdminChatNotifications()" class="text-xs sm:text-sm font-bold rounded-xl bg-blue-50 text-blue-700 px-3 py-2">🔔 Aktifkan dering/getar</button><button type="button" onclick="closeAdminChat()" class="text-2xl px-2" aria-label="Tutup chat">×</button></div></header>
+  <header class="px-5 py-4 border-b flex items-center justify-between gap-3"><div><h2 class="font-extrabold text-lg">Chat Pelanggan</h2><p class="text-xs text-slate-500">Pesan pelanggan masuk di sini; balasan dikirim langsung ke website.</p><p id="ks-chat-notify-status" class="text-xs text-slate-500 mt-1">Notifikasi belum diaktifkan di browser ini.</p></div><div class="flex items-center gap-2 flex-wrap justify-end"><button type="button" onclick="enableAdminChatNotifications()" class="text-xs sm:text-sm font-bold rounded-xl bg-blue-50 text-blue-700 px-3 py-2">🔔 Dering/getar</button><button id="ks-push-enable" type="button" onclick="enableAdminPush()" class="text-xs sm:text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-3 py-2">📲 Push latar</button><button type="button" onclick="closeAdminChat()" class="text-2xl px-2" aria-label="Tutup chat">×</button></div></header>
   <div class="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-[280px_1fr]">
    <aside class="border-r overflow-y-auto" id="admin-chat-conversations"><p class="p-4 text-sm text-slate-500">Memuat percakapan…</p></aside>
    <div class="min-h-0 flex flex-col"><div id="admin-chat-active-title" class="p-4 border-b text-sm font-bold text-slate-500">Pilih percakapan</div><div id="admin-chat-messages" class="flex-1 min-h-0 overflow-y-auto p-4 space-y-3 bg-slate-50"><p class="text-sm text-slate-500">Belum ada percakapan dipilih.</p></div><form id="admin-chat-form" class="p-3 border-t flex gap-2"><input id="admin-chat-input" maxlength="2000" placeholder="Balas pelanggan…" class="min-w-0 flex-1 border rounded-xl px-3 py-3 text-sm" disabled><button id="admin-chat-send" type="submit" class="bg-slate-900 text-white font-bold px-4 rounded-xl disabled:opacity-50" disabled>Kirim</button></form></div>
@@ -833,6 +835,9 @@ async function adminLogin() {
         hideAdminLogin();
         showToast("Login admin berhasil.", "success");
         await loadProducts();
+        if (new URLSearchParams(window.location.search).get("openChat") === "1") {
+            setTimeout(() => { if (typeof openAdminChat === "function") openAdminChat(); }, 500);
+        }
     } catch (error) {
         console.error(error);
         messageEl.textContent = error.message || "Login gagal.";
@@ -1438,7 +1443,14 @@ async function deleteOrder(id) { if (!confirm(`Hapus pesanan #${id}?`)) return; 
 async function deleteOrderHistory() { if (!confirm("Hapus semua riwayat?")) return; try { await authFetch(`${API_URL}/api/orders`, { method: "DELETE" }); showToast("Dihapus.", "success"); loadOrders(); } catch (error) { showToast("Gagal.", "error"); } }
 
 renderSizes(); renderImagePreviews(); updatePreview();
-checkAdminAuth().then(authenticated => { if (authenticated) loadProducts(); });
+checkAdminAuth().then(authenticated => {
+    if (authenticated) {
+        loadProducts();
+        if (new URLSearchParams(window.location.search).get("openChat") === "1") {
+            setTimeout(() => { if (typeof openAdminChat === "function") openAdminChat(); }, 500);
+        }
+    }
+});
 </script>
 
 <script>
@@ -1593,6 +1605,50 @@ document.getElementById('admin-chat-form').addEventListener('submit', async even
   finally { input.disabled = false; send.disabled = false; input.focus(); }
 });
 setInterval(() => { if (adminToken && !document.hidden) refreshAdminConversations(); }, 10000);
+</script>
+
+
+<script>
+// Web Push: one subscription per browser/device; backend stores each endpoint.
+function ksUrlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const raw = atob(base64);
+  return Uint8Array.from(raw, character => character.charCodeAt(0));
+}
+async function enableAdminPush() {
+  const button = document.getElementById('ks-push-enable');
+  if (!adminToken) { showAdminLogin('Silakan login sebagai admin terlebih dahulu.'); return; }
+  if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+    showToast('Browser ini belum mendukung Web Push. Coba Chrome/Edge terbaru.', 'error');
+    return;
+  }
+  const originalText = button ? button.textContent : '';
+  if (button) { button.disabled = true; button.textContent = 'Mengaktifkan…'; }
+  try {
+    const permission = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
+    if (permission !== 'granted') throw new Error('Izin notifikasi belum diberikan di browser.');
+    const keyResponse = await fetch(`${KS_CHAT_API}/api/push/vapid-public-key`);
+    const keyData = await keyResponse.json();
+    if (!keyResponse.ok || !keyData.success || !keyData.publicKey) throw new Error(keyData.message || 'Kunci Web Push belum dikonfigurasi di server Render.');
+    const registration = await navigator.serviceWorker.register('./service-worker.js', { scope: './' });
+    await navigator.serviceWorker.ready;
+    let subscription = await registration.pushManager.getSubscription();
+    if (!subscription) subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: ksUrlBase64ToUint8Array(keyData.publicKey) });
+    const saveResponse = await authFetch(`${KS_CHAT_API}/api/admin/push/subscribe`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(subscription)
+    });
+    const saveData = await saveResponse.json();
+    if (!saveResponse.ok || !saveData.success) throw new Error(saveData.message || 'Langganan notifikasi gagal disimpan.');
+    if (button) button.textContent = '✓ Push aktif';
+    showToast('Notifikasi latar aktif di perangkat ini.', 'success');
+    try { await registration.showNotification('Kicks Station', { body: 'Notifikasi chat berhasil diaktifkan di perangkat ini.', icon: './icons/icon-192.png', badge: './icons/icon-192.png', tag: 'kicks-push-ready' }); } catch (_) {}
+  } catch (error) {
+    console.error('Aktivasi Web Push gagal:', error);
+    if (button) button.textContent = originalText || '📲 Push latar';
+    showToast(error.message || 'Notifikasi gagal diaktifkan.', 'error');
+  } finally { if (button) button.disabled = false; }
+}
 </script>
 
 </body>
