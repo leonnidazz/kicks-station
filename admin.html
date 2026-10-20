@@ -3,9 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#0f172a">
-<link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icons/icon-192.png">
 <title>AL KAUTSAR — Admin Dashboard</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <script>
@@ -250,9 +247,6 @@ button:active {
 
         <button id="menu-pengunjung" onclick="showPage('pengunjung')" class="sidebar-item w-full text-left px-4 py-3.5 rounded-2xl flex items-center gap-3.5 font-semibold text-slate-600 text-sm">
             <span class="text-lg opacity-80">👥</span> Data Pengunjung
-        </button>
-        <button id="menu-chat" onclick="openAdminChat()" class="sidebar-item w-full text-left px-4 py-3.5 rounded-2xl flex items-center gap-3.5 font-semibold text-slate-600 text-sm">
-            <span class="text-lg opacity-80">💬</span> Chat Pelanggan <span id="chat-unread-badge" class="hidden ml-auto text-xs bg-red-500 text-white rounded-full px-2 py-1">0</span>
         </button>
 
         <div class="my-4 border-t border-slate-200/50"></div>
@@ -743,18 +737,6 @@ button:active {
             <button id="btn-confirm-delete" onclick="confirmDelete()" class="flex-1 px-5 py-3.5 rounded-2xl bg-red-600 text-white font-bold hover:bg-red-700 shadow-md transition">Ya, Hapus</button>
         </div>
     </div>
-</div>
-
-
-<!-- PANEL LIVE CHAT ADMIN -->
-<div id="admin-chat-modal" class="hidden fixed inset-0 z-[800] bg-slate-950/40 backdrop-blur-sm p-3 sm:p-6 items-center justify-center">
- <section class="w-full max-w-5xl h-[min(88vh,760px)] bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col">
-  <header class="px-5 py-4 border-b flex items-center justify-between"><div><h2 class="font-extrabold text-lg">Chat Pelanggan</h2><p class="text-xs text-slate-500">Pesan tersinkron otomatis antarperangkat</p></div><button onclick="closeAdminChat()" class="text-2xl px-2">×</button></header>
-  <div class="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-[280px_1fr]">
-   <aside class="border-r overflow-y-auto" id="admin-chat-conversations"><p class="p-4 text-sm text-slate-500">Memuat percakapan…</p></aside>
-   <div class="min-h-0 flex flex-col"><div id="admin-chat-active-title" class="p-4 border-b text-sm font-bold text-slate-500">Pilih percakapan</div><div id="admin-chat-messages" class="flex-1 min-h-0 overflow-y-auto p-4 space-y-3 bg-slate-50"><p class="text-sm text-slate-500">Belum ada percakapan dipilih.</p></div><form id="admin-chat-form" class="p-3 border-t flex gap-2"><input id="admin-chat-input" maxlength="2000" placeholder="Balas pelanggan…" class="min-w-0 flex-1 border rounded-xl px-3 py-3 text-sm" disabled><button id="admin-chat-send" class="bg-slate-900 text-white font-bold px-4 rounded-xl disabled:opacity-50" disabled>Kirim</button></form></div>
-  </div>
- </section>
 </div>
 
 <!-- TOAST -->
@@ -1356,7 +1338,7 @@ function showToast(message, type = "success") {
 }
 
 // LOGIKA PESANAN DAN PENGUNJUNG TETAP SAMA PERSIS.
-const referralNames = { hsn: "Hasan AU", mrm: "Rosyad AU", amr: "Ammar GE", ajn: "Juna CTAF", roy: "Roy CTAF", king: "Risky CTAF", zkr: "Zaka UNDIP", udn: "Udin CTAF", amu: "Amru UNDIP", zni: "Zaini CTAF", anm: "Anam CTAF", rhn: "Rihan CTAF", bri: "Bara CTAF", ali: "Ali jogja", fth: "hahan", fiq: "faiq undip", eka: "Dhani CTAF", ky: "Fathan", wld: "Wildan CTAF", jmk: "Fadel UNDIP" };
+const referralNames = { hsn: "Hasan AU", mrm: "Rosyad AU", amr: "Ammar GE", ajn: "Juna CTAF", roy: "Roy CTAF", king: "Risky CTAF", zkr: "Zaka UNDIP", udn: "Udin CTAF", amu: "Amru UNDIP", zni: "Zaini CTAF", anm: "Anam CTAF", rhn: "Rihan CTAF", bri: "Bara CTAF", ali: "Ali jogja", fth: "hahan", fiq: "faiq undip", eka: "Dhani CTAF", ky: "Fathan", wld: "Wildan CTAF" };
 function formatReferral(referral) { const code = String(referral || "").trim().toLowerCase(); if (!code) return "-"; return referralNames[code] ? `${referralNames[code]} (${code.toUpperCase()})` : code.toUpperCase(); }
 function escapeOrderText(value) { return String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c])); }
 function statusLabel(status) { return ({ baru: "Menunggu", diproses: "Diproses", selesai: "Sukses", batal: "Batal" }[status] || status || "Menunggu"); }
@@ -1446,23 +1428,5 @@ checkAdminAuth().then(authenticated => { if (authenticated) loadProducts(); });
 <script>
     try { localStorage.setItem("kickstation_admin_device", "1"); } catch (error) { console.warn("Cannot set admin flag.", error); }
 </script>
-
-<script>
-const KS_CHAT_API = "https://kicks-station-api.onrender.com";
-let ksChatTimer=null, ksChatActiveId='', ksChatKnownUnread=0, ksChatLastIds={};
-function ksEsc(v){const e=document.createElement('div');e.textContent=String(v??'');return e.innerHTML;}
-function ksAttr(v){return String(v??'').replace(/[&<>\"']/g,ch=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;',"'":'&#39;'}[ch]));}
-async function ksAdminFetch(url,opts={}){const headers=new Headers(opts.headers||{});if(adminToken)headers.set('Authorization',`Bearer ${adminToken}`);return fetch(url,{...opts,headers});}
-async function refreshAdminConversations(){if(!adminToken)return;try{const r=await ksAdminFetch(KS_CHAT_API+'/api/chat/conversations');if(!r.ok)return;const d=await r.json();const list=d.conversations||[];const unread=list.reduce((n,c)=>n+Number(c.unread_count||0),0);const badge=document.getElementById('chat-unread-badge');badge.textContent=unread;badge.classList.toggle('hidden',unread===0);if(unread>ksChatKnownUnread&&document.getElementById('admin-chat-modal').classList.contains('hidden')){try{if('Notification'in window&&Notification.permission==='granted')new Notification('Pesan baru di Kicks Station',{body:'Ada pesan pelanggan yang belum dibaca.'});}catch(_){}}ksChatKnownUnread=unread;const box=document.getElementById('admin-chat-conversations');if(!list.length){box.innerHTML='<p class="p-4 text-sm text-slate-500">Belum ada chat dari pelanggan.</p>';return;}box.innerHTML=list.map(c=>`<button type="button" data-chat-id="${ksAttr(c.id)}" data-chat-name="${ksAttr(c.visitor_name||'Pelanggan')}" class="w-full text-left p-4 border-b hover:bg-slate-50 ${ksChatActiveId===c.id?'bg-blue-50':''}"><div class="flex items-center justify-between gap-2"><b class="text-sm">${ksEsc(c.visitor_name||'Pelanggan')}</b>${Number(c.unread_count)>0?`<span class="bg-red-500 text-white rounded-full px-2 py-0.5 text-xs">${Number(c.unread_count)}</span>`:''}</div><p class="text-xs text-slate-500 truncate mt-1">${ksEsc(c.last_message||'Belum ada pesan')}</p><div class="flex items-center justify-between gap-2 mt-1"><span class="text-[10px] rounded-full px-2 py-0.5 ${c.status==='closed'?'bg-slate-100 text-slate-500':'bg-emerald-50 text-emerald-700'}">${c.status==='closed'?'Ditutup':'Terbuka'}</span><span class="text-[10px] text-slate-400">${new Date(c.last_message_at).toLocaleString('id-ID')}</span></div></button>`).join('');}catch(e){console.warn('Chat list gagal dimuat',e);}}
-document.getElementById('admin-chat-conversations').addEventListener('click',e=>{const button=e.target.closest('button[data-chat-id]');if(button)selectAdminConversation(button.dataset.chatId,button.dataset.chatName);});
-async function selectAdminConversation(id,name){ksChatActiveId=id;document.getElementById('admin-chat-active-title').textContent=name||'Pelanggan';document.getElementById('admin-chat-input').disabled=false;document.getElementById('admin-chat-send').disabled=false;await loadAdminChatMessages();await refreshAdminConversations();}
-async function loadAdminChatMessages(){if(!ksChatActiveId)return;try{const r=await ksAdminFetch(KS_CHAT_API+'/api/chat/admin-messages?conversation_id='+encodeURIComponent(ksChatActiveId));if(!r.ok)return;const d=await r.json();const messages=d.messages||[];const box=document.getElementById('admin-chat-messages');box.innerHTML=messages.map(m=>`<div class="flex ${m.sender==='admin'?'justify-end':'justify-start'}"><div class="max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap break-words ${m.sender==='admin'?'bg-slate-900 text-white':'bg-white border'}">${ksEsc(m.message)}<div class="text-[10px] opacity-60 mt-1">${new Date(m.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</div></div></div>`).join('')||'<p class="text-sm text-slate-500">Belum ada pesan.</p>';box.scrollTop=box.scrollHeight;}catch(e){console.warn('Isi chat gagal dimuat',e);}}
-async function openAdminChat(){if(!adminToken){showAdminLogin('Silakan login sebagai admin terlebih dahulu.');return;}const modal=document.getElementById('admin-chat-modal');modal.classList.remove('hidden');modal.classList.add('flex');if('Notification'in window&&Notification.permission==='default'){try{await Notification.requestPermission();}catch(_){}}await refreshAdminConversations();if(ksChatTimer)clearInterval(ksChatTimer);ksChatTimer=setInterval(async()=>{await refreshAdminConversations();await loadAdminChatMessages();},3000);}
-function closeAdminChat(){const modal=document.getElementById('admin-chat-modal');modal.classList.add('hidden');modal.classList.remove('flex');if(ksChatTimer)clearInterval(ksChatTimer);ksChatTimer=null;}
-document.getElementById('admin-chat-form').addEventListener('submit',async e=>{e.preventDefault();const input=document.getElementById('admin-chat-input');const message=input.value.trim();if(!message||!ksChatActiveId)return;input.disabled=true;try{const r=await ksAdminFetch(KS_CHAT_API+'/api/chat/messages',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({conversation_id:ksChatActiveId,message,sender:'admin'})});const d=await r.json();if(!r.ok)throw new Error(d.message||'Pesan gagal dikirim.');input.value='';await loadAdminChatMessages();await refreshAdminConversations();}catch(err){showToast(err.message||'Gagal mengirim pesan.','error');}finally{input.disabled=false;input.focus();}});
-if('serviceWorker'in navigator&&location.protocol.startsWith('http'))navigator.serviceWorker.register('./service-worker.js').catch(()=>{});
-setInterval(()=>{if(adminToken&&!document.hidden)refreshAdminConversations();},10000);
-</script>
-
 </body>
 </html>
