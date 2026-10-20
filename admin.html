@@ -170,6 +170,57 @@ button {
 button:active {
     transform: scale(0.97);
 }
+
+
+/* Performa perangkat seluler: kurangi efek yang mahal di GPU Android */
+@media (max-width: 768px) {
+  body {
+    background-image: linear-gradient(180deg, #f7faf9 0%, #eef3f7 100%);
+    background-attachment: scroll;
+  }
+  .glass-panel,
+  .modal-bg,
+  #admin-login-screen,
+  #sidebar-overlay,
+  #admin-chat-modal,
+  input, select, textarea,
+  .gallery-button {
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+  .glass-panel {
+    background: rgba(255, 255, 255, 0.96);
+    box-shadow: 0 3px 12px rgba(16, 35, 63, 0.05);
+    transition: none !important;
+  }
+  .glass-panel:hover { box-shadow: 0 3px 12px rgba(16, 35, 63, 0.05); }
+  input, select, textarea { transition: border-color .12s ease !important; }
+  input:focus, select:focus, textarea:focus { transform: none !important; box-shadow: 0 0 0 2px rgba(21, 122, 120, 0.10) !important; }
+  button, .sidebar-item, .fade-in, .photo-thumb img, .preview-thumbnail img, .card-thumbnail img {
+    animation: none !important;
+    transition-duration: .12s !important;
+  }
+  .sidebar-item:hover, button:active { transform: none !important; }
+  .fade-in { animation: none !important; }
+  #admin-chat-modal { padding: 0 !important; }
+  #admin-chat-modal > section {
+    width: 100%;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  #admin-chat-modal > section > header { padding: 10px 12px; }
+  #admin-chat-modal > section > header h2 { font-size: 1rem; }
+  #admin-chat-modal > section > header p { font-size: 10px; }
+  #admin-chat-messages { overscroll-behavior: contain; }
+  #admin-chat-conversations { overscroll-behavior: contain; }
+  img { content-visibility: auto; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; transition-duration: .01ms !important; }
+}
+
 </style>
 </head>
 
@@ -1602,7 +1653,7 @@ async function openAdminChat() {
     ksChatPolling = true;
     try { await refreshAdminConversations(); await loadAdminChatMessages(); }
     finally { ksChatPolling = false; }
-  }, 5000);
+  }, 8000);
 }
 function closeAdminChat() {
   const modal = document.getElementById('admin-chat-modal');
@@ -1630,7 +1681,7 @@ document.getElementById('admin-chat-form').addEventListener('submit', async even
 setInterval(() => {
   const chatModal = document.getElementById('admin-chat-modal');
   if (adminToken && !document.hidden && (!chatModal || chatModal.classList.contains('hidden')) && !ksChatPolling) refreshAdminConversations();
-}, 15000);
+}, 30000);
 </script>
 
 

@@ -29,3 +29,10 @@ git push origin main
 - Offline hanya menjadi fallback untuk halaman statis; login, chat, database, dan notifikasi push tetap memerlukan koneksi internet.
 - Perubahan polling mengurangi request berulang dan render ulang daftar chat ketika data tidak berubah. Performa tetap bergantung pada perangkat, jaringan, dan backend.
 - Tailwind CDN masih digunakan dan dapat menghasilkan peringatan di console; migrasi Tailwind ke CSS hasil build bisa dilakukan sebagai tahap optimasi terpisah.
+
+
+## Optimasi tambahan untuk Android
+- Efek blur/backdrop-filter, bayangan berat, animasi, dan latar fixed dikurangi di layar kecil untuk mengurangi beban GPU.
+- Polling chat aktif menjadi 8 detik dan polling daftar chat saat modal tertutup menjadi 30 detik. Web Push tetap menjadi jalur notifikasi latar belakang.
+- Cache service worker dinaikkan ke v5 agar browser mengambil versi shell terbaru.
+- Jika masih lambat saat pertama kali dibuka, Tailwind CDN dan Google Fonts masih menjadi sumber beban pemuatan awal; migrasi ke CSS statis hasil build perlu dilakukan terpisah dan diuji agar tidak merusak tampilan.
