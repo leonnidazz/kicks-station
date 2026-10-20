@@ -38,6 +38,8 @@ tailwind.config = {
     }
 }
 </script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
 <style>
@@ -69,19 +71,19 @@ body {
     color: white;
 }
 
-/* Glassmorphism Panels */
+/* Glassmorphism panels: visual style retained with cheaper paint/compositing. */
 .glass-panel {
-    background: rgba(255, 255, 255, 0.76);
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(24px);
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(255, 255, 255, 0.92);
-    box-shadow: 0 14px 34px rgba(16, 35, 63, 0.06);
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 8px 24px rgba(16, 35, 63, 0.055);
+    transition: box-shadow 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
 }
 
 .glass-panel:hover {
-    box-shadow: 0 18px 42px rgba(16, 35, 63, 0.1);
-    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 10px 28px rgba(16, 35, 63, 0.075);
+    background: rgba(255, 255, 255, 0.92);
 }
 
 /* Sidebar Active State */
@@ -100,9 +102,9 @@ body {
 
 /* Inputs & Textareas */
 input, select, textarea {
-    background: rgba(255, 255, 255, 0.7) !important;
-    backdrop-filter: blur(10px);
-    transition: all 0.3s ease !important;
+    background: rgba(255, 255, 255, 0.78) !important;
+    backdrop-filter: blur(6px);
+    transition: border-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease !important;
 }
 input:focus, select:focus, textarea:focus {
     background: #ffffff !important;
@@ -165,12 +167,19 @@ input:focus, select:focus, textarea:focus {
 
 /* Buttons General */
 button {
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: background-color 0.16s ease, border-color 0.16s ease, color 0.16s ease, box-shadow 0.16s ease, opacity 0.16s ease;
 }
 button:active {
     transform: scale(0.97);
 }
 
+
+/* Optimasi rendering katalog: kartu di luar layar tidak perlu dilukis terus-menerus. */
+#product-list > article {
+    content-visibility: auto;
+    contain-intrinsic-size: auto 560px;
+    contain: layout style paint;
+}
 
 /* Performa perangkat seluler: kurangi efek yang mahal di GPU Android */
 @media (max-width: 768px) {
@@ -1215,12 +1224,12 @@ function createProductCard(product) {
     card.innerHTML = `
         <div class="gallery-wrapper bg-white/50 relative border-b border-white/50">
             <div class="relative aspect-square overflow-hidden bg-slate-100">
-                ${image ? `<img src="${escapeHTML(image)}" alt="${escapeHTML(product.nama)}" class="gallery-image w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" onerror="this.style.display='none';">` : `<div class="absolute inset-0 flex items-center justify-center text-slate-300"><div class="text-center"><div class="text-5xl">👟</div><p class="text-[10px] font-bold uppercase tracking-widest mt-2">No Image</p></div></div>`}
+                ${image ? `<img src="${escapeHTML(image)}" alt="${escapeHTML(product.nama)}" loading="lazy" decoding="async" fetchpriority="low" class="gallery-image w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" onerror="this.style.display='none';">` : `<div class="absolute inset-0 flex items-center justify-center text-slate-300"><div class="text-center"><div class="text-5xl">👟</div><p class="text-[10px] font-bold uppercase tracking-widest mt-2">No Image</p></div></div>`}
                 <div class="absolute top-4 left-4"><span class="px-3 py-1.5 rounded-xl bg-white/90 backdrop-blur text-[11px] font-black shadow-sm text-slate-800">#${product.id}</span></div>
                 ${images.length > 1 ? `
-                    <button type="button" onclick="changeProductImage(${Number(product.id)}, -1)" class="gallery-button left opacity-0 group-hover:opacity-100">‹</button>
-                    <button type="button" onclick="changeProductImage(${Number(product.id)}, 1)" class="gallery-button right opacity-0 group-hover:opacity-100">›</button>
-                    <div class="gallery-dots">${images.map((_, index) => `<span class="gallery-dot ${index === currentIndex ? "active" : ""}"></span>`).join("")}</div>
+                    <button type="button" aria-label="Foto sebelumnya" onclick="changeProductImage(${Number(product.id)}, -1)" class="gallery-button left opacity-0 group-hover:opacity-100">‹</button>
+                    <button type="button" aria-label="Foto berikutnya" onclick="changeProductImage(${Number(product.id)}, 1)" class="gallery-button right opacity-0 group-hover:opacity-100">›</button>
+                    <div class="gallery-dots">${images.map((_, index) => `<span class="gallery-dot ${index === currentIndex ? "active" : ""}" data-gallery-index="${index}"></span>`).join("")}</div>
                     <div class="absolute bottom-4 right-4"><span class="px-2.5 py-1 rounded-lg bg-slate-900/80 backdrop-blur text-white text-[10px] font-bold">📷 ${images.length}</span></div>
                 ` : ""}
             </div>
@@ -1249,21 +1258,56 @@ function createProductCard(product) {
     return card;
 }
 
+function updateProductGalleryCard(id, index) {
+    const product = allProducts.find(item => Number(item.id) === Number(id));
+    if (!product) return;
+    const images = getProductImages(product);
+    if (!images.length || index < 0 || index >= images.length) return;
+    productGalleryIndexes[id] = index;
+    const cards = document.querySelectorAll('#product-list > article');
+    let card = null;
+    for (const candidate of cards) {
+        const editButton = candidate.querySelector('button[onclick^="openEditModal("]');
+        if (editButton && editButton.getAttribute('onclick') === `openEditModal(${Number(id)})`) { card = candidate; break; }
+    }
+    if (!card) { renderProducts(); return; }
+    const image = card.querySelector('.gallery-image');
+    if (image) {
+        image.style.display = '';
+        image.src = images[index];
+        image.alt = String(product.nama || 'Foto produk');
+    }
+    card.querySelectorAll('.gallery-dot').forEach(dot => {
+        dot.classList.toggle('active', Number(dot.dataset.galleryIndex) === index);
+    });
+}
 function changeProductImage(id, direction) {
     const product = allProducts.find(item => Number(item.id) === Number(id)); if (!product) return;
     const images = getProductImages(product); if (images.length <= 1) return;
     let current = productGalleryIndexes[id] || 0; current += direction;
     if (current < 0) current = images.length - 1; if (current >= images.length) current = 0;
-    productGalleryIndexes[id] = current; renderProducts();
+    updateProductGalleryCard(id, current);
 }
 function setProductImage(id, index) {
     const product = allProducts.find(item => Number(item.id) === Number(id)); if (!product) return;
     const images = getProductImages(product); if (index < 0 || index >= images.length) return;
-    productGalleryIndexes[id] = index; renderProducts();
+    updateProductGalleryCard(id, index);
 }
 function escapeHTML(value) { return String(value ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;"); }
 
-document.getElementById("product-search").addEventListener("input", renderProducts);
+let productSearchRenderTimer = null;
+let productSearchFrame = 0;
+document.getElementById("product-search").addEventListener("input", () => {
+    if (productSearchRenderTimer) clearTimeout(productSearchRenderTimer);
+    productSearchRenderTimer = setTimeout(() => {
+        productSearchRenderTimer = null;
+        if (productSearchFrame) cancelAnimationFrame(productSearchFrame);
+        productSearchFrame = requestAnimationFrame(() => {
+            productSearchFrame = 0;
+            renderProducts();
+        });
+    }, 180);
+});
 document.getElementById("product-filter").addEventListener("change", renderProducts);
 
 function toggleCustomTipeInput() {
