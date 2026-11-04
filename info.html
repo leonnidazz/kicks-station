@@ -263,12 +263,29 @@ document.querySelectorAll('[data-cfg]').forEach(function(el){
     a.rel = 'noopener';
     box.appendChild(a);
   }
-  if (CFG.email) {
-    var m = document.createElement('a');
-    m.className = 'btn';
-    m.href = 'mailto:' + CFG.email;
-    m.textContent = 'Email';
-    box.appendChild(m);
+    if (CFG.email) {
+    var g = document.createElement('a');
+    g.className = 'btn';
+    g.href = 'https://mail.google.com/mail/?view=cm&fs=1&to=' + encodeURIComponent(CFG.email);
+    g.target = '_blank';
+    g.rel = 'noopener';
+    g.textContent = 'Kirim lewat Gmail';
+    box.appendChild(g);
+
+    var c = document.createElement('a');
+    c.className = 'btn';
+    c.href = '#kontak';
+    c.textContent = 'Salin email';
+    c.addEventListener('click', function (e) {
+      e.preventDefault();
+      var done = function () { c.textContent = 'Tersalin'; };
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(CFG.email).then(done);
+      } else {
+        window.prompt('Salin email ini:', CFG.email);
+      }
+    });
+    box.appendChild(c);
   }
 })();
 </script>
