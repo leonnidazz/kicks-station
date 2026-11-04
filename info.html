@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#2563eb">
+<title>Informasi Toko | Kicks Station</title>
+<meta name="description" content="Tentang Kicks Station, cara pesan, pengiriman, garansi dan retur, FAQ, kebijakan privasi, serta syarat dan ketentuan.">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root{
+  --bg:#f8fafc; --card:#ffffff; --text:#0f172a; --muted:#475569;
+  --line:#e2e8f0; --blue:#2563eb; --blue-soft:#dbeafe; --note:#fef3c7; --note-text:#78350f;
+}
+html.dark{
+  --bg:#030712; --card:#0f172a; --text:#f1f5f9; --muted:#94a3b8;
+  --line:#1e293b; --blue:#60a5fa; --blue-soft:#172554; --note:#422006; --note-text:#fde68a;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:76px}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  line-height:1.7; font-size:16px;
+}
+a{color:var(--blue)}
+.wrap{max-width:760px; margin:0 auto; padding:0 20px}
+
+header.top{
+  position:sticky; top:0; z-index:10; background:var(--bg);
+  border-bottom:1px solid var(--line);
+}
+.top-row{display:flex; align-items:center; justify-content:space-between; gap:12px; height:56px}
+.back{font-weight:700; text-decoration:none; color:var(--text)}
+.back:hover{color:var(--blue)}
+.toc{display:flex; gap:8px; overflow-x:auto; padding:0 20px 12px; max-width:760px; margin:0 auto; scrollbar-width:none}
+.toc::-webkit-scrollbar{display:none}
+.toc a{
+  flex:none; padding:6px 14px; border-radius:999px; font-size:14px; font-weight:600;
+  text-decoration:none; color:var(--muted); background:var(--card); border:1px solid var(--line);
+}
+.toc a:hover,.toc a:focus-visible{color:var(--blue); border-color:var(--blue)}
+
+h1{font-size:clamp(28px,5vw,40px); line-height:1.2; margin:40px 0 8px; font-weight:800; letter-spacing:-.02em}
+.sub{color:var(--muted); margin:0 0 8px}
+section{padding:36px 0; border-top:1px solid var(--line)}
+section:first-of-type{border-top:0}
+h2{font-size:24px; margin:0 0 12px; font-weight:800; letter-spacing:-.01em}
+h3{font-size:17px; margin:24px 0 6px; font-weight:700}
+p{margin:0 0 12px; max-width:68ch}
+ul,ol{margin:0 0 12px; padding-left:22px; max-width:68ch}
+li{margin-bottom:6px}
+.note{
+  background:var(--note); color:var(--note-text); border-radius:12px;
+  padding:12px 16px; margin:16px 0; font-size:15px; max-width:68ch;
+}
+details{border:1px solid var(--line); background:var(--card); border-radius:12px; margin-bottom:10px; max-width:68ch}
+summary{cursor:pointer; padding:14px 16px; font-weight:700; list-style:none; display:flex; justify-content:space-between; gap:12px}
+summary::-webkit-details-marker{display:none}
+summary::after{content:"+"; color:var(--blue); font-weight:800; font-size:20px; line-height:1}
+details[open] summary::after{content:"–"}
+details p{padding:0 16px; margin:0 0 14px}
+:focus-visible{outline:2px solid var(--blue); outline-offset:2px; border-radius:4px}
+.contact a.btn{
+  display:inline-block; margin:4px 8px 4px 0; padding:10px 18px; border-radius:12px;
+  background:var(--blue); color:#fff; font-weight:700; text-decoration:none;
+}
+html.dark .contact a.btn{color:#0b1220}
+footer{padding:32px 0 56px; border-top:1px solid var(--line); color:var(--muted); font-size:14px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+</style>
+<script>
+try{
+  var t=localStorage.getItem('theme');
+  if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){
+    document.documentElement.classList.add('dark');
+  }
+}catch(e){}
+</script>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap top-row">
+    <a class="back" href="index.html">← <span data-cfg="nama">Kicks Station</span></a>
+  </div>
+  <nav class="toc" aria-label="Isi halaman">
+    <a href="#tentang">Tentang</a>
+    <a href="#cara-pesan">Cara pesan</a>
+    <a href="#pengiriman">Pengiriman</a>
+    <a href="#retur">Garansi &amp; retur</a>
+    <a href="#faq">FAQ</a>
+    <a href="#privasi">Privasi</a>
+    <a href="#syarat">Syarat</a>
+    <a href="#kontak">Kontak</a>
+  </nav>
+</header>
+
+<main class="wrap">
+  <h1>Informasi toko</h1>
+  <p class="sub">Terakhir diperbarui: <span data-cfg="tanggalUpdate"></span></p>
+
+  <section id="tentang">
+    <h2>Tentang kami</h2>
+    <p><span data-cfg="nama"></span> adalah toko online yang mengkurasi sepatu dari brand pilihan. Kami bukan pabrik sepatu: produk kami ambil dari pemasok mitra, lalu kami bantu dari memilih ukuran, memesan, sampai pengiriman.</p>
+    <p>Karena stok berasal dari mitra, kami selalu mengonfirmasi ketersediaan, ukuran, dan estimasi kirim lewat chat sebelum kamu membayar.</p>
+  </section>
+
+  <section id="cara-pesan">
+    <h2>Cara pesan dan pembayaran</h2>
+    <ol>
+      <li>Pilih sepatu dan ukuran di katalog, lalu masukkan ke keranjang.</li>
+      <li>Klik tombol pesan. Chat akan terbuka dengan rincian pesananmu.</li>
+      <li>Admin mengonfirmasi stok, total harga, dan ongkir di chat.</li>
+      <li>Lakukan pembayaran sesuai instruksi dari admin: <span data-cfg="metodeBayar"></span>.</li>
+      <li>Setelah pembayaran kami terima, pesananmu diproses.</li>
+    </ol>
+    <p>Pembayaran hanya kami minta lewat chat resmi di situs ini. Jangan transfer ke rekening yang dikirim lewat pihak lain yang mengatasnamakan toko.</p>
+  </section>
+
+  <section id="pengiriman">
+    <h2>Pengiriman</h2>
+    <ul>
+      <li>Pesanan diproses dalam <span data-cfg="prosesHari"></span> setelah pembayaran diterima.</li>
+      <li>Estimasi sampai: <span data-cfg="kirimHari"></span>, tergantung kota tujuan dan ekspedisi.</li>
+      <li>Nomor resi kami kirim lewat chat setelah barang diserahkan ke ekspedisi.</li>
+    </ul>
+    <p>Keterlambatan karena ekspedisi di luar kendali kami, tetapi kami bantu melacak paketmu.</p>
+  </section>
+
+  <section id="retur">
+    <h2>Garansi dan retur</h2>
+    <h3>Barang bisa dikembalikan atau diganti jika</h3>
+    <ul>
+      <li>Barang yang diterima salah model, warna, atau ukuran dari yang dipesan.</li>
+      <li>Barang cacat produksi atau rusak saat diterima.</li>
+    </ul>
+    <p>Ongkir pengembalian ditanggung <strong>kami</strong> untuk kasus di atas.</p>
+
+    <h3>Tukar ukuran</h3>
+    <p>Jika ukuran kurang pas, kamu bisa menukar ke ukuran lain selama stok tersedia. Ongkir pulang-pergi ditanggung pembeli.</p>
+
+    <h3>Syarat klaim</h3>
+    <ul>
+      <li>Hubungi kami lewat chat maksimal <strong><span data-cfg="batasKlaimHari"></span> hari</strong> setelah barang diterima.</li>
+      <li>Sertakan video unboxing (dari paket masih tertutup) atau foto jelas bagian yang bermasalah.</li>
+      <li>Barang belum dipakai, tidak kotor, dan masih lengkap dengan box.</li>
+    </ul>
+    <p>Setelah klaim kami setujui, penggantian atau pengembalian dana kami proses sesuai kesepakatan di chat.</p>
+    <div class="note">Warna di layar bisa sedikit berbeda dari aslinya karena pencahayaan dan pengaturan layar. Hal ini bukan termasuk cacat produk.</div>
+  </section>
+
+  <section id="faq">
+    <h2>Pertanyaan yang sering muncul</h2>
+    <details>
+      <summary>Apakah stok di katalog selalu ada?</summary>
+      <p>Stok bisa berubah. Admin akan mengonfirmasi ketersediaan di chat sebelum kamu membayar.</p>
+    </details>
+    <details>
+      <summary>Bagaimana memilih ukuran yang pas?</summary>
+      <p>Ukur panjang telapak kakimu dari tumit ke ujung jari terpanjang, lalu tanyakan ke admin lewat chat. Kami bantu pilihkan ukuran sesuai model karena tiap brand bisa berbeda.</p>
+    </details>
+    <details>
+      <summary>Berapa lama pesanan sampai?</summary>
+      <p>Diproses <span data-cfg="prosesHari"></span>, lalu pengiriman <span data-cfg="kirimHari"></span>. Nomor resi dikirim lewat chat.</p>
+    </details>
+    <details>
+      <summary>Bagaimana kalau ukuran tidak pas?</summary>
+      <p>Kamu bisa tukar ukuran selama stok ada, dengan ongkir ditanggung pembeli. Baca bagian garansi dan retur untuk syaratnya.</p>
+    </details>
+    <details>
+      <summary>Bagaimana cara cek status pesanan?</summary>
+      <p>Buka chat di situs ini dan tanyakan status pesananmu. Kami balas pada jam layanan.</p>
+    </details>
+    <details>
+      <summary>Apakah aman bertransaksi di sini?</summary>
+      <p>Pembayaran hanya kami minta lewat chat resmi di situs ini, dan kami mengirim nomor resi untuk setiap pesanan. Jika ada yang mencurigakan, tanyakan dulu ke kami lewat chat.</p>
+    </details>
+  </section>
+
+  <section id="privasi">
+    <h2>Kebijakan privasi</h2>
+    <p>Kami menulis kebijakan ini dengan bahasa sederhana supaya kamu tahu data apa yang kami simpan.</p>
+
+    <h3>Data yang kami catat</h3>
+    <ul>
+      <li><strong>Kunjungan situs:</strong> ID pengunjung acak, sumber kunjungan (referral), jenis perangkat dan peramban (user agent), serta perkiraan lokasi (kota, wilayah, negara) yang diturunkan dari alamat IP.</li>
+      <li><strong>Pesanan:</strong> produk, ukuran, jumlah, harga, dan total belanja.</li>
+      <li><strong>Chat:</strong> nama yang kamu isi dan isi percakapanmu dengan admin. Data pengiriman (nama penerima, alamat, nomor telepon) yang kamu tulis di chat juga tersimpan di percakapan tersebut.</li>
+      <li><strong>Penyimpanan di peramban:</strong> pengaturan tema, keranjang, ID pengunjung, dan token chat, agar situs berjalan sesuai kebutuhanmu.</li>
+    </ul>
+
+    <h3>Untuk apa data dipakai</h3>
+    <ul>
+      <li>Memproses pesanan dan membalas chat.</li>
+      <li>Memahami dari mana pengunjung datang dan memperbaiki situs.</li>
+      <li>Menjaga keamanan dan mencegah penyalahgunaan.</li>
+    </ul>
+
+    <h3>Pihak ketiga</h3>
+    <p>Alamat IP dikirim ke layanan pencarian lokasi IP pihak ketiga untuk mendapatkan perkiraan lokasi. Data situs disimpan pada penyedia hosting dan database yang kami gunakan. Kami tidak menjual datamu.</p>
+
+    <h3>Hak kamu</h3>
+    <p>Kamu dapat meminta kami menghapus data pesanan atau chat-mu lewat chat atau kontak di bawah. Kami akan menanggapi permintaan tersebut secepatnya.</p>
+    <p>Kebijakan ini dapat berubah. Tanggal pembaruan terakhir tertera di bagian atas halaman.</p>
+  </section>
+
+  <section id="syarat">
+    <h2>Syarat dan ketentuan</h2>
+    <ul>
+      <li>Harga dan stok dapat berubah sewaktu-waktu. Pesanan dianggap sah setelah admin mengonfirmasi dan pembayaran kami terima.</li>
+      <li>Pembeli bertanggung jawab memberikan nama penerima, alamat, dan nomor telepon yang benar. Kesalahan data pengiriman dari pembeli di luar tanggung jawab kami.</li>
+      <li>Jika terjadi kesalahan penulisan harga, kami berhak mengonfirmasi ulang sebelum pesanan diproses, dan pembeli boleh membatalkan.</li>
+      <li>Foto produk bersifat ilustrasi dan dapat sedikit berbeda dari barang asli.</li>
+      <li>Garansi dan retur mengikuti bagian garansi dan retur di halaman ini.</li>
+      <li>Kami berhak menolak pesanan yang tampak menyalahgunakan layanan.</li>
+    </ul>
+  </section>
+
+  <section id="kontak" class="contact">
+    <h2>Kontak</h2>
+    <p>Jam layanan: <span data-cfg="jamLayanan"></span></p>
+    <p id="contact-buttons">
+      <a class="btn" href="index.html" id="btn-chat">Buka chat di situs</a>
+    </p>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">&copy; 2026 <span data-cfg="nama"></span>. Halaman ini adalah ringkasan kebijakan toko.</div>
+</footer>
+
+<script>
+/* ============================================================
+   UBAH DI SINI. Semua isi halaman mengikuti nilai di bawah.
+   Isi sesuai kenyataan usahamu: yang kamu tulis adalah janji ke pembeli.
+   ============================================================ */
+var CFG = {
+  nama: "Kicks Station",
+  tanggalUpdate: "4 November 2026",
+  jamLayanan: "Setiap hari, 08.00–21.00 WIB",
+  prosesHari: "1–2 hari kerja",
+  kirimHari: "2–5 hari kerja",
+  batasKlaimHari: "1",
+  metodeBayar: "transfer bank atau e-wallet (rincian dikirim admin)",
+  email: "yazidmuhammadalkautsar@gmail.com",      // opsional, contoh: "halo@tokomu.com"
+  whatsapp: "6285931100080"    // opsional, format: "628123456789"
+};
+
+document.querySelectorAll('[data-cfg]').forEach(function(el){
+  var v = CFG[el.getAttribute('data-cfg')];
+  if (v) el.textContent = v;
+});
+
+(function(){
+  var box = document.getElementById('contact-buttons');
+  if (CFG.whatsapp) {
+    var a = document.createElement('a');
+    a.className = 'btn';
+    a.href = 'https://wa.me/' + encodeURIComponent(CFG.whatsapp);
+    a.textContent = 'WhatsApp';
+    a.rel = 'noopener';
+    box.appendChild(a);
+  }
+  if (CFG.email) {
+    var m = document.createElement('a');
+    m.className = 'btn';
+    m.href = 'mailto:' + CFG.email;
+    m.textContent = 'Email';
+    box.appendChild(m);
+  }
+})();
+</script>
+</body>
+</html>
