@@ -1,12 +1,15 @@
 {
-  "dependencies": {
-    "pg": "^8.23.0",
-    "web-push": "^3.6.7"
-  },
-  "scripts": {
-    "start": "node backend/server.js"
-  },
-  "devDependencies": {
-    "tailwindcss": "^3.4.19"
-  }
+     "dependencies": {
+          "pg": "^8.23.0",
+          "web-push": "^3.6.7"
+     },
+     "scripts": {
+          "start": "node backend/server.js",
+          "build:css:index": "tailwindcss -c tailwind.index.config.js -i input.css -o tailwind-index.css --minify",
+          "build:css:admin": "tailwindcss -c tailwind.admin.config.js -i input.css -o tailwind-admin.css --minify",
+          "build:css": "npm run build:css:index && npm run build:css:admin"
+     },
+     "devDependencies": {
+          "tailwindcss": "^3.4.19"
+     }
 }
