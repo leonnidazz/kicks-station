@@ -2321,14 +2321,11 @@
                     `${index + 1}. *${item.name}*\n` +
                     `   • Size: ${item.size}\n` +
                     `   • Jumlah: ${item.qty} pcs\n` +
-                    `   • Harga: Rp ${subtotal.toLocaleString('id-ID')}\n\n`;
 
             });
 
 
-            text +=
-                `*Total Pembayaran: Rp ${total.toLocaleString('id-ID')}*\n\n` +
-                `Terima kasih!`;
+                text += `Terima kasih!`;
 
 
             fetch("https://kicks-station.onrender.com/api/orders", {
