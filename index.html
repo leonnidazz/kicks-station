@@ -2262,7 +2262,7 @@
     referral: ref || "",
     user_agent: navigator.userAgent
 });
-                const analyticsUrl = "https://kicks-station-api.onrender.com/api/analytics/visit";
+                const analyticsUrl = "https://kicks-station.onrender.com/api/analytics/visit";
                 if (navigator.sendBeacon) {
                     const queued = navigator.sendBeacon(analyticsUrl, new Blob([payload], { type: "application/json" }));
                     if (!queued) {
@@ -2324,7 +2324,7 @@
                 `Terima kasih!`;
 
 
-            fetch("https://kicks-station-api.onrender.com/api/orders", {
+            fetch("https://kicks-station.onrender.com/api/orders", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
@@ -2678,7 +2678,7 @@
            Data server tetap diperbarui di background.
         ===================================================== */
 
-        const PRODUCTS_API = 'https://kicks-station-api.onrender.com/api/products';
+        const PRODUCTS_API = 'https://kicks-station.onrender.com/api/products';
         const PRODUCTS_CACHE_KEY = 'kicks_station_products_v1';
         const PRODUCTS_CACHE_MAX_AGE = 30 * 60 * 1000;
 
@@ -2790,7 +2790,7 @@
 </div>
 <script>
 (() => {
- const API='https://kicks-station-api.onrender.com';
+ const API='https://kicks-station.onrender.com';
  const KEY='ks_chat_conversation_id';
  const TOKEN_KEY='ks_chat_visitor_token';
  let conversationId=localStorage.getItem(KEY)||'';
