@@ -2274,9 +2274,17 @@
             } catch (_) {}
         })();
 
+        function goCheckout() {
+            if (!cart.length) { alert('Keranjang belanja Anda kosong!'); return; }
+            try {
+                localStorage.setItem('ks_cart', JSON.stringify(cart.map(i => ({
+                    name: i.name || i.nama, size: i.size, qty: i.qty, price: i.price
+                }))));
+            } catch (e) {}
+            window.location.href = 'checkout.html';
+        }
 
         function checkoutWA() {
-
             if (cart.length === 0) {
 
                 alert(

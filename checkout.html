@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checkout | Kicks Station</title>
+<meta name="robots" content="noindex">
+<style>
+:root{--bg:#000;--card:#0b0b0c;--field:#111113;--line:#26262a;--text:#f4f4f5;--mute:#8b8b93;--btn:#fff;--btn-t:#09090b;--err:#f87171;--ok:#4ade80}
+@media(prefers-color-scheme:light){:root{--bg:#f4f4f5;--card:#fff;--field:#f4f4f5;--line:#e4e4e7;--text:#09090b;--mute:#71717a;--btn:#09090b;--btn-t:#fff;--err:#dc2626;--ok:#16a34a}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+main{max-width:520px;margin:0 auto;padding:24px 16px 48px}
+h1{font-size:22px;margin:0 0 4px}a{color:inherit}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px;margin-top:16px}
+label{display:block;font-size:15px;margin:16px 0 6px}label:first-child{margin-top:0}label b{color:var(--err)}label small{color:var(--mute)}
+input,textarea{width:100%;background:var(--field);border:1px solid var(--line);border-radius:12px;padding:14px;color:var(--text);font:inherit}
+textarea{min-height:96px;resize:vertical}input:focus,textarea:focus{outline:2px solid var(--mute);outline-offset:0}
+.row{display:flex;gap:10px}.row input{flex:1}
+.ghost{background:var(--field);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:0 18px;font:inherit;font-weight:600;cursor:pointer}
+.pay{width:100%;margin-top:22px;background:var(--btn);color:var(--btn-t);border:0;border-radius:12px;padding:15px;font:inherit;font-weight:700;cursor:pointer}
+.pay:disabled{opacity:.6;cursor:wait}
+.item{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.item small{color:var(--mute);display:block}.sum{display:flex;justify-content:space-between;padding-top:10px;color:var(--mute)}
+.sum.total{color:var(--text);font-weight:700;font-size:18px}
+.msg{margin-top:12px;font-size:14px;min-height:20px}.msg.err{color:var(--err)}.msg.ok{color:var(--ok)}
+.note{margin-top:12px;text-align:center;font-size:13px;color:var(--mute)}.hide{display:none}
+</style>
+</head>
+<body>
+<main>
+  <a href="index.html" style="color:var(--mute);font-size:14px;text-decoration:none">&larr; Kembali ke toko</a>
+  <h1 style="margin-top:12px">Checkout</h1>
+  <p style="margin:0;color:var(--mute);font-size:14px">Lengkapi data pengiriman, lalu pilih metode pembayaran.</p>
+
+  <section id="empty" class="card hide"><p style="margin:0">Keranjangmu kosong. <a href="index.html"><b>Pilih produk dulu</b></a>.</p></section>
+
+  <section id="summary" class="card hide"><div id="items"></div><div id="sums"></div></section>
+
+  <section id="formCard" class="card hide">
+    <label for="name">Nama Lengkap <b>*</b></label>
+    <input id="name" autocomplete="name" maxlength="100" placeholder="Masukkan nama lengkap">
+    <label for="phone">No. WhatsApp <b>*</b></label>
+    <input id="phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="16" placeholder="Contoh: 08123456789">
+    <label for="address">Alamat Lengkap <b>*</b></label>
+    <textarea id="address" maxlength="500" autocomplete="street-address" placeholder="Nama jalan, nomor rumah, RT/RW, kelurahan, kecamatan, kota, provinsi, kode pos"></textarea>
+    <label for="ref">Kode Referral <small>(Opsional)</small></label>
+    <div class="row"><input id="ref" maxlength="30" placeholder="Masukkan kode referral jika ada"><button type="button" class="ghost" id="useRef">Gunakan</button></div>
+    <div id="msg" class="msg" role="status"></div>
+    <button type="button" class="pay" id="payBtn">Bayar Sekarang</button>
+    <p class="note">Kamu akan diarahkan ke halaman pembayaran Midtrans.<br>Kami tidak pernah meminta pembayaran di luar halaman ini.</p>
+  </section>
+
+  <section id="done" class="card hide"></section>
+</main>
+<script>
+(function () {
+  var API = "https://kicks-station-api.onrender.com";
+  var $ = function (id) { return document.getElementById(id); };
+  var rupiah = function (n) { return "Rp" + Math.round(n).toLocaleString("id-ID"); };
+  var cart = [], shipping = 0, session = null, dirty = true;
+  try { cart = JSON.parse(localStorage.getItem("ks_cart") || "[]"); } catch (e) {}
+  cart = cart.filter(function (i) { return i && i.name && Number(i.qty) > 0; });
+
+  function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
+  function say(text, kind) { var m = $("msg"); m.textContent = text || ""; m.className = "msg " + (kind || ""); }
+
+  function renderSummary() {
+    var box = $("items"), sums = $("sums"), sub = 0;
+    box.textContent = ""; sums.textContent = "";
+    cart.forEach(function (i) {
+      var line = Number(i.price) * Number(i.qty); sub += line;
+      var row = el("div", "item"), left = el("div", "", i.name);
+      left.appendChild(el("small", "", (i.size ? "Ukuran " + i.size + " · " : "") + i.qty + " pcs"));
+      row.appendChild(left); row.appendChild(el("div", "", rupiah(line))); box.appendChild(row);
+    });
+    function sum(label, val, cls) { var r = el("div", "sum " + (cls || "")); r.appendChild(el("span", "", label)); r.appendChild(el("span", "", val)); sums.appendChild(r); }
+    sum("Subtotal", rupiah(sub));
+    sum("Ongkos kirim", shipping > 0 ? rupiah(shipping) : "Gratis");
+    sum("Total", rupiah(sub + shipping), "total");
+  }
+
+  function init() {
+    if (!cart.length) { $("empty").classList.remove("hide"); return; }
+    ["summary", "formCard"].forEach(function (id) { $(id).classList.remove("hide"); });
+    var saved = ""; try { saved = sessionStorage.getItem("kicks_station_referral") || ""; } catch (e) {}
+    $("ref").value = saved;
+    renderSummary();
+    fetch(API + "/api/checkout/config").then(function (r) { return r.json(); }).then(function (c) {
+      shipping = Number(c.shipping_fee) || 0; renderSummary();
+      if (!c.ready) say("Pembayaran online belum aktif. Hubungi admin lewat chat.", "err");
+    }).catch(function () {});
+  }
+
+  ["name", "phone", "address", "ref"].forEach(function (id) { $(id).addEventListener("input", function () { dirty = true; }); });
+  $("useRef").addEventListener("click", function () {
+    var v = $("ref").value.trim().toLowerCase();
+    if (!v) { say(""); return; }
+    if (!/^[a-z0-9_-]{2,30}$/.test(v)) { say("Kode referral hanya boleh huruf, angka, - dan _.", "err"); return; }
+    $("ref").value = v; try { sessionStorage.setItem("kicks_station_referral", v); } catch (e) {}
+    say("Kode referral dipakai.", "ok");
+  });
+
+  function finish(kind, orderId) {
+    try { localStorage.removeItem("ks_cart"); } catch (e) {}
+    ["summary", "formCard"].forEach(function (id) { $(id).classList.add("hide"); });
+    var d = $("done"); d.classList.remove("hide"); d.textContent = "";
+    d.appendChild(el("h1", "", kind === "paid" ? "Pembayaran berhasil" : "Menunggu pembayaran"));
+    d.appendChild(el("p", "", "Nomor pesanan: " + orderId));
+    d.appendChild(el("p", "", kind === "paid"
+      ? "Terima kasih! Admin akan menghubungi lewat WhatsApp untuk konfirmasi pengiriman."
+      : "Selesaikan pembayaran sebelum batas waktu. Status pesanan diperbarui otomatis setelah pembayaran diterima."));
+    var a = el("a", "", "Kembali ke toko"); a.href = "index.html"; d.appendChild(a);
+  }
+
+  function openSnap(s) {
+    window.snap.pay(s.token, {
+      onSuccess: function () { finish("paid", s.order_id); },
+      onPending: function () { finish("pending", s.order_id); },
+      onError: function () { say("Pembayaran gagal. Silakan coba lagi.", "err"); $("payBtn").disabled = false; },
+      onClose: function () { say("Pembayaran belum selesai. Klik Bayar Sekarang untuk melanjutkan.", ""); $("payBtn").disabled = false; }
+    });
+  }
+  function loadSnap(s) {
+    return new Promise(function (ok, fail) {
+      if (window.snap) return ok();
+      var t = document.createElement("script"); t.src = s.snap_url; t.setAttribute("data-client-key", s.client_key);
+      t.onload = ok; t.onerror = function () { fail(new Error("Halaman pembayaran gagal dimuat. Periksa koneksi lalu coba lagi.")); };
+      document.head.appendChild(t);
+    });
+  }
+
+  $("payBtn").addEventListener("click", function () {
+    var btn = $("payBtn"); say("");
+    if (session && !dirty) { btn.disabled = true; openSnap(session); return; }
+    var ref = $("ref").value.trim().toLowerCase();
+    var payload = {
+      name: $("name").value.trim(), phone: $("phone").value.trim(), address: $("address").value.trim(),
+      referral: /^[a-z0-9_-]{2,30}$/.test(ref) ? ref : "",
+      items: cart.map(function (i) { return { name: i.name, size: i.size || "", qty: Number(i.qty), price: Number(i.price) }; })
+    };
+    if (payload.name.length < 2) return say("Nama lengkap wajib diisi.", "err");
+    if (!/^(\+62|62|0)8\d{8,12}$/.test(payload.phone.replace(/[\s-]/g, ""))) return say("Nomor WhatsApp tidak valid. Contoh: 08123456789", "err");
+    if (payload.address.length < 15) return say("Alamat lengkap wajib diisi (jalan, kelurahan, kota, kode pos).", "err");
+    btn.disabled = true; say("Menyiapkan pembayaran…");
+    fetch(API + "/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok || !j.success) throw new Error(j.message || "Pembayaran tidak dapat diproses."); return j; }); })
+      .then(function (s) { session = s; dirty = false; return loadSnap(s).then(function () { say(""); openSnap(s); }); })
+      .catch(function (e) { say(e.message || "Terjadi kesalahan. Coba lagi.", "err"); btn.disabled = false; });
+  });
+  init();
+})();
+</script>
+</body>
+</html>
