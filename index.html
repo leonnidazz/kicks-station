@@ -2320,12 +2320,11 @@
                 text +=
                     `${index + 1}. *${item.name}*\n` +
                     `   • Size: ${item.size}\n` +
-                    `   • Jumlah: ${item.qty} pcs\n` +
+                    `   • Jumlah: ${item.qty} pcs\n\n`;
 
             });
 
-
-                text += `Terima kasih!`;
+            text += `Terima kasih!`;
 
 
             fetch("https://kicks-station.onrender.com/api/orders", {
