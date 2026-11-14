@@ -252,11 +252,11 @@ button:active {
 
         <form onsubmit="event.preventDefault(); adminLogin();" class="relative z-10">
             <label for="admin-pin-input" class="block text-xs font-bold mb-3 text-slate-400 uppercase tracking-widest text-center">
-                Authentication PIN
+                Kata sandi admin
             </label>
             <input
-                id="admin-pin-input" type="password" inputmode="numeric" maxlength="6" autocomplete="new-password" name="admin-pin" placeholder="••••••"
-                class="w-full px-4 py-4 rounded-2xl border border-slate-200 text-center text-3xl tracking-[0.5em] font-black text-slate-900 bg-white/50 focus:bg-white"
+                id="admin-pin-input" type="password" maxlength="128" autocomplete="current-password" name="admin-pin" placeholder="Kata sandi admin"
+                class="w-full px-4 py-4 rounded-2xl border border-slate-200 text-center text-xl tracking-normal font-bold text-slate-900 bg-white/50 focus:bg-white"
             >
             <p id="admin-login-message" class="text-sm text-red-500 font-semibold mt-4 min-h-[20px] text-center"></p>
 
@@ -879,8 +879,8 @@ async function adminLogin() {
     if (!input || !button || !messageEl) return;
     const pin = input.value.trim();
 
-    if (!/^\d{6}$/.test(pin)) {
-        messageEl.textContent = "PIN harus terdiri dari 6 angka.";
+    if (pin.length < 6) {
+        messageEl.textContent = "Kata sandi minimal 6 karakter.";
         input.focus();
         return;
     }

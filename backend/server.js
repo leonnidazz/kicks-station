@@ -26,6 +26,11 @@ const MAX_IMAGES = 10;
 const MAX_REQUEST_SIZE = 60 * 1024 * 1024;
 
 const ADMIN_PIN = String(process.env.ADMIN_PIN || "").trim();
+if (ADMIN_PIN && (ADMIN_PIN.length < 12 || /^\d+$/.test(ADMIN_PIN))) {
+    console.warn(
+        "[KEAMANAN] ADMIN_PIN terlalu lemah. Ganti di Render dengan kata sandi acak minimal 12 karakter."
+    );
+}
 const VAPID_PUBLIC_KEY = String(process.env.VAPID_PUBLIC_KEY || "").trim();
 const VAPID_PRIVATE_KEY = String(process.env.VAPID_PRIVATE_KEY || "").trim();
 const VAPID_SUBJECT = String(process.env.VAPID_SUBJECT || "").trim();
@@ -65,14 +70,24 @@ if (!DATABASE_URL) {
     });
 }
 
+// Jumlah proxy tepercaya di depan server (Render = 1). Entri X-Forwarded-For
+// paling kiri bisa dipalsukan pengunjung, jadi kita ambil entri yang ditambahkan
+// proxy kita sendiri, dihitung dari kanan. Jika lokasi pengunjung tampil sebagai
+// lokasi data center, set TRUSTED_PROXY_HOPS=2 di environment Render.
+const TRUSTED_PROXY_HOPS = Math.max(1, Number(process.env.TRUSTED_PROXY_HOPS) || 1);
+
 function getClientIP(req) {
-    return String(
-        req.headers["x-forwarded-for"] ||
-        req.socket?.remoteAddress ||
-        "unknown"
-    )
-        .split(",")[0]
-        .trim();
+    const forwarded = String(req.headers["x-forwarded-for"] || "")
+        .split(",")
+        .map((value) => value.trim())
+        .filter(Boolean);
+
+    if (forwarded.length) {
+        const index = Math.max(0, forwarded.length - TRUSTED_PROXY_HOPS);
+        return forwarded[index];
+    }
+
+    return String(req.socket?.remoteAddress || "unknown").trim();
 }
 
 // =====================================================
@@ -240,7 +255,7 @@ function cleanupAdminSessions() {
 }
 
 // Batas global: tetap melindungi PIN walaupun header IP dipalsukan penyerang.
-const MAX_GLOBAL_LOGIN_FAILURES = 30;
+const MAX_GLOBAL_LOGIN_FAILURES = 200;
 const globalLoginAttempts = { windowStart: 0, failures: 0 };
 
 function resetGlobalLoginWindowIfNeeded(now) {
@@ -329,6 +344,35 @@ function requireAdmin(req, res) {
         return false;
     }
     return true;
+}
+
+// Pesan error yang aman ditampilkan ke pengunjung. Error database, jaringan,
+// dan bug internal mengembalikan "" sehingga pesan umum (fallback) yang dipakai.
+function publicErrorMessage(error) {
+    if (!error) return "";
+    const internal =
+        error.severity ||
+        error.routine ||
+        error.syscall ||
+        error instanceof TypeError ||
+        error instanceof ReferenceError ||
+        error instanceof RangeError ||
+        /DATABASE_URL|SUPABASE|ADMIN_PIN|VAPID|ECONN|ETIMEDOUT/i.test(String(error.message || ""));
+    return internal ? "" : String(error.message || "");
+}
+
+// Mengunci tabel dari Data API Supabase (PostgREST). Backend ini memakai
+// koneksi langsung sebagai role postgres, jadi tidak terpengaruh.
+async function lockDownTables(tableNames) {
+    if (!pool) return;
+    for (const table of tableNames) {
+        try {
+            await pool.query(`ALTER TABLE ${table} ENABLE ROW LEVEL SECURITY`);
+            await pool.query(`REVOKE ALL ON ${table} FROM anon, authenticated`);
+        } catch (error) {
+            console.warn("Gagal mengunci tabel", table, "-", error.code || "error");
+        }
+    }
 }
 
 function sendJSON(res, statusCode, data) {
@@ -698,6 +742,7 @@ async function ensureDatabaseOnce() {
 
     await pool.query(`ALTER TABLE products DROP COLUMN IF EXISTS stok`);
     await pool.query(`ALTER TABLE products ENABLE ROW LEVEL SECURITY`);
+    await lockDownTables(["public.products"]);
 
     databaseReady = true;
 }
@@ -1011,6 +1056,7 @@ async function ensureOrdersTableOnce() {
     
     await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS keterangan TEXT DEFAULT ''`);
     await pool.query(`ALTER TABLE orders ENABLE ROW LEVEL SECURITY`);
+    await lockDownTables(["public.orders"]);
 }
 
 function mapOrder(row) {
@@ -1143,6 +1189,7 @@ async function ensureAnalyticsTableOnce() {
     `);
 
     await pool.query(`ALTER TABLE public.site_visits ENABLE ROW LEVEL SECURITY`);
+    await lockDownTables(["public.site_visits"]);
 }
 
 
@@ -1309,6 +1356,11 @@ async function ensureChatTableOnce() {
             updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
     `);
+    await lockDownTables([
+        "public.chat_conversations",
+        "public.chat_messages",
+        "public.chat_push_subscriptions",
+    ]);
 }
 const ensureChatTable = runOnce(ensureChatTableOnce);
 
@@ -1342,7 +1394,15 @@ async function notifyAdminOfCustomerMessage(publicConversationId, message) {
 }
 
 const server = http.createServer(async (req, res) => {
-    console.log("REQUEST:", req.method, req.url);
+    console.log("REQUEST:", req.method, String(req.url).split("?")[0]);
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "DENY");
+    res.setHeader("Referrer-Policy", "no-referrer");
+    res.setHeader("Content-Security-Policy", "default-src 'none'; frame-ancestors 'none'");
+    res.setHeader("Strict-Transport-Security", "max-age=31536000");
+    if (/^\/api\/(admin|chat|orders|analytics)/.test(String(req.url))) {
+        res.setHeader("Cache-Control", "no-store");
+    }
     const requestOrigin = String(req.headers.origin || "");
     const allowedOrigins = new Set([
         "https://leonnidazz.github.io",
@@ -1463,7 +1523,7 @@ const server = http.createServer(async (req, res) => {
         sendJSON(res, 400, {
             success: false,
             message:
-                error.message ||
+                publicErrorMessage(error) ||
                 "Kunjungan tidak dapat dicatat."
         });
     }
@@ -1493,7 +1553,7 @@ const server = http.createServer(async (req, res) => {
                 sendJSON(res, 201, { success:true, message:"Checkout berhasil dicatat.", order:{ id:Number(savedOrder.id), created_at:savedOrder.created_at, referral:savedOrder.referral || "", total:Number(savedOrder.total || 0), status:savedOrder.status } });
             } catch (error) {
                 console.error("Gagal menyimpan pesanan:", error);
-                sendJSON(res, 400, { success:false, message:error.message || "Pesanan tidak dapat disimpan." });
+                sendJSON(res, 400, { success:false, message:publicErrorMessage(error) || "Pesanan tidak dapat disimpan." });
             }
             return;
         }
@@ -1521,13 +1581,11 @@ const server = http.createServer(async (req, res) => {
             const data = await readBody(req, 1024);
             const pin = String(data?.pin || "").trim();
 
-            if (!/^\d{6}$/.test(pin) || !pinMatches(pin)) {
+            if (pin.length < 6 || pin.length > 128 || !pinMatches(pin)) {
                 recordLoginFailure(ip);
                 sendJSON(res, 401, {
                     success: false,
-                    message: /^\d{6}$/.test(pin)
-                        ? "PIN salah."
-                        : "PIN harus terdiri dari 6 angka.",
+                    message: "Kata sandi salah.",
                 });
                 return;
             }
@@ -1939,7 +1997,7 @@ const server = http.createServer(async (req, res) => {
                 sendJSON(res, 200, { success: true, analytics, visits });
             } catch (error) {
                 console.error("Gagal mengambil analytics:", error);
-                sendJSON(res, 500, { success: false, message: error.message || "Analytics tidak dapat diambil." });
+                sendJSON(res, 500, { success: false, message: publicErrorMessage(error) || "Analytics tidak dapat diambil." });
             }
             return;
         }
@@ -1950,7 +2008,7 @@ const server = http.createServer(async (req, res) => {
         if (req.method === "GET" && pathname === "/api/orders") {
             if (!requireAdmin(req, res)) return;
             try { sendJSON(res, 200, { success:true, orders:await getOrders() }); }
-            catch (error) { console.error("Gagal mengambil pesanan:", error); sendJSON(res, 500, { success:false, message:error.message || "Pesanan tidak dapat diambil." }); }
+            catch (error) { console.error("Gagal mengambil pesanan:", error); sendJSON(res, 500, { success:false, message:publicErrorMessage(error) || "Pesanan tidak dapat diambil." }); }
             return;
         }
 
@@ -1964,7 +2022,7 @@ const server = http.createServer(async (req, res) => {
                 sendJSON(res, 200, { success:true, message:"Seluruh riwayat pesanan berhasil dihapus." });
             } catch (error) {
                 console.error("Gagal menghapus riwayat pesanan:", error);
-                sendJSON(res, 500, { success:false, message:error.message || "Riwayat pesanan tidak dapat dihapus." });
+                sendJSON(res, 500, { success:false, message:publicErrorMessage(error) || "Riwayat pesanan tidak dapat dihapus." });
             }
             return;
         }
@@ -1980,7 +2038,7 @@ const server = http.createServer(async (req, res) => {
                 } catch (error) {
                     console.error("Gagal menghapus kunjungan:", error);
                     const status = error.message === "Kunjungan tidak ditemukan." ? 404 : 500;
-                    sendJSON(res, status, { success: false, message: error.message || "Kunjungan tidak dapat dihapus." });
+                    sendJSON(res, status, { success: false, message: publicErrorMessage(error) || "Kunjungan tidak dapat dihapus." });
                 }
                 return;
             }
@@ -2002,7 +2060,7 @@ const server = http.createServer(async (req, res) => {
         sendJSON(res, 500, {
             success: false,
             message:
-                error.message ||
+                publicErrorMessage(error) ||
                 "Riwayat kunjungan tidak dapat dihapus."
         });
     }
@@ -2023,7 +2081,7 @@ const server = http.createServer(async (req, res) => {
                 sendJSON(res, 200, { success:true, message:"Pesanan berhasil dihapus." });
             } catch (error) {
                 console.error("Gagal menghapus pesanan:", error);
-                sendJSON(res, 400, { success:false, message:error.message || "Pesanan tidak dapat dihapus." });
+                sendJSON(res, 400, { success:false, message:publicErrorMessage(error) || "Pesanan tidak dapat dihapus." });
             }
             return;
         }
@@ -2040,7 +2098,7 @@ const server = http.createServer(async (req, res) => {
                 const data = await readBody(req);
                 const order = await updateOrderStatus(id, String(data?.status || "baru").trim(), data?.keterangan);
                 sendJSON(res, 200, { success:true, message:"Pesanan berhasil diperbarui.", order });
-            } catch (error) { console.error("Gagal memperbarui pesanan:", error); sendJSON(res, 400, { success:false, message:error.message || "Pesanan tidak dapat diperbarui." }); }
+            } catch (error) { console.error("Gagal memperbarui pesanan:", error); sendJSON(res, 400, { success:false, message:publicErrorMessage(error) || "Pesanan tidak dapat diperbarui." }); }
             return;
         }
 
@@ -2391,7 +2449,7 @@ const server = http.createServer(async (req, res) => {
 
         sendJSON(res, 500, {
             success: false,
-            message: error.message || "Terjadi kesalahan pada server.",
+            message: publicErrorMessage(error) || "Terjadi kesalahan pada server.",
         });
     }
 });

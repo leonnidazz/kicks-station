@@ -1,0 +1,14 @@
+# Dependensi: Render menjalankan "npm install" sendiri
+node_modules/
+
+# Rahasia: jangan pernah di-commit
+.env
+.env.*
+*.pem
+*.key
+
+# Berkas editor dan sistem
+.vscode/
+.DS_Store
+Thumbs.db
+*.log
