@@ -172,7 +172,21 @@
             opacity: 1;
         }
     </style>
-   <link rel="stylesheet" href="tailwind-index.css">
+   <style id="ks-trust-css">
+        .ks-trust{background:#f8fafc;border-top:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb;padding:28px 16px}
+        .dark .ks-trust{background:#0b0f19;border-color:#1f2937}
+        .ks-trust-grid{max-width:80rem;margin:0 auto;display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+        .ks-trust-item{display:flex;gap:12px;align-items:flex-start;text-align:left}
+        .ks-trust-item ion-icon{flex:none;font-size:28px;color:#2563eb}
+        .dark .ks-trust-item ion-icon{color:#60a5fa}
+        .ks-trust-item b{display:block;font-size:15px;color:#111827}.dark .ks-trust-item b{color:#f3f4f6}
+        .ks-trust-item span{display:block;font-size:13px;line-height:1.45;color:#4b5563;margin-top:2px}.dark .ks-trust-item span{color:#9ca3af}
+        .ks-trust-note{max-width:80rem;margin:18px auto 0;font-size:13px;color:#4b5563;text-align:left}.dark .ks-trust-note{color:#9ca3af}
+        .ks-trust-note a{color:#2563eb;font-weight:600}.dark .ks-trust-note a{color:#60a5fa}
+        .ks-contact{margin-top:18px;font-size:14px;color:#9ca3af;line-height:1.7}
+        .ks-contact a{color:#fff;font-weight:600;text-decoration:underline;text-underline-offset:3px}
+    </style>
+    <link rel="stylesheet" href="tailwind-index.css">
 </head>
 
 <body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 font-grotesk antialiased selection:bg-blue-600 selection:text-white relative transition-colors duration-300 text-left">
@@ -372,6 +386,16 @@
     <!-- =========================
          KATALOG
     ========================== -->
+
+    <section class="ks-trust" aria-label="Jaminan belanja di Kicks Station">
+        <div class="ks-trust-grid">
+            <div class="ks-trust-item"><ion-icon name="card-outline"></ion-icon><div><b>Bayar aman lewat Midtrans</b><span>Virtual account bank, QRIS, dan e-wallet. Kami tidak menyimpan data kartu atau rekeningmu.</span></div></div>
+            <div class="ks-trust-item"><ion-icon name="shield-checkmark-outline"></ion-icon><div><b>Garansi barang</b><span>Salah kirim atau cacat diganti, ongkir retur kami tanggung. Stok habis setelah bayar, dana kembali penuh.</span></div></div>
+            <div class="ks-trust-item"><ion-icon name="cube-outline"></ion-icon><div><b>Nomor resi selalu dikirim</b><span>Diproses 1–2 hari kerja, tiba 2–5 hari kerja tergantung kota tujuan.</span></div></div>
+            <div class="ks-trust-item"><ion-icon name="chatbubbles-outline"></ion-icon><div><b>Admin siap membantu</b><span>Setiap hari 08.00–21.00 WIB lewat chat atau WhatsApp.</span></div></div>
+        </div>
+        <p class="ks-trust-note">Belum yakin ukuran? Tanyakan ke admin sebelum membayar, karena kami tidak menerima tukar karena salah ukuran. <a href="info.html">Baca kebijakan lengkap</a></p>
+    </section>
 
     <section
         id="katalog"
@@ -882,6 +906,11 @@
                     Menghadirkan kurasi eksklusif produk dari brand pilihan dengan penawaran harga terbaik di bawah pasaran.
                 </p>
 
+                <div class="ks-contact">
+                    <div>Jam layanan: setiap hari, 08.00–21.00 WIB</div>
+                    <div><a href="https://wa.me/6285931100080?text=Halo%20Kicks%20Station%2C%20saya%20mau%20bertanya" target="_blank" rel="noopener">Chat WhatsApp</a> &nbsp;·&nbsp; <a href="mailto:yazidmuhammadalkautsar@gmail.com">Email</a> &nbsp;·&nbsp; <a href="info.html">Info toko</a></div>
+                </div>
+
             </div>
 
             <div>
@@ -889,10 +918,6 @@
                 <h4 class="font-bold text-lg mb-4">
                     Menu Navigasi
                 </h4>
-                   <li><a href="info.html#retur" class="hover:text-white transition-colors">Garansi &amp; Retur</a></li>
-                    <li><a href="info.html#faq" class="hover:text-white transition-colors">FAQ</a></li>
-                     <li><a href="info.html#privasi" class="hover:text-white transition-colors">Kebijakan Privasi</a></li>
-                     <li><a href="info.html#syarat" class="hover:text-white transition-colors">Syarat &amp; Ketentuan</a></li>
                 <ul class="space-y-2 text-sm text-gray-400">
 
                     <li>
@@ -919,6 +944,10 @@
                         </a>
                     </li>
 
+                                    <li><a href="info.html#retur" class="hover:text-white transition-colors">Garansi &amp; Retur</a></li>
+                    <li><a href="info.html#faq" class="hover:text-white transition-colors">FAQ</a></li>
+                    <li><a href="info.html#privasi" class="hover:text-white transition-colors">Kebijakan Privasi</a></li>
+                    <li><a href="info.html#syarat" class="hover:text-white transition-colors">Syarat &amp; Ketentuan</a></li>
                 </ul>
 
             </div>
