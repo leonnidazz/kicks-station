@@ -104,19 +104,20 @@ try{
   <section id="tentang">
     <h2>Tentang kami</h2>
     <p><span data-cfg="nama"></span> adalah toko online yang mengkurasi sepatu dari brand pilihan. Kami bukan pabrik sepatu: produk kami ambil dari pemasok mitra, lalu kami bantu dari memilih ukuran, memesan, sampai pengiriman.</p>
-    <p>Karena stok berasal dari mitra, kami selalu mengonfirmasi ketersediaan, ukuran, dan estimasi kirim lewat chat sebelum kamu membayar.</p>
+    <p>Karena stok berasal dari mitra, ketersediaan bisa berubah. Kalau ada pertanyaan soal stok atau ukuran, tanyakan dulu lewat chat sebelum membayar. Jika barang yang sudah kamu bayar ternyata habis, kami menghubungimu lewat WhatsApp dan mengembalikan dana secara penuh.</p>
+    <p id="lokasi-row" hidden>Lokasi toko: <span data-cfg="lokasi"></span>.</p>
   </section>
 
   <section id="cara-pesan">
     <h2>Cara pesan dan pembayaran</h2>
     <ol>
       <li>Pilih sepatu dan ukuran di katalog, lalu masukkan ke keranjang.</li>
-      <li>Klik tombol pesan. Chat akan terbuka dengan rincian pesananmu.</li>
-      <li>Admin mengonfirmasi stok, total harga, dan ongkir di chat.</li>
-      <li>Lakukan pembayaran sesuai instruksi dari admin: <span data-cfg="metodeBayar"></span>.</li>
-      <li>Setelah pembayaran kami terima, pesananmu diproses.</li>
+      <li>Klik <strong>Bayar Sekarang</strong> untuk memesan langsung, atau tombol tanya-tanya dulu kalau kamu ingin bertanya ke admin lewat chat.</li>
+      <li>Di halaman checkout, isi nama, nomor WhatsApp, dan alamat lengkap. Produk, ukuran, dan jumlah sudah terisi otomatis dari keranjangmu.</li>
+      <li>Pilih metode pembayaran di halaman pembayaran Midtrans: <span data-cfg="metodeBayar"></span>.</li>
+      <li>Setelah pembayaran kami terima, admin menghubungi lewat WhatsApp dan pesananmu diproses.</li>
     </ol>
-    <p>Pembayaran hanya kami minta lewat chat resmi di situs ini. Jangan transfer ke rekening yang dikirim lewat pihak lain yang mengatasnamakan toko.</p>
+    <p>Pembayaran hanya lewat halaman pembayaran resmi dari tombol Bayar Sekarang di situs ini, atau lewat instruksi admin di chat resmi di situs ini. Jangan transfer ke rekening yang dikirim lewat pihak lain yang mengatasnamakan toko.</p>
   </section>
 
   <section id="pengiriman">
@@ -124,22 +125,22 @@ try{
     <ul>
       <li>Pesanan diproses dalam <span data-cfg="prosesHari"></span> setelah pembayaran diterima.</li>
       <li>Estimasi sampai: <span data-cfg="kirimHari"></span>, tergantung kota tujuan dan ekspedisi.</li>
-      <li>Nomor resi kami kirim lewat chat setelah barang diserahkan ke ekspedisi.</li>
+      <li>Nomor resi kami kirim lewat WhatsApp atau chat setelah barang diserahkan ke ekspedisi.</li>
     </ul>
     <p>Keterlambatan karena ekspedisi di luar kendali kami, tetapi kami bantu melacak paketmu.</p>
   </section>
 
   <section id="retur">
     <h2>Garansi dan retur</h2>
-    <h3>Barang bisa dikembalikan atau diganti jika</h3>
+    <div class="note"><strong>Tidak ada pengembalian atau tukar</strong> karena berubah pikiran, salah memilih ukuran, atau selera. Pastikan ukuran dan model sebelum membayar; admin siap membantu lewat chat.</div>
+
+    <h3>Pengecualian: barang bisa diganti atau dananya dikembalikan jika</h3>
     <ul>
       <li>Barang yang diterima salah model, warna, atau ukuran dari yang dipesan.</li>
       <li>Barang cacat produksi atau rusak saat diterima.</li>
+      <li>Barang yang sudah dibayar ternyata habis (dana dikembalikan penuh).</li>
     </ul>
     <p>Ongkir pengembalian ditanggung <strong>kami</strong> untuk kasus di atas.</p>
-
-    <h3>Tukar ukuran</h3>
-    <p>Jika ukuran kurang pas, kamu bisa menukar ke ukuran lain selama stok tersedia. Ongkir pulang-pergi ditanggung pembeli.</p>
 
     <h3>Syarat klaim</h3>
     <ul>
@@ -155,7 +156,7 @@ try{
     <h2>Pertanyaan yang sering muncul</h2>
     <details>
       <summary>Apakah stok di katalog selalu ada?</summary>
-      <p>Stok bisa berubah. Admin akan mengonfirmasi ketersediaan di chat sebelum kamu membayar.</p>
+      <p>Stok bisa berubah. Kalau ragu, tanyakan dulu ke admin lewat chat. Jika barang yang sudah kamu bayar ternyata habis, dana dikembalikan penuh.</p>
     </details>
     <details>
       <summary>Bagaimana memilih ukuran yang pas?</summary>
@@ -167,7 +168,7 @@ try{
     </details>
     <details>
       <summary>Bagaimana kalau ukuran tidak pas?</summary>
-      <p>Kamu bisa tukar ukuran selama stok ada, dengan ongkir ditanggung pembeli. Baca bagian garansi dan retur untuk syaratnya.</p>
+      <p>Kami tidak menerima tukar ukuran atau pengembalian karena salah memilih ukuran, jadi pastikan ukuran sebelum membayar. Kalau ragu, tanyakan ke admin lewat chat. Baca bagian garansi dan retur untuk pengecualiannya.</p>
     </details>
     <details>
       <summary>Bagaimana cara cek status pesanan?</summary>
@@ -175,7 +176,7 @@ try{
     </details>
     <details>
       <summary>Apakah aman bertransaksi di sini?</summary>
-      <p>Pembayaran hanya kami minta lewat chat resmi di situs ini, dan kami mengirim nomor resi untuk setiap pesanan. Jika ada yang mencurigakan, tanyakan dulu ke kami lewat chat.</p>
+      <p>Pembayaran lewat halaman pembayaran Midtrans dari tombol Bayar Sekarang, dan kami mengirim nomor resi untuk setiap pesanan. Jika ada yang mencurigakan, tanyakan dulu ke kami lewat chat.</p>
     </details>
   </section>
 
@@ -186,7 +187,7 @@ try{
     <h3>Data yang kami catat</h3>
     <ul>
       <li><strong>Kunjungan situs:</strong> ID pengunjung acak, sumber kunjungan (referral), jenis perangkat dan peramban (user agent), serta perkiraan lokasi (kota, wilayah, negara) yang diturunkan dari alamat IP.</li>
-      <li><strong>Pesanan:</strong> produk, ukuran, jumlah, harga, dan total belanja.</li>
+      <li><strong>Pesanan:</strong> produk, ukuran, jumlah, harga, total belanja, status pembayaran, dan kode referral jika ada. Saat checkout kami juga mencatat nama, nomor WhatsApp, dan alamat pengirimanmu.</li>
       <li><strong>Chat:</strong> nama yang kamu isi dan isi percakapanmu dengan admin. Data pengiriman (nama penerima, alamat, nomor telepon) yang kamu tulis di chat juga tersimpan di percakapan tersebut.</li>
       <li><strong>Penyimpanan di peramban:</strong> pengaturan tema, keranjang, ID pengunjung, dan token chat, agar situs berjalan sesuai kebutuhanmu.</li>
     </ul>
@@ -199,7 +200,7 @@ try{
     </ul>
 
     <h3>Pihak ketiga</h3>
-    <p>Alamat IP dikirim ke layanan pencarian lokasi IP pihak ketiga untuk mendapatkan perkiraan lokasi. Data situs disimpan pada penyedia hosting dan database yang kami gunakan. Kami tidak menjual datamu.</p>
+    <p>Alamat IP dikirim ke layanan pencarian lokasi IP pihak ketiga untuk mendapatkan perkiraan lokasi. Pembayaran diproses oleh Midtrans. Kami tidak menyimpan nomor kartu, akun e-wallet, atau data rekeningmu; data itu diproses oleh Midtrans dan penyedia pembayaran sesuai kebijakan mereka. Data situs disimpan pada penyedia hosting dan database yang kami gunakan. Kami tidak menjual datamu.</p>
 
     <h3>Hak kamu</h3>
     <p>Kamu dapat meminta kami menghapus data pesanan atau chat-mu lewat chat atau kontak di bawah. Kami akan menanggapi permintaan tersebut secepatnya.</p>
@@ -209,11 +210,11 @@ try{
   <section id="syarat">
     <h2>Syarat dan ketentuan</h2>
     <ul>
-      <li>Harga dan stok dapat berubah sewaktu-waktu. Pesanan dianggap sah setelah admin mengonfirmasi dan pembayaran kami terima.</li>
+      <li>Harga dan stok dapat berubah sewaktu-waktu. Pesanan dianggap sah setelah pembayaran kami terima. Jika stok habis setelah pembayaran, dana dikembalikan penuh.</li>
       <li>Pembeli bertanggung jawab memberikan nama penerima, alamat, dan nomor telepon yang benar. Kesalahan data pengiriman dari pembeli di luar tanggung jawab kami.</li>
       <li>Jika terjadi kesalahan penulisan harga, kami berhak mengonfirmasi ulang sebelum pesanan diproses, dan pembeli boleh membatalkan.</li>
       <li>Foto produk bersifat ilustrasi dan dapat sedikit berbeda dari barang asli.</li>
-      <li>Garansi dan retur mengikuti bagian garansi dan retur di halaman ini.</li>
+      <li>Tidak ada pengembalian atau tukar karena berubah pikiran atau salah memilih ukuran. Pengecualian dan syarat klaim mengikuti bagian garansi dan retur di halaman ini.</li>
       <li>Kami berhak menolak pesanan yang tampak menyalahgunakan layanan.</li>
     </ul>
   </section>
@@ -238,12 +239,13 @@ try{
    ============================================================ */
 var CFG = {
   nama: "Kicks Station",
-  tanggalUpdate: "4 November 2026",
+  tanggalUpdate: "15 November 2026",
   jamLayanan: "Setiap hari, 08.00–21.00 WIB",
   prosesHari: "1–2 hari kerja",
   kirimHari: "2–5 hari kerja",
   batasKlaimHari: "1",
-  metodeBayar: "transfer bank atau e-wallet (rincian dikirim admin)",
+  metodeBayar: "virtual account bank, QRIS, atau e-wallet, sesuai pilihan yang tersedia",
+  lokasi: "Kec. Mojolaban, Kab. Sukoharjo",   // isi dengan "Kecamatan ..., Kota ..." agar tampil di halaman
   email: "yazidmuhammadalkautsar@gmail.com",      // opsional, contoh: "halo@tokomu.com"
   whatsapp: "6285931100080"    // opsional, format: "628123456789"
 };
@@ -252,6 +254,11 @@ document.querySelectorAll('[data-cfg]').forEach(function(el){
   var v = CFG[el.getAttribute('data-cfg')];
   if (v) el.textContent = v;
 });
+
+(function(){
+  var lokasi = document.getElementById('lokasi-row');
+  if (lokasi && CFG.lokasi) lokasi.hidden = false;
+})();
 
 (function(){
   var box = document.getElementById('contact-buttons');
