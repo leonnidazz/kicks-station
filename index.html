@@ -2281,7 +2281,8 @@
                 // Perangkat admin/pemilik tidak dihitung sebagai pengunjung.
                 // admin.html memberi flag ini pada perangkat yang digunakan untuk admin.
                 const isAdminDevice =
-                    localStorage.getItem("kickstation_admin_device") === "1";
+                    localStorage.getItem("kickstation_admin_device") === "1" &&
+                    !location.search.includes("track=1");
 
                 if (isAdminDevice) {
                     return;
