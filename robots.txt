@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://kicks-station.vercel.app/sitemap.xml
+Sitemap: https://leonnidazz.github.io/kicks-station/sitemap.xml
