@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'self'; form-action 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self' https://kicks-station.onrender.com">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#2563eb">
+    <meta name="theme-color" content="#000000">
     <link rel="manifest" href="manifest-store.webmanifest">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -24,10 +24,10 @@
     <script nomodule src="vendor/ionicons/ionicons.js"></script>
 
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@90..100,400..700&display=swap');
 
         .font-grotesk {
-            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-family: 'Archivo', system-ui, -apple-system, 'Segoe UI', sans-serif;
         }
 
         .scrollbar-hide::-webkit-scrollbar {
@@ -49,8 +49,8 @@
             }
         }
 
-        .whatsapp-float-anim {
-            animation: floatBounce 3s ease-in-out infinite;
+        .{
+            animation:none;
         }
 
         .interactive-char {
@@ -64,7 +64,7 @@
         .interactive-char:hover,
         .interactive-char.touched {
             transform: translateY(-10px) scale(1.15);
-            color: #60a5fa;
+            color: #d4d4d4;
         }
 
         .filter-panel-modern {
@@ -103,7 +103,7 @@
             height: 2px;
             bottom: -4px;
             left: 0;
-            background-color: #60a5fa;
+            background-color: #d4d4d4;
             transition: width 0.3s ease;
         }
 
@@ -133,7 +133,7 @@
         }
 
         .product-thumbnail.active {
-            border-color: #2563eb;
+            border-color: #000000;
             box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
         }
 
@@ -159,7 +159,7 @@
         }
 
         .lightbox-thumb.active {
-            border-color: #60a5fa;
+            border-color: #d4d4d4;
             opacity: 1;
             transform: scale(1.03);
         }
@@ -173,36 +173,37 @@
         }
     </style>
    <style id="ks-trust-css">
-        .ks-trust{background:#f8fafc;border-top:1px solid #e5e7eb;border-bottom:1px solid #e5e7eb;padding:28px 16px}
-        .dark .ks-trust{background:#0b0f19;border-color:#1f2937}
+        .ks-trust{background:#fafafa;border-top:1px solid #e5e5e5;border-bottom:1px solid #e5e5e5;padding:28px 16px}
+        .dark .ks-trust{background:#0a0a0a;border-color:#262626}
         .ks-trust-grid{max-width:80rem;margin:0 auto;display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
         .ks-trust-item{display:flex;gap:12px;align-items:flex-start;text-align:left}
-        .ks-trust-item ion-icon{flex:none;font-size:28px;color:#2563eb}
-        .dark .ks-trust-item ion-icon{color:#60a5fa}
-        .ks-trust-item b{display:block;font-size:15px;color:#111827}.dark .ks-trust-item b{color:#f3f4f6}
-        .ks-trust-item span{display:block;font-size:13px;line-height:1.45;color:#4b5563;margin-top:2px}.dark .ks-trust-item span{color:#9ca3af}
-        .ks-trust-note{max-width:80rem;margin:18px auto 0;font-size:13px;color:#4b5563;text-align:left}.dark .ks-trust-note{color:#9ca3af}
-        .ks-trust-note a{color:#2563eb;font-weight:600}.dark .ks-trust-note a{color:#60a5fa}
-        .ks-contact{margin-top:18px;font-size:14px;color:#9ca3af;line-height:1.7}
+        .ks-trust-item ion-icon{flex:none;font-size:28px;color:#000000}
+        .dark .ks-trust-item ion-icon{color:#d4d4d4}
+        .ks-trust-item b{display:block;font-size:15px;color:#171717}.dark .ks-trust-item b{color:#f3f4f6}
+        .ks-trust-item span{display:block;font-size:13px;line-height:1.45;color:#525252;margin-top:2px}.dark .ks-trust-item span{color:#a3a3a3}
+        .ks-trust-note{max-width:80rem;margin:18px auto 0;font-size:13px;color:#525252;text-align:left}.dark .ks-trust-note{color:#a3a3a3}
+        .ks-trust-note a{color:#000000;font-weight:600}.dark .ks-trust-note a{color:#d4d4d4}
+        .ks-contact{margin-top:18px;font-size:14px;color:#a3a3a3;line-height:1.7}
         .ks-contact a{color:#fff;font-weight:600;text-decoration:underline;text-underline-offset:3px}
     </style>
     <link rel="stylesheet" href="tailwind-index.css">
+    <link rel="stylesheet" href="ks-theme.css">
 </head>
 
-<body class="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200 font-grotesk antialiased selection:bg-blue-600 selection:text-white relative transition-colors duration-300 text-left">
+<body class="bg-neutral-100 dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 font-grotesk antialiased selection:bg-neutral-900 selection:text-white relative transition-colors duration-300 text-left">
 
     <!-- =========================
          TOMBOL KERANJANG
     ========================== -->
     <button
         onclick="toggleCart()"
-        class="fixed bottom-24 right-6 z-40 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110">
+        class="fixed bottom-20 right-4 z-40 bg-neutral-900 hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 text-white px-5 py-3 rounded-md shadow-2xl flex items-center justify-center transition-all duration-300">
 
-        <ion-icon name="cart-outline" class="text-3xl"></ion-icon>
+        <span class="text-sm font-semibold">Keranjang</span>
 
         <span
             id="cart-badge"
-            class="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center border-2 border-white dark:border-gray-900 hidden">
+            class="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center border-2 border-white dark:border-neutral-900 hidden">
             0
         </span>
     </button>
@@ -212,24 +213,24 @@
     ========================== -->
     <button
         id="whatsapp-float" type="button" onclick="openKickChat()" aria-label="Chat dengan Kicks Station"
-        class="whatsapp-float-anim fixed bottom-6 right-6 z-40 bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-2xl flex items-center justify-center transition-all duration-300 hover:scale-110">
-        <ion-icon name="chatbubbles-outline" class="text-3xl"></ion-icon>
+        class="fixed bottom-4 right-4 z-40 bg-neutral-900 hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 text-white px-5 py-3 rounded-md shadow-2xl flex items-center justify-center transition-all duration-300">
+        <span class="text-sm font-semibold">Chat</span>
     </button>
 
     <!-- =========================
          HEADER
     ========================== -->
-    <header class="sticky top-0 z-40 bg-white/90 dark:bg-gray-950/90 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 transition-colors duration-300">
+    <header class="sticky top-0 z-40 bg-white/90 dark:bg-neutral-950/90 backdrop-blur-md border-b border-neutral-200 dark:border-neutral-800 transition-colors duration-300">
 
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex justify-between items-center text-left">
 
             <div class="flex items-center gap-3">
 
-                <div class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-2xl text-xl font-black tracking-tight shadow-md flex items-center justify-center transition-all duration-300 hover:-rotate-6 hover:scale-105 cursor-pointer">
+                <div class="bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-2.5 py-1 rounded-md text-lg font-bold tracking-tight">
                     KS
                 </div>
 
-                <span class="text-2xl font-black tracking-wider text-gray-900 dark:text-white">
+                <span class="text-2xl font-black text-neutral-900 dark:text-white">
                     Kicks Station
                 </span>
 
@@ -240,33 +241,33 @@
                 <a
                     href="#"
                     onclick="setActiveNav(this)"
-                    class="nav-link text-blue-600 font-semibold dark:text-blue-400 transition-colors">
+                    class="nav-link text-neutral-900 font-semibold dark:text-white transition-colors">
                     Beranda
                 </a>
 
                 <a
                     href="#katalog"
                     onclick="setActiveNav(this)"
-                    class="nav-link text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    class="nav-link text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-colors">
                     Cari Produk
                 </a>
 
                 <a
                     href="#fitur"
                     onclick="setActiveNav(this)"
-                    class="nav-link text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    class="nav-link text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-colors">
                     Keunggulan
                 </a>
 
                 <a
                     href="#panduan"
                     onclick="setActiveNav(this)"
-                    class="nav-link text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+                    class="nav-link text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-colors">
                     Cara Pesan
                 </a>
                 <a
     href="info.html"
-    class="nav-link text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
+    class="nav-link text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-colors">
     Info Toko
 </a>
 
@@ -276,7 +277,7 @@
 
                 <button
                     id="theme-toggle"
-                    class="text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 text-2xl transition-colors focus:outline-none flex items-center justify-center">
+                    class="text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white text-2xl transition-colors focus:outline-none flex items-center justify-center">
 
                     <ion-icon name="moon-outline" id="theme-icon"></ion-icon>
 
@@ -284,7 +285,7 @@
 
                 <button
                     id="mobile-menu-btn"
-                    class="md:hidden text-3xl text-gray-800 dark:text-gray-200 focus:outline-none flex items-center justify-center">
+                    class="md:hidden text-3xl text-neutral-800 dark:text-neutral-200 focus:outline-none flex items-center justify-center">
 
                     <ion-icon name="menu-outline"></ion-icon>
 
@@ -298,38 +299,38 @@
 
         <nav
             id="mobile-menu"
-            class="hidden md:hidden bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 px-4 pt-2 pb-4 space-y-3 shadow-lg absolute w-full left-0 transition-colors duration-300 text-left">
+            class="hidden md:hidden bg-white dark:bg-neutral-900 border-b border-neutral-200 dark:border-neutral-800 px-4 pt-2 pb-4 space-y-3 shadow-lg absolute w-full left-0 transition-colors duration-300 text-left">
 
             <a
                 href="#"
                 onclick="setActiveNav(this)"
-                class="nav-link block text-blue-600 font-semibold dark:text-blue-400 py-2">
+                class="nav-link block text-neutral-900 font-semibold dark:text-white py-2">
                 Beranda
             </a>
 
             <a
                 href="#katalog"
                 onclick="setActiveNav(this)"
-                class="nav-link block text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 py-2">
+                class="nav-link block text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white py-2">
                 Cari Produk
             </a>
 
             <a
                 href="#fitur"
                 onclick="setActiveNav(this)"
-                class="nav-link block text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 py-2">
+                class="nav-link block text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white py-2">
                 Keunggulan
             </a>
 
             <a
                 href="#panduan"
                 onclick="setActiveNav(this)"
-                class="nav-link block text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 py-2">
+                class="nav-link block text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white py-2">
                 Cara Pesan
             </a>
             <a
     href="info.html"
-    class="nav-link block text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 py-2">
+    class="nav-link block text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white py-2">
     Info Toko
 </a>
         </nav>
@@ -340,28 +341,24 @@
          HERO
     ========================== -->
 
-    <section class="relative bg-gray-900 text-white overflow-hidden text-left">
+    <section class="relative bg-neutral-900 text-white overflow-hidden text-left">
 
         <div
             class="absolute inset-0 opacity-40 bg-cover bg-center"
             style="background-image: url('images/A.jpeg');">
         </div>
 
-        <div class="absolute inset-0 bg-gradient-to-r from-gray-950 via-gray-900/80 to-transparent"></div>
+        <div class="absolute inset-0 bg-gradient-to-r from-neutral-950 via-neutral-900/80 to-transparent"></div>
 
         <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24 md:py-36 flex flex-col justify-center min-h-[550px] items-start text-left">
 
-            <span class="text-blue-400 font-bold uppercase tracking-widest text-sm mb-3">
-                Authentic Footwear, Curated Savings
-            </span>
+            
 
             <h1
                 id="interactive-title"
                 class="text-3xl sm:text-6xl font-black tracking-tight max-w-2xl mb-6 select-none text-left leading-tight">
 
-                Premium Brands, Smart Pricing, Without the
-                <br class="block sm:hidden">
-                Retail Markup.
+                Sepatu original,<br class="block sm:hidden"> harga di bawah retail.
 
             </h1>
 
@@ -369,11 +366,9 @@
 
                 <a
                     href="#katalog"
-                    class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 rounded-xl font-bold transition-all duration-300 shadow-xl shadow-blue-600/30 hover:-translate-y-1 flex items-center gap-2">
+                    class="bg-white hover:bg-neutral-200 text-neutral-900 px-8 py-4 rounded-md font-semibold transition-colors flex items-center gap-2">
 
-                    Jelajahi Koleksi
-
-                    <ion-icon name="arrow-forward-outline"></ion-icon>
+                    Lihat koleksi
 
                 </a>
 
@@ -389,27 +384,27 @@
 
     <section class="ks-trust" aria-label="Jaminan belanja di Kicks Station">
         <div class="ks-trust-grid">
-            <div class="ks-trust-item"><ion-icon name="card-outline"></ion-icon><div><b>Bayar aman lewat Midtrans</b><span>Virtual account bank, QRIS, dan e-wallet. Kami tidak menyimpan data kartu atau rekeningmu.</span></div></div>
-            <div class="ks-trust-item"><ion-icon name="shield-checkmark-outline"></ion-icon><div><b>Garansi barang</b><span>Salah kirim atau cacat diganti, ongkir retur kami tanggung. Stok habis setelah bayar, dana kembali penuh.</span></div></div>
-            <div class="ks-trust-item"><ion-icon name="cube-outline"></ion-icon><div><b>Nomor resi selalu dikirim</b><span>Diproses 1–2 hari kerja, tiba 2–5 hari kerja tergantung kota tujuan.</span></div></div>
-            <div class="ks-trust-item"><ion-icon name="chatbubbles-outline"></ion-icon><div><b>Admin siap membantu</b><span>Setiap hari 08.00–21.00 WIB lewat chat atau WhatsApp.</span></div></div>
+            <div class="ks-trust-item"><div><b>Bayar aman lewat Midtrans</b><span>Virtual account bank, QRIS, dan e-wallet. Kami tidak menyimpan data kartu atau rekeningmu.</span></div></div>
+            <div class="ks-trust-item"><div><b>Garansi barang</b><span>Salah kirim atau cacat diganti, ongkir retur kami tanggung. Stok habis setelah bayar, dana kembali penuh.</span></div></div>
+            <div class="ks-trust-item"><div><b>Nomor resi selalu dikirim</b><span>Diproses 1–2 hari kerja, tiba 2–5 hari kerja tergantung kota tujuan.</span></div></div>
+            <div class="ks-trust-item"><div><b>Admin siap membantu</b><span>Setiap hari 08.00–21.00 WIB lewat chat atau WhatsApp.</span></div></div>
         </div>
         <p class="ks-trust-note">Belum yakin ukuran? Tanyakan ke admin sebelum membayar, karena kami tidak menerima tukar karena salah ukuran. <a href="info.html">Baca kebijakan lengkap</a></p>
     </section>
 
     <section
         id="katalog"
-        class="py-16 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 scroll-mt-24 transition-colors duration-300 text-left">
+        class="py-16 bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-800 scroll-mt-24 transition-colors duration-300 text-left">
 
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
             <div class="mb-8 text-left">
 
-                <h2 class="text-3xl font-black text-gray-900 dark:text-white mt-1">
+                <h2 class="text-3xl font-black text-neutral-900 dark:text-white mt-1">
                     Koleksi Terbaru
                 </h2>
 
-                <p class="text-gray-500 dark:text-gray-400 mt-2">
+                <p class="text-neutral-500 dark:text-neutral-400 mt-2">
                     Cari, filter, urutkan, dan masukkan ke keranjang belanja.
                 </p>
 
@@ -419,7 +414,7 @@
                  FILTER
             ========================== -->
 
-            <div class="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-5 rounded-2xl mb-10 shadow-sm space-y-5 transition-colors duration-300 text-left">
+            <div class="bg-neutral-50 dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 p-5 rounded-lg mb-10 shadow-sm space-y-5 transition-colors duration-300 text-left">
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
@@ -429,12 +424,7 @@
                             type="text"
                             id="filter-search"
                             placeholder="Cari nama seri, model, atau brand..."
-                            class="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm shadow-sm placeholder-gray-400 dark:placeholder-gray-400">
-
-                        <ion-icon
-                            name="search-outline"
-                            class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-xl">
-                        </ion-icon>
+                            class="w-full pl-4 pr-4 py-3 rounded-md border border-neutral-300 dark:border-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-900 bg-white dark:bg-neutral-700 text-neutral-900 dark:text-white text-sm shadow-sm placeholder-neutral-400 dark:placeholder-neutral-400">
 
                     </div>
 
@@ -442,7 +432,7 @@
 
                         <select
                             id="sort-price"
-                            class="w-full pl-4 pr-10 py-3 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-600 text-sm cursor-pointer text-gray-700 dark:text-white shadow-sm transition-colors appearance-none">
+                            class="w-full pl-4 pr-10 py-3 rounded-md border border-neutral-300 dark:border-neutral-600 bg-white dark:bg-neutral-700 focus:outline-none focus:ring-2 focus:ring-neutral-900 text-sm cursor-pointer text-neutral-700 dark:text-white shadow-sm transition-colors appearance-none">
 
                             <option value="terbaru">
                                 Urutkan: Terbaru (Default)
@@ -462,9 +452,7 @@
 
                         </select>
 
-                        <div class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-lg flex items-center">
-
-                            <ion-icon name="chevron-down-outline"></ion-icon>
+                        <div class="absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-400 text-lg flex items-center">
 
                         </div>
 
@@ -472,48 +460,48 @@
 
                 </div>
 
-                <div class="flex flex-wrap items-center gap-x-6 gap-y-3 pt-3 border-t border-gray-200 dark:border-gray-700 overflow-x-auto pb-2 scrollbar-hide text-sm font-bold tracking-wide">
+                <div class="flex flex-wrap items-center gap-x-6 gap-y-3 pt-3 border-t border-neutral-200 dark:border-neutral-700 overflow-x-auto pb-2 scrollbar-hide text-sm font-bold tracking-wide">
 
                     <div class="flex items-center gap-3">
 
                         <button
                             onclick="setCategory('running')"
                             id="cat-running"
-                            class="cat-link text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors uppercase">
+                            class="cat-link text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-colors">
                             Running
                         </button>
 
                         <button
                             onclick="setCategory('kasual')"
                             id="cat-kasual"
-                            class="cat-link text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors uppercase">
+                            class="cat-link text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-colors">
                             Kasual
                         </button>
 
                     </div>
 
-                    <span class="text-gray-300 dark:text-gray-600">|</span>
+                    <span class="text-neutral-300 dark:text-neutral-600">|</span>
 
                     <div class="flex items-center gap-3">
 
                         <button
                             onclick="setFilter('pengguna', 'pria')"
                             id="btn-pengguna-pria"
-                            class="filter-link text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors uppercase">
+                            class="filter-link text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-colors">
                             Pria
                         </button>
 
                         <button
                             onclick="setFilter('pengguna', 'wanita')"
                             id="btn-pengguna-wanita"
-                            class="filter-link text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors uppercase">
+                            class="filter-link text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-colors">
                             Wanita
                         </button>
 
                         <button
                             onclick="setFilter('pengguna', 'unisex')"
                             id="btn-pengguna-unisex"
-                            class="filter-link text-gray-600 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-colors uppercase">
+                            class="filter-link text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-colors">
                             Unisex
                         </button>
 
@@ -531,14 +519,9 @@
 
             <div
                 id="no-result-msg"
-                class="hidden text-center py-12 text-gray-500 dark:text-gray-400">
+                class="hidden text-center py-12 text-neutral-500 dark:text-neutral-400">
 
-                <ion-icon
-                    name="search-outline"
-                    class="text-4xl text-gray-300 dark:text-gray-600 mb-3">
-                </ion-icon>
-
-                <p class="font-medium text-lg text-gray-600 dark:text-gray-300">
+                <p class="font-medium text-lg text-neutral-600 dark:text-neutral-300">
                     Produk tidak ditemukan
                 </p>
 
@@ -574,21 +557,19 @@
 
     <section
         id="fitur"
-        class="py-20 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 scroll-mt-24 transition-colors duration-300">
+        class="py-20 bg-neutral-50 dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-800 scroll-mt-24 transition-colors duration-300">
 
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
             <div class="text-center max-w-2xl mx-auto mb-16">
 
-                <span class="text-blue-600 dark:text-blue-400 font-bold uppercase tracking-widest text-xs">
-                    Mengapa Memilih Kami
-                </span>
+                
 
-                <h2 class="text-3xl font-black text-gray-900 dark:text-white mt-2">
+                <h2 class="text-3xl font-black text-neutral-900 dark:text-white mt-2">
                     Keunggulan Kicks Station
                 </h2>
 
-                <p class="text-gray-500 dark:text-gray-400 mt-2 text-sm">
+                <p class="text-neutral-500 dark:text-neutral-400 mt-2 text-sm">
                     Komitmen kami untuk menghadirkan pengalaman belanja sepatu terbaik, aman, dan terpercaya.
                 </p>
 
@@ -596,55 +577,37 @@
 
             <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
 
-                <div class="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-sm border border-gray-200/80 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-xl transition-all duration-300 group">
+                <div class="bg-white dark:bg-neutral-800 p-8 rounded-lg shadow-sm border border-neutral-200/80 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-500 hover:shadow-xl transition-all duration-300 group">
 
-                    <div class="w-14 h-14 bg-blue-50 dark:bg-gray-700 text-blue-600 dark:text-blue-400 rounded-2xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition-transform duration-300">
-
-                        <ion-icon name="shield-checkmark-outline"></ion-icon>
-
-                    </div>
-
-                    <h3 class="font-bold text-xl text-gray-900 dark:text-white mb-2">
+                    <h3 class="font-bold text-xl text-neutral-900 dark:text-white mb-2">
                         100% Original & Terkurasi
                     </h3>
 
-                    <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+                    <p class="text-neutral-600 dark:text-neutral-400 text-sm leading-relaxed">
                         Setiap seri sepatu dipilih secara ketat untuk menjamin keaslian, kualitas, dan standar terbaik.
                     </p>
 
                 </div>
 
-                <div class="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-sm border border-gray-200/80 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-xl transition-all duration-300 group">
+                <div class="bg-white dark:bg-neutral-800 p-8 rounded-lg shadow-sm border border-neutral-200/80 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-500 hover:shadow-xl transition-all duration-300 group">
 
-                    <div class="w-14 h-14 bg-green-50 dark:bg-gray-700 text-green-600 dark:text-green-400 rounded-2xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition-transform duration-300">
-
-                        <ion-icon name="pricetag-outline"></ion-icon>
-
-                    </div>
-
-                    <h3 class="font-bold text-xl text-gray-900 dark:text-white mb-2">
+                    <h3 class="font-bold text-xl text-neutral-900 dark:text-white mb-2">
                         Harga Jauh di Bawah Retail
                     </h3>
 
-                    <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+                    <p class="text-neutral-600 dark:text-neutral-400 text-sm leading-relaxed">
                         Nikmati penawaran harga spesial dan potongan diskon menarik tanpa mengorbankan kualitas.
                     </p>
 
                 </div>
 
-                <div class="bg-white dark:bg-gray-800 p-8 rounded-2xl shadow-sm border border-gray-200/80 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-xl transition-all duration-300 group">
+                <div class="bg-white dark:bg-neutral-800 p-8 rounded-lg shadow-sm border border-neutral-200/80 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-500 hover:shadow-xl transition-all duration-300 group">
 
-                    <div class="w-14 h-14 bg-purple-50 dark:bg-gray-700 text-purple-600 dark:text-purple-400 rounded-2xl flex items-center justify-center text-2xl mb-6 group-hover:scale-110 transition-transform duration-300">
-
-                        <ion-icon name="chatbubbles-outline"></ion-icon>
-
-                    </div>
-
-                    <h3 class="font-bold text-xl text-gray-900 dark:text-white mb-2">
+                    <h3 class="font-bold text-xl text-neutral-900 dark:text-white mb-2">
                         Respon Cepat via WhatsApp
                     </h3>
 
-                    <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
+                    <p class="text-neutral-600 dark:text-neutral-400 text-sm leading-relaxed">
                         Konsultasi ukuran, ketersediaan stok, dan pemesanan diproses secara cepat dan personal.
                     </p>
 
@@ -662,21 +625,19 @@
 
     <section
         id="panduan"
-        class="py-20 bg-gray-50 dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 transition-colors duration-300 text-left">
+        class="py-20 bg-neutral-50 dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-800 transition-colors duration-300 text-left">
 
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
             <div class="text-left max-w-2xl mr-auto mb-16">
 
-                <span class="text-blue-600 dark:text-blue-400 font-bold uppercase tracking-widest text-xs">
-                    Simpel & Transparan
-                </span>
+                
 
-                <h2 class="text-3xl font-black text-gray-900 dark:text-white mt-2">
+                <h2 class="text-3xl font-black text-neutral-900 dark:text-white mt-2">
                     Alur Pemesanan via WhatsApp
                 </h2>
 
-                <p class="text-gray-500 dark:text-gray-400 mt-2">
+                <p class="text-neutral-500 dark:text-neutral-400 mt-2">
                     Ikuti 4 fase mudah di bawah ini untuk memesan produk impian Anda dengan cepat.
                 </p>
 
@@ -686,36 +647,36 @@
 
                 <!-- 01 -->
 
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200/80 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition-all duration-300 flex flex-col justify-between">
+                <div class="bg-white dark:bg-neutral-800 p-6 rounded-lg shadow-sm border border-neutral-200/80 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-500 hover:shadow-md transition-all duration-300 flex flex-col justify-between">
 
                     <div>
 
-                        <div class="w-12 h-12 bg-blue-50 dark:bg-gray-700 text-blue-600 dark:text-blue-400 rounded-xl font-black text-lg flex items-center justify-center mb-5">
+                        <div class="w-12 h-12 bg-neutral-100 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-400 rounded-md font-black text-lg flex items-center justify-center mb-5">
                             01
                         </div>
 
-                        <h3 class="font-bold text-lg text-gray-900 dark:text-white mb-2">
+                        <h3 class="font-bold text-lg text-neutral-900 dark:text-white mb-2">
                             Eksplorasi & Ketertarikan
                         </h3>
 
-                        <ul class="text-gray-500 dark:text-gray-400 text-sm space-y-2 list-disc list-inside">
+                        <ul class="text-neutral-500 dark:text-neutral-400 text-sm space-y-2 list-disc list-inside">
 
                             <li>
-                                <strong class="text-gray-700 dark:text-gray-300">
+                                <strong class="text-neutral-700 dark:text-neutral-300">
                                     Masuk Website:
                                 </strong>
                                 Pilih produk favorit Anda di katalog Kicks Station!
                             </li>
 
                             <li>
-                                <strong class="text-gray-700 dark:text-gray-300">
+                                <strong class="text-neutral-700 dark:text-neutral-300">
                                     Cek Detail & Size:
                                 </strong>
                                 Cek harga spesial & ukuran tersedia.
                             </li>
 
                             <li>
-                                <strong class="text-gray-700 dark:text-gray-300">
+                                <strong class="text-neutral-700 dark:text-neutral-300">
                                     Klik Tombol Beli:
                                 </strong>
                                 Masukkan keranjang atau langsung klik tombol WhatsApp.
@@ -725,44 +686,40 @@
 
                     </div>
 
-                    <div class="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700 text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
-                        Fase Website
-                    </div>
-
                 </div>
 
                 <!-- 02 -->
 
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200/80 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition-all duration-300 flex flex-col justify-between">
+                <div class="bg-white dark:bg-neutral-800 p-6 rounded-lg shadow-sm border border-neutral-200/80 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-500 hover:shadow-md transition-all duration-300 flex flex-col justify-between">
 
                     <div>
 
-                        <div class="w-12 h-12 bg-green-50 dark:bg-gray-700 text-green-600 dark:text-green-400 rounded-xl font-black text-lg flex items-center justify-center mb-5">
+                        <div class="w-12 h-12 bg-neutral-100 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-400 rounded-md font-black text-lg flex items-center justify-center mb-5">
                             02
                         </div>
 
-                        <h3 class="font-bold text-lg text-gray-900 dark:text-white mb-2">
+                        <h3 class="font-bold text-lg text-neutral-900 dark:text-white mb-2">
                             Interaksi & Negosiasi
                         </h3>
 
-                        <ul class="text-gray-500 dark:text-gray-400 text-sm space-y-2 list-disc list-inside">
+                        <ul class="text-neutral-500 dark:text-neutral-400 text-sm space-y-2 list-disc list-inside">
 
                             <li>
-                                <strong class="text-gray-700 dark:text-gray-300">
+                                <strong class="text-neutral-700 dark:text-neutral-300">
                                     Pesan Otomatis:
                                 </strong>
                                 Terhubung ke WhatsApp dengan format pesanan instan.
                             </li>
 
                             <li>
-                                <strong class="text-gray-700 dark:text-gray-300">
+                                <strong class="text-neutral-700 dark:text-neutral-300">
                                     Tanya Jawab:
                                 </strong>
                                 Mimin merespons cepat info stok dan ukuran.
                             </li>
 
                             <li>
-                                <strong class="text-gray-700 dark:text-gray-300">
+                                <strong class="text-neutral-700 dark:text-neutral-300">
                                     Tawar Harga:
                                 </strong>
                                 Nikmati sesi negosiasi santai hingga deal.
@@ -772,44 +729,40 @@
 
                     </div>
 
-                    <div class="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700 text-xs font-semibold text-green-600 dark:text-green-400 uppercase tracking-wider">
-                        Fase WhatsApp
-                    </div>
-
                 </div>
 
                 <!-- 03 -->
 
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200/80 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition-all duration-300 flex flex-col justify-between">
+                <div class="bg-white dark:bg-neutral-800 p-6 rounded-lg shadow-sm border border-neutral-200/80 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-500 hover:shadow-md transition-all duration-300 flex flex-col justify-between">
 
                     <div>
 
-                        <div class="w-12 h-12 bg-blue-50 dark:bg-gray-700 text-blue-600 dark:text-blue-400 rounded-xl font-black text-lg flex items-center justify-center mb-5">
+                        <div class="w-12 h-12 bg-neutral-100 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-400 rounded-md font-black text-lg flex items-center justify-center mb-5">
                             03
                         </div>
 
-                        <h3 class="font-bold text-lg text-gray-900 dark:text-white mb-2">
+                        <h3 class="font-bold text-lg text-neutral-900 dark:text-white mb-2">
                             Kesepakatan & Bayar
                         </h3>
 
-                        <ul class="text-gray-500 dark:text-gray-400 text-sm space-y-2 list-disc list-inside">
+                        <ul class="text-neutral-500 dark:text-neutral-400 text-sm space-y-2 list-disc list-inside">
 
                             <li>
-                                <strong class="text-gray-700 dark:text-gray-300">
+                                <strong class="text-neutral-700 dark:text-neutral-300">
                                     Data Kirim:
                                 </strong>
                                 Kirim format Nama, No. HP, & Alamat lengkap.
                             </li>
 
                             <li>
-                                <strong class="text-gray-700 dark:text-gray-300">
+                                <strong class="text-neutral-700 dark:text-neutral-300">
                                     Metode Bayar:
                                 </strong>
                                 Transfer Bank atau QRIS/E-Wallet.
                             </li>
 
                             <li>
-                                <strong class="text-gray-700 dark:text-gray-300">
+                                <strong class="text-neutral-700 dark:text-neutral-300">
                                     Konfirmasi:
                                 </strong>
                                 Kirim bukti transfer screenshot via chat.
@@ -819,44 +772,40 @@
 
                     </div>
 
-                    <div class="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700 text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
-                        Fase Pembayaran
-                    </div>
-
                 </div>
 
                 <!-- 04 -->
 
-                <div class="bg-white dark:bg-gray-800 p-6 rounded-2xl shadow-sm border border-gray-200/80 dark:border-gray-700 hover:border-blue-400 dark:hover:border-blue-500 hover:shadow-md transition-all duration-300 flex flex-col justify-between">
+                <div class="bg-white dark:bg-neutral-800 p-6 rounded-lg shadow-sm border border-neutral-200/80 dark:border-neutral-700 hover:border-neutral-400 dark:hover:border-neutral-500 hover:shadow-md transition-all duration-300 flex flex-col justify-between">
 
                     <div>
 
-                        <div class="w-12 h-12 bg-purple-50 dark:bg-gray-700 text-purple-600 dark:text-purple-400 rounded-xl font-black text-lg flex items-center justify-center mb-5">
+                        <div class="w-12 h-12 bg-neutral-100 dark:bg-neutral-700 text-neutral-900 dark:text-neutral-400 rounded-md font-black text-lg flex items-center justify-center mb-5">
                             04
                         </div>
 
-                        <h3 class="font-bold text-lg text-gray-900 dark:text-white mb-2">
+                        <h3 class="font-bold text-lg text-neutral-900 dark:text-white mb-2">
                             Pengemasan & Kirim
                         </h3>
 
-                        <ul class="text-gray-500 dark:text-gray-400 text-sm space-y-2 list-disc list-inside">
+                        <ul class="text-neutral-500 dark:text-neutral-400 text-sm space-y-2 list-disc list-inside">
 
                             <li>
-                                <strong class="text-gray-700 dark:text-gray-300">
+                                <strong class="text-neutral-700 dark:text-neutral-300">
                                     Verifikasi & Packing:
                                 </strong>
                                 Dana dicek, produk di-QC, lalu dipacking aman.
                             </li>
 
                             <li>
-                                <strong class="text-gray-700 dark:text-gray-300">
+                                <strong class="text-neutral-700 dark:text-neutral-300">
                                     Kirim Resi:
                                 </strong>
                                 Paket diserahkan ke kurir & nomor resi dikirim ke Anda.
                             </li>
 
                             <li>
-                                <strong class="text-gray-700 dark:text-gray-300">
+                                <strong class="text-neutral-700 dark:text-neutral-300">
                                     Selesai:
                                 </strong>
                                 Paket tiba dengan aman di tangan Anda!
@@ -864,10 +813,6 @@
 
                         </ul>
 
-                    </div>
-
-                    <div class="mt-6 pt-4 border-t border-gray-100 dark:border-gray-700 text-xs font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-wider">
-                        Fase Pengiriman
                     </div>
 
                 </div>
@@ -884,7 +829,7 @@
 
     <footer
         id="tentang"
-        class="bg-gray-950 text-white py-16 text-left">
+        class="bg-neutral-950 text-white py-16 text-left">
 
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid grid-cols-1 md:grid-cols-2 gap-10 text-left">
 
@@ -892,17 +837,17 @@
 
                 <div class="flex items-center gap-3 mb-4">
 
-                    <div class="bg-blue-600 text-white px-3 py-1.5 rounded-2xl text-xl font-black tracking-tight shadow-md flex items-center justify-center">
+                    <div class="bg-white text-neutral-900 px-2.5 py-1 rounded-md text-lg font-bold tracking-tight">
                         KS
                     </div>
 
-                    <span class="text-2xl font-black tracking-wider">
+                    <span class="text-2xl font-black">
                         Kicks Station
                     </span>
 
                 </div>
 
-                <p class="text-gray-400 text-sm leading-relaxed max-w-md">
+                <p class="text-neutral-400 text-sm leading-relaxed max-w-md">
                     Menghadirkan kurasi eksklusif produk dari brand pilihan dengan penawaran harga terbaik di bawah pasaran.
                 </p>
 
@@ -918,7 +863,7 @@
                 <h4 class="font-bold text-lg mb-4">
                     Menu Navigasi
                 </h4>
-                <ul class="space-y-2 text-sm text-gray-400">
+                <ul class="space-y-2 text-sm text-neutral-400">
 
                     <li>
                         <a href="#" class="hover:text-white transition-colors">
@@ -954,7 +899,7 @@
 
         </div>
 
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-gray-900 mt-12 pt-8 text-center text-sm text-gray-500">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 border-t border-neutral-900 mt-12 pt-8 text-center text-sm text-neutral-500">
 
             &copy; 2026 Kicks Station Indonesia. All rights reserved.
 
@@ -1009,7 +954,7 @@
                 <button
                     id="lightbox-prev"
                     onclick="previousLightboxImage()"
-                    class="absolute left-2 sm:left-4 z-40 w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-black/60 hover:bg-blue-600 text-white text-2xl sm:text-3xl flex items-center justify-center transition-all shadow-xl border border-white/10">
+                    class="absolute left-2 sm:left-4 z-40 w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-black/60 hover:bg-neutral-900 text-white text-2xl sm:text-3xl flex items-center justify-center transition-all shadow-xl border border-white/10">
 
                     <ion-icon name="chevron-back-outline"></ion-icon>
 
@@ -1021,14 +966,14 @@
                     id="lightbox-img"
                     src=""
                     alt="Detail Gambar"
-                    class="max-h-full max-w-full object-contain rounded-xl shadow-2xl">
+                    class="max-h-full max-w-full object-contain rounded-md shadow-2xl">
 
                 <!-- NEXT -->
 
                 <button
                     id="lightbox-next"
                     onclick="nextLightboxImage()"
-                    class="absolute right-2 sm:right-4 z-40 w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-black/60 hover:bg-blue-600 text-white text-2xl sm:text-3xl flex items-center justify-center transition-all shadow-xl border border-white/10">
+                    class="absolute right-2 sm:right-4 z-40 w-11 h-11 sm:w-14 sm:h-14 rounded-full bg-black/60 hover:bg-neutral-900 text-white text-2xl sm:text-3xl flex items-center justify-center transition-all shadow-xl border border-white/10">
 
                     <ion-icon name="chevron-forward-outline"></ion-icon>
 
@@ -1054,15 +999,13 @@
 
     <div
         id="cart-modal"
-        class="hidden fixed inset-0 z-50 bg-gray-900/60 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center transition-opacity text-left">
+        class="hidden fixed inset-0 z-50 bg-neutral-900/60 dark:bg-black/70 backdrop-blur-sm flex items-center justify-center transition-opacity text-left">
 
-        <div class="bg-white dark:bg-gray-800 w-full max-w-md mx-4 rounded-2xl shadow-2xl flex flex-col max-h-[85vh] transition-colors duration-300 text-left">
+        <div class="bg-white dark:bg-neutral-800 w-full max-w-md mx-4 rounded-lg shadow-2xl flex flex-col max-h-[85vh] transition-colors duration-300 text-left">
 
-            <div class="p-4 border-b dark:border-gray-700 flex justify-between items-center bg-gray-50 dark:bg-gray-900 rounded-t-2xl">
+            <div class="p-4 border-b dark:border-neutral-700 flex justify-between items-center bg-neutral-50 dark:bg-neutral-900 rounded-t-2xl">
 
-                <h3 class="font-bold text-lg text-gray-900 dark:text-white flex items-center gap-2">
-
-                    <ion-icon name="cart"></ion-icon>
+                <h3 class="font-bold text-lg text-neutral-900 dark:text-white flex items-center gap-2">
 
                     Keranjang Belanja
 
@@ -1070,7 +1013,7 @@
 
                 <button
                     onclick="toggleCart()"
-                    class="text-gray-400 hover:text-red-500 text-2xl transition-colors">
+                    class="text-neutral-400 hover:text-red-500 text-2xl transition-colors">
                     &times;
                 </button>
 
@@ -1078,20 +1021,20 @@
 
             <div
                 id="cart-items-container"
-                class="p-4 flex-1 overflow-y-auto space-y-3 bg-gray-50/50 dark:bg-gray-800 text-left">
+                class="p-4 flex-1 overflow-y-auto space-y-3 bg-neutral-50/50 dark:bg-neutral-800 text-left">
             </div>
 
-            <div class="p-5 border-t dark:border-gray-700 bg-white dark:bg-gray-900 rounded-b-2xl">
+            <div class="p-5 border-t dark:border-neutral-700 bg-white dark:bg-neutral-900 rounded-b-2xl">
 
                 <div class="flex justify-between items-center mb-4">
 
-                    <span class="font-medium text-gray-600 dark:text-gray-300">
+                    <span class="font-medium text-neutral-600 dark:text-neutral-300">
                         Total Harga:
                     </span>
 
                     <span
                         id="cart-total-price"
-                        class="font-black text-2xl text-blue-600 dark:text-blue-400">
+                        class="font-black text-2xl text-neutral-900 dark:text-neutral-400">
                         Rp 0
                     </span>
 
@@ -1100,15 +1043,12 @@
                 
                 <button
                     onclick="goCheckout()"
-                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg mb-3">
-                    <ion-icon name="card-outline" class="text-xl"></ion-icon>
+                    class="w-full bg-neutral-900 hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 text-white font-bold py-3.5 rounded-md flex items-center justify-center gap-2 transition-all shadow-lg mb-3">
                     Bayar Sekarang
                 </button>
                 <button
                     onclick="checkoutWA()"
-                    class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3.5 rounded-xl flex items-center justify-center gap-2 transition-all shadow-lg hover:shadow-green-500/30">
-
-                    <ion-icon name="logo-whatsapp" class="text-xl"></ion-icon>
+                    class="w-full bg-neutral-500 hover:bg-neutral-900 text-white font-bold py-3.5 rounded-md flex items-center justify-center gap-2 transition-all shadow-lg hover:">
 
                     Tanya-tanya dulu
 
@@ -1196,26 +1136,26 @@
             document.querySelectorAll('.nav-link').forEach(link => {
 
                 link.classList.remove(
-                    'text-blue-600',
-                    'dark:text-blue-400',
+                    'text-neutral-900',
+                    'dark:text-white',
                     'font-semibold'
                 );
 
                 link.classList.add(
-                    'text-gray-600',
-                    'dark:text-gray-300'
+                    'text-neutral-600',
+                    'dark:text-neutral-300'
                 );
 
             });
 
             clickedElement.classList.remove(
-                'text-gray-600',
-                'dark:text-gray-300'
+                'text-neutral-600',
+                'dark:text-neutral-300'
             );
 
             clickedElement.classList.add(
-                'text-blue-600',
-                'dark:text-blue-400',
+                'text-neutral-900',
+                'dark:text-white',
                 'font-semibold'
             );
 
@@ -1374,9 +1314,9 @@
                     rounded-lg
                     overflow-hidden
                     border-2
-                    bg-gray-900
+                    bg-neutral-900
                     ${index === lightboxCurrentIndex
-                        ? 'active border-blue-400'
+                        ? 'active border-neutral-400'
                         : 'border-white/20'}
                 `;
 
@@ -1657,15 +1597,15 @@
             document.querySelectorAll('.cat-link').forEach(btn => {
 
                 btn.classList.remove(
-                    'text-blue-600',
-                    'dark:text-blue-400',
+                    'text-neutral-900',
+                    'dark:text-neutral-400',
                     'font-extrabold',
                     'underline'
                 );
 
                 btn.classList.add(
-                    'text-gray-600',
-                    'dark:text-gray-300'
+                    'text-neutral-600',
+                    'dark:text-neutral-300'
                 );
 
             });
@@ -1681,13 +1621,13 @@
                 if (activeCatBtn) {
 
                     activeCatBtn.classList.remove(
-                        'text-gray-600',
-                        'dark:text-gray-300'
+                        'text-neutral-600',
+                        'dark:text-neutral-300'
                     );
 
                     activeCatBtn.classList.add(
-                        'text-blue-600',
-                        'dark:text-blue-400',
+                        'text-neutral-900',
+                        'dark:text-neutral-400',
                         'font-extrabold',
                         'underline'
                     );
@@ -1700,15 +1640,15 @@
             document.querySelectorAll('.filter-link').forEach(btn => {
 
                 btn.classList.remove(
-                    'text-blue-600',
-                    'dark:text-blue-400',
+                    'text-neutral-900',
+                    'dark:text-neutral-400',
                     'font-extrabold',
                     'underline'
                 );
 
                 btn.classList.add(
-                    'text-gray-600',
-                    'dark:text-gray-300'
+                    'text-neutral-600',
+                    'dark:text-neutral-300'
                 );
 
             });
@@ -1729,13 +1669,13 @@
                     if (activeBtn) {
 
                         activeBtn.classList.remove(
-                            'text-gray-600',
-                            'dark:text-gray-300'
+                            'text-neutral-600',
+                            'dark:text-neutral-300'
                         );
 
                         activeBtn.classList.add(
-                            'text-blue-600',
-                            'dark:text-blue-400',
+                            'text-neutral-900',
+                            'dark:text-neutral-400',
                             'font-extrabold',
                             'underline'
                         );
@@ -1984,19 +1924,19 @@
                 .forEach(b => {
 
                     b.classList.remove(
-                        'bg-blue-600',
+                        'bg-neutral-900',
                         'text-white',
-                        'border-blue-600',
+                        'border-neutral-900',
                         'selected-size'
                     );
 
                     b.classList.add(
                         'bg-white',
-                        'text-gray-700',
-                        'border-blue-200',
-                        'dark:bg-gray-700',
-                        'dark:text-gray-200',
-                        'dark:border-gray-600'
+                        'text-neutral-700',
+                        'border-neutral-300',
+                        'dark:bg-neutral-700',
+                        'dark:text-neutral-200',
+                        'dark:border-neutral-600'
                     );
 
                 });
@@ -2006,17 +1946,17 @@
 
                 buttonElement.classList.remove(
                     'bg-white',
-                    'text-gray-700',
-                    'border-blue-200',
-                    'dark:bg-gray-700',
-                    'dark:text-gray-200',
-                    'dark:border-gray-600'
+                    'text-neutral-700',
+                    'border-neutral-300',
+                    'dark:bg-neutral-700',
+                    'dark:text-neutral-200',
+                    'dark:border-neutral-600'
                 );
 
                 buttonElement.classList.add(
-                    'bg-blue-600',
+                    'bg-neutral-900',
                     'text-white',
-                    'border-blue-600',
+                    'border-neutral-900',
                     'selected-size'
                 );
 
@@ -2088,20 +2028,20 @@
 
 
             selectedSizeBtn.classList.remove(
-                'bg-blue-600',
+                'bg-neutral-900',
                 'text-white',
-                'border-blue-600',
+                'border-neutral-900',
                 'selected-size'
             );
 
 
             selectedSizeBtn.classList.add(
                 'bg-white',
-                'text-gray-700',
-                'border-blue-200',
-                'dark:bg-gray-700',
-                'dark:text-gray-200',
-                'dark:border-gray-600'
+                'text-neutral-700',
+                'border-neutral-300',
+                'dark:bg-neutral-700',
+                'dark:text-neutral-200',
+                'dark:border-neutral-600'
             );
 
         }
@@ -2152,7 +2092,7 @@
             if (cart.length === 0) {
 
                 container.innerHTML = `
-                    <div class="text-center text-gray-500 dark:text-gray-400 py-8">
+                    <div class="text-center text-neutral-500 dark:text-neutral-400 py-8">
                         <p>Keranjang masih kosong.</p>
                     </div>
                 `;
@@ -2171,25 +2111,25 @@
 
                     container.innerHTML += `
 
-                        <div class="flex justify-between items-center bg-white dark:bg-gray-800 p-4 border border-gray-100 dark:border-gray-700 rounded-xl shadow-sm text-left">
+                        <div class="flex justify-between items-center bg-white dark:bg-neutral-800 p-4 border border-neutral-100 dark:border-neutral-700 rounded-md shadow-sm text-left">
 
                             <div>
 
-                                <h4 class="font-bold text-sm text-gray-900 dark:text-white">
+                                <h4 class="font-bold text-sm text-neutral-900 dark:text-white">
                                     ${escapeHTML(item.name)}
                                 </h4>
 
-                                <p class="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                                <p class="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
 
                                     Size:
 
-                                    <span class="font-bold text-gray-700 dark:text-gray-300">
+                                    <span class="font-bold text-neutral-700 dark:text-neutral-300">
                                         ${escapeHTML(item.size)}
                                     </span>
 
                                 </p>
 
-                                <p class="font-bold text-blue-600 dark:text-blue-400 text-sm mt-1">
+                                <p class="font-bold text-neutral-900 dark:text-neutral-400 text-sm mt-1">
 
                                     Rp ${subtotal.toLocaleString('id-ID')}
 
@@ -2197,11 +2137,11 @@
 
                             </div>
 
-                            <div class="flex items-center gap-3 bg-gray-50 dark:bg-gray-900 rounded-lg p-1.5 border border-gray-200 dark:border-gray-700">
+                            <div class="flex items-center gap-3 bg-neutral-50 dark:bg-neutral-900 rounded-lg p-1.5 border border-neutral-200 dark:border-neutral-700">
 
                                 <button
                                     onclick="changeQty(${index}, -1)"
-                                    class="w-6 h-6 flex items-center justify-center bg-white dark:bg-gray-700 rounded-md shadow-sm text-gray-600 dark:text-gray-300 font-bold hover:text-blue-600 dark:hover:text-blue-400">
+                                    class="w-6 h-6 flex items-center justify-center bg-white dark:bg-neutral-700 rounded-md shadow-sm text-neutral-600 dark:text-neutral-300 font-bold hover:text-neutral-900 dark:hover:text-white">
                                     -
                                 </button>
 
@@ -2211,7 +2151,7 @@
 
                                 <button
                                     onclick="changeQty(${index}, 1)"
-                                    class="w-6 h-6 flex items-center justify-center bg-white dark:bg-gray-700 rounded-md shadow-sm text-gray-600 dark:text-gray-300 font-bold hover:text-blue-600 dark:hover:text-blue-400">
+                                    class="w-6 h-6 flex items-center justify-center bg-white dark:bg-neutral-700 rounded-md shadow-sm text-neutral-600 dark:text-neutral-300 font-bold hover:text-neutral-900 dark:hover:text-white">
                                     +
                                 </button>
 
@@ -2402,7 +2342,7 @@
 
 
                 card.className =
-                    'product-card bg-gray-50 dark:bg-gray-800 rounded-2xl p-4 border border-gray-100 dark:border-gray-700 group hover:shadow-xl transition-all duration-300 flex flex-col justify-between text-left';
+                    'product-card bg-neutral-50 dark:bg-neutral-800 rounded-lg p-4 border border-neutral-100 dark:border-neutral-700 group hover:shadow-xl transition-all duration-300 flex flex-col justify-between text-left';
 
 
                 card.dataset.uploadOrder =
@@ -2448,7 +2388,7 @@
 
                             <button
                                 onclick="selectSize(this)"
-                                class="size-btn bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 text-[10px] font-semibold px-2 py-0.5 rounded border border-blue-200 dark:border-gray-600 transition-colors">
+                                class="size-btn bg-white dark:bg-neutral-700 text-neutral-700 dark:text-neutral-200 text-[10px] font-semibold px-2 py-0.5 rounded border border-neutral-300 dark:border-neutral-600 transition-colors">
 
                                 ${escapeHTML(size)}
 
@@ -2493,7 +2433,7 @@
                                 <button
                                     type="button"
                                     onclick="openLightbox(${escapeHTML(JSON.stringify(images))}, ${escapeHTML(JSON.stringify(product.upload_order))}, ${index})"
-                                    class="product-thumbnail ${index === 0 ? 'active' : ''} flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 border-transparent bg-gray-200 dark:bg-gray-700">
+                                    class="product-thumbnail ${index === 0 ? 'active' : ''} flex-shrink-0 w-12 h-12 rounded-lg overflow-hidden border-2 border-transparent bg-neutral-200 dark:bg-neutral-700">
 
                                     <img
                                         src="${escapeHTML(image)}"
@@ -2545,7 +2485,7 @@
 
                         <div
                             onclick="openLightbox(${escapeHTML(JSON.stringify(images))}, ${escapeHTML(JSON.stringify(product.upload_order))}, 0)"
-                            class="relative rounded-xl overflow-hidden mb-1 h-60 bg-gray-200 dark:bg-gray-700 cursor-pointer">
+                            class="relative rounded-md overflow-hidden mb-1 h-60 bg-neutral-200 dark:bg-neutral-700 cursor-pointer">
 
                             ${
                                 firstImage
@@ -2554,14 +2494,14 @@
                                         <img
                                             src="${escapeHTML(firstImage)}"
                                             alt="${name}"
-                                            class="product-main-image object-cover w-full h-full group-hover:scale-110 transition-transform duration-500"
+                                            class="product-main-image object-cover w-full h-full transition-transform duration-500"
                                             loading="lazy"
                                             decoding="async">
 
                                       `
                                     : `
 
-                                        <div class="w-full h-full flex items-center justify-center text-gray-400">
+                                        <div class="w-full h-full flex items-center justify-center text-neutral-400">
 
                                             <ion-icon
                                                 name="image-outline"
@@ -2603,7 +2543,7 @@
 
                         <!-- BRAND -->
 
-                        <span class="text-xs text-gray-500 dark:text-gray-400 font-medium block mt-3">
+                        <span class="text-xs text-neutral-500 dark:text-neutral-400 font-medium block mt-3">
 
                             ${brand}
 
@@ -2613,7 +2553,7 @@
                         <!-- NAMA -->
 
                         <h3
-                            class="font-bold text-lg text-gray-900 dark:text-white mt-1 mb-1 product-name">
+                            class="font-bold text-lg text-neutral-900 dark:text-white mt-1 mb-1 product-name">
 
                             ${name}
 
@@ -2622,9 +2562,9 @@
 
                         <!-- SIZE -->
 
-                        <div class="bg-blue-50/60 dark:bg-gray-700/50 border border-blue-100 dark:border-gray-600 rounded-lg p-2 mb-3 mt-2">
+                        <div class="bg-neutral-100/60 dark:bg-neutral-700/50 border border-neutral-200 dark:border-neutral-600 rounded-lg p-2 mb-3 mt-2">
 
-                            <p class="text-[11px] font-bold text-blue-700 dark:text-blue-400 mb-1">
+                            <p class="text-[11px] font-bold text-neutral-700 dark:text-neutral-400 mb-1">
 
                                 Pilih Size:
 
@@ -2649,7 +2589,7 @@
                             oldPrice
                                 ? `
 
-                                    <div class="text-xs text-gray-400 dark:text-gray-500 line-through mb-0.5">
+                                    <div class="text-xs text-neutral-400 dark:text-neutral-500 line-through mb-0.5">
 
                                         Rp ${oldPrice.toLocaleString('id-ID')}
 
@@ -2660,9 +2600,9 @@
                         }
 
 
-                        <div class="flex justify-between items-center pt-1 border-t border-gray-200/60 dark:border-gray-700">
+                        <div class="flex justify-between items-center pt-1 border-t border-neutral-200/60 dark:border-neutral-700">
 
-                            <span class="text-lg font-black text-blue-600 dark:text-blue-400">
+                            <span class="text-lg font-black text-neutral-900 dark:text-neutral-400">
 
                                 Rp ${price.toLocaleString('id-ID')}
 
@@ -2671,7 +2611,7 @@
 
                             <button
                                 onclick="addToCart(this, ${escapeHTML(JSON.stringify(product.nama))}, ${price})"
-                                class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-xl text-xs font-bold shadow-md">
+                                class="bg-neutral-900 hover:bg-neutral-700 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 text-white px-3 py-2 rounded-md text-xs font-bold shadow-md">
 
                                 + Keranjang
 
@@ -2815,10 +2755,10 @@
 
 
 <!-- LIVE CHAT PELANGGAN -->
-<div id="kick-chat-panel" class="hidden fixed bottom-24 right-4 sm:right-6 z-[100] w-[min(92vw,380px)] h-[min(70vh,560px)] bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden flex-col">
-  <div class="bg-blue-600 text-white p-4 flex items-center justify-between"><div><div class="font-extrabold">Kicks Station</div><div class="text-xs opacity-90">Chat langsung dengan admin</div></div><button onclick="closeKickChat()" class="text-2xl px-2" aria-label="Tutup chat">×</button></div>
-  <div id="kick-chat-messages" class="flex-1 overflow-y-auto p-3 space-y-3 bg-gray-50 dark:bg-gray-950" style="min-height:0"><p class="text-sm text-gray-500 text-center py-4">Memuat percakapan…</p></div>
-  <form class="p-3 flex gap-2 border-t border-gray-200 dark:border-gray-700" onsubmit="event.preventDefault(); submitKickChatMessage();"><input id="kick-chat-input" maxlength="2000" autocomplete="off" placeholder="Tulis pesan…" class="min-w-0 flex-1 rounded-xl border border-gray-300 dark:border-gray-700 dark:bg-gray-800 px-3 py-3 text-sm"><button class="bg-blue-600 text-white font-bold px-4 rounded-xl" type="submit">Kirim</button></form>
+<div id="kick-chat-panel" class="hidden fixed bottom-24 right-4 sm:right-6 z-[100] w-[min(92vw,380px)] h-[min(70vh,560px)] bg-white dark:bg-neutral-900 rounded-lg shadow-2xl border border-neutral-200 dark:border-neutral-700 overflow-hidden flex-col">
+  <div class="bg-neutral-900 text-white p-4 flex items-center justify-between"><div><div class="font-extrabold">Kicks Station</div><div class="text-xs opacity-90">Chat langsung dengan admin</div></div><button onclick="closeKickChat()" class="text-2xl px-2" aria-label="Tutup chat">×</button></div>
+  <div id="kick-chat-messages" class="flex-1 overflow-y-auto p-3 space-y-3 bg-neutral-50 dark:bg-neutral-950" style="min-height:0"><p class="text-sm text-neutral-500 text-center py-4">Memuat percakapan…</p></div>
+  <form class="p-3 flex gap-2 border-t border-neutral-200 dark:border-neutral-700" onsubmit="event.preventDefault(); submitKickChatMessage();"><input id="kick-chat-input" maxlength="2000" autocomplete="off" placeholder="Tulis pesan…" class="min-w-0 flex-1 rounded-md border border-neutral-300 dark:border-neutral-700 dark:bg-neutral-800 px-3 py-3 text-sm"><button class="bg-neutral-900 text-white font-bold px-4 rounded-md" type="submit">Kirim</button></form>
 </div>
 <script>
 (() => {
@@ -2846,7 +2786,7 @@
  }
  function escapeText(v){const e=document.createElement('div');e.textContent=v;return e.innerHTML;}
  function showError(message){const box=document.getElementById('kick-chat-messages');if(box){const p=document.createElement('p');p.className='text-red-500 text-sm';p.textContent=message;box.appendChild(p);}}
- function render(messages){const box=document.getElementById('kick-chat-messages');if(!box)return;if(!messages.length){box.innerHTML='<p class="text-sm text-gray-500 text-center py-4">Halo kak! Ada yang bisa kami bantu?</p>';return;}box.innerHTML=messages.map(m=>{const mine=m.sender==='customer';return `<div class="flex ${mine?'justify-end':'justify-start'}"><div class="max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap break-words ${mine?'bg-blue-600 text-white':'bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700'}">${escapeText(m.message)}<div class="text-[10px] opacity-60 mt-1">${new Date(m.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</div></div></div>`}).join('');box.scrollTop=box.scrollHeight;}
+ function render(messages){const box=document.getElementById('kick-chat-messages');if(!box)return;if(!messages.length){box.innerHTML='<p class="text-sm text-neutral-500 text-center py-4">Halo kak! Ada yang bisa kami bantu?</p>';return;}box.innerHTML=messages.map(m=>{const mine=m.sender==='customer';return `<div class="flex ${mine?'justify-end':'justify-start'}"><div class="max-w-[85%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap break-words ${mine?'bg-neutral-900 text-white':'bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700'}">${escapeText(m.message)}<div class="text-[10px] opacity-60 mt-1">${new Date(m.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</div></div></div>`}).join('');box.scrollTop=box.scrollHeight;}
  async function load(){if(!conversationId)return;try{const r=await fetch(API+'/api/chat/messages?conversation_id='+encodeURIComponent(conversationId),{headers:{'X-Chat-Token':visitorToken}});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.message||`Gagal memuat chat (HTTP ${r.status}).`);if(d.success)render(Array.isArray(d.messages)?d.messages:[]);}catch(e){console.warn('Chat refresh gagal',e);}}
  window.openKickChat=async function(){const panel=document.getElementById('kick-chat-panel');panel.classList.remove('hidden');panel.classList.add('flex');try{await ensure();await load();document.getElementById('kick-chat-input').focus();if(timer)clearInterval(timer);timer=setInterval(()=>{if(!document.hidden)load();},3000);}catch(e){document.getElementById('kick-chat-messages').innerHTML='<p class="text-red-500 text-sm">'+escapeText(e.message)+'</p>';}};
  window.closeKickChat=function(){const panel=document.getElementById('kick-chat-panel');panel.classList.add('hidden');panel.classList.remove('flex');if(timer)clearInterval(timer);timer=null;};

@@ -7,18 +7,19 @@
 <title>Checkout | Kicks Station</title>
 <meta name="robots" content="noindex">
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@90..100,400..700&display=swap');
 :root{--bg:#000;--card:#0b0b0c;--field:#111113;--line:#26262a;--text:#f4f4f5;--mute:#8b8b93;--btn:#fff;--btn-t:#09090b;--err:#f87171;--ok:#4ade80}
 @media(prefers-color-scheme:light){:root{--bg:#f4f4f5;--card:#fff;--field:#f4f4f5;--line:#e4e4e7;--text:#09090b;--mute:#71717a;--btn:#09090b;--btn-t:#fff;--err:#dc2626;--ok:#16a34a}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,"Segoe UI",sans-serif}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 "Archivo",system-ui,-apple-system,"Segoe UI",sans-serif}
 main{max-width:520px;margin:0 auto;padding:24px 16px 48px}
 h1{font-size:22px;margin:0 0 4px}a{color:inherit}
-.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:20px;margin-top:16px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:20px;margin-top:16px}
 label{display:block;font-size:15px;margin:16px 0 6px}label:first-child{margin-top:0}label b{color:var(--err)}label small{color:var(--mute)}
-input,textarea{width:100%;background:var(--field);border:1px solid var(--line);border-radius:12px;padding:14px;color:var(--text);font:inherit}
+input,textarea{width:100%;background:var(--field);border:1px solid var(--line);border-radius:6px;padding:14px;color:var(--text);font:inherit}
 textarea{min-height:96px;resize:vertical}input:focus,textarea:focus{outline:2px solid var(--mute);outline-offset:0}
 .row{display:flex;gap:10px}.row input{flex:1}
-.ghost{background:var(--field);color:var(--text);border:1px solid var(--line);border-radius:12px;padding:0 18px;font:inherit;font-weight:600;cursor:pointer}
-.pay{width:100%;margin-top:22px;background:var(--btn);color:var(--btn-t);border:0;border-radius:12px;padding:15px;font:inherit;font-weight:700;cursor:pointer}
+.ghost{background:var(--field);color:var(--text);border:1px solid var(--line);border-radius:6px;padding:0 18px;font:inherit;font-weight:600;cursor:pointer}
+.pay{width:100%;margin-top:22px;background:var(--btn);color:var(--btn-t);border:0;border-radius:6px;padding:15px;font:inherit;font-weight:700;cursor:pointer}
 .pay:disabled{opacity:.6;cursor:wait}
 .item{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
 .item small{color:var(--mute);display:block}.sum{display:flex;justify-content:space-between;padding-top:10px;color:var(--mute)}
@@ -46,6 +47,7 @@ textarea{min-height:96px;resize:vertical}input:focus,textarea:focus{outline:2px 
     <textarea id="address" maxlength="500" autocomplete="street-address" placeholder="Nama jalan, nomor rumah, RT/RW, kelurahan, kecamatan, kota, provinsi, kode pos"></textarea>
     <label for="ref">Kode Referral <small>(Opsional)</small></label>
     <div class="row"><input id="ref" maxlength="30" placeholder="Masukkan kode referral jika ada"><button type="button" class="ghost" id="useRef">Gunakan</button></div>
+    <div id="cfBox" class="hide" style="margin:12px 0"></div>
     <div id="msg" class="msg" role="status"></div>
     <button type="button" class="pay" id="payBtn">Bayar Sekarang</button>
     <p class="note">Kamu akan diarahkan ke halaman pembayaran Midtrans.<br>Kami tidak pernah meminta pembayaran di luar halaman ini.</p>
@@ -88,6 +90,7 @@ textarea{min-height:96px;resize:vertical}input:focus,textarea:focus{outline:2px 
     renderSummary();
     fetch(API + "/api/checkout/config").then(function (r) { return r.json(); }).then(function (c) {
       shipping = Number(c.shipping_fee) || 0; renderSummary();
+      if (c.turnstile_site_key && /^[0-9A-Za-z_-]{10,60}$/.test(c.turnstile_site_key)) initTurnstile(c.turnstile_site_key);
       if (!c.ready) say("Pembayaran online belum aktif. Hubungi admin lewat chat.", "err");
     }).catch(function () {});
   }
@@ -121,6 +124,22 @@ textarea{min-height:96px;resize:vertical}input:focus,textarea:focus{outline:2px 
       onClose: function () { say("Pembayaran belum selesai. Klik Bayar Sekarang untuk melanjutkan.", ""); $("payBtn").disabled = false; }
     });
   }
+  var cfToken = "", cfWidget = null;
+  function initTurnstile(siteKey) {
+    window.__ksTsLoaded = function () {
+      $("cfBox").classList.remove("hide");
+      cfWidget = window.turnstile.render("#cfBox", {
+        sitekey: siteKey,
+        callback: function (t) { cfToken = t; },
+        "expired-callback": function () { cfToken = ""; },
+        "error-callback": function () { cfToken = ""; }
+      });
+    };
+    var t = document.createElement("script");
+    t.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=__ksTsLoaded";
+    t.async = true; t.defer = true; document.head.appendChild(t);
+  }
+  function resetTurnstile() { cfToken = ""; try { if (cfWidget !== null && window.turnstile) window.turnstile.reset(cfWidget); } catch (e) {} }
   function loadSnap(s) {
     return new Promise(function (ok, fail) {
       if (window.snap) return ok();
@@ -138,16 +157,18 @@ textarea{min-height:96px;resize:vertical}input:focus,textarea:focus{outline:2px 
     var payload = {
       name: $("name").value.trim(), phone: $("phone").value.trim(), address: $("address").value.trim(),
       referral: /^[a-z0-9_-]{2,30}$/.test(ref) ? ref : "",
+      cf_token: cfToken,
       items: cart.map(function (i) { return { name: i.name, size: i.size || "", qty: Number(i.qty), price: Number(i.price) }; })
     };
     if (payload.name.length < 2) return say("Nama lengkap wajib diisi.", "err");
     if (!/^(\+62|62|0)8\d{8,12}$/.test(payload.phone.replace(/[\s-]/g, ""))) return say("Nomor WhatsApp tidak valid. Contoh: 08123456789", "err");
     if (payload.address.length < 15) return say("Alamat lengkap wajib diisi (jalan, kelurahan, kota, kode pos).", "err");
+    if (cfWidget !== null && !cfToken) return say("Selesaikan verifikasi keamanan di atas dulu.", "err");
     btn.disabled = true; say("Menyiapkan pembayaran…");
     fetch(API + "/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) })
       .then(function (r) { return r.json().then(function (j) { if (!r.ok || !j.success) throw new Error(j.message || "Pembayaran tidak dapat diproses."); return j; }); })
       .then(function (s) { session = s; dirty = false; return loadSnap(s).then(function () { say(""); openSnap(s); }); })
-      .catch(function (e) { say(e.message || "Terjadi kesalahan. Coba lagi.", "err"); btn.disabled = false; });
+      .catch(function (e) { say(e.message || "Terjadi kesalahan. Coba lagi.", "err"); btn.disabled = false; resetTurnstile(); });
   });
   init();
 })();

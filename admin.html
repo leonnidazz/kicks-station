@@ -6,7 +6,7 @@
 <script>if (window.top !== window.self) { document.documentElement.style.display = "none"; try { window.top.location = window.self.location; } catch (e) {} }</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#0f172a">
+<meta name="theme-color" content="#171717">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -19,7 +19,7 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@90..100,400..700&display=swap" rel="stylesheet">
 
 <style>
 /* =====================================================
@@ -40,13 +40,13 @@ body {
     background-image: var(--bg-mesh);
     background-attachment: fixed;
     color: var(--ink);
-    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-family: 'Archivo', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
 
 ::selection {
-    background: #0f172a;
+    background: #171717;
     color: white;
 }
 
@@ -104,7 +104,7 @@ input:focus, select:focus, textarea:focus {
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
-::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+::-webkit-scrollbar-thumb:hover { background: #a3a3a3; }
 .scrollbar-hide::-webkit-scrollbar { display: none; }
 .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
@@ -133,7 +133,7 @@ input:focus, select:focus, textarea:focus {
     position: absolute; top: 50%; transform: translateY(-50%);
     width: 36px; height: 36px; border-radius: 99px;
     background: rgba(255,255,255,0.8); backdrop-filter: blur(4px);
-    color: #0f172a; display: flex; align-items: center; justify-content: center;
+    color: #171717; display: flex; align-items: center; justify-content: center;
     z-index: 10; box-shadow: 0 4px 12px rgba(0,0,0,0.1);
     transition: all 0.2s ease;
 }
@@ -211,36 +211,37 @@ button:active {
 
 </style>
 <link rel="stylesheet" href="tailwind-admin.css">
+    <link rel="stylesheet" href="ks-theme.css">
 </head>
 
-<body class="text-slate-800 relative">
+<body class="text-neutral-800 relative">
 
 <!-- ADMIN LOGIN SCREEN -->
-<div id="admin-login-screen" class="hidden fixed inset-0 z-[500] flex items-center justify-center p-5 bg-slate-50/50 backdrop-blur-xl">
+<div id="admin-login-screen" class="hidden fixed inset-0 z-[500] flex items-center justify-center p-5 bg-neutral-50/50 backdrop-blur-xl">
     <div class="w-full max-w-md glass-panel rounded-[2rem] border border-white/60 p-10 relative overflow-hidden">
         <!-- Decorative blobs -->
-        <div class="absolute -top-10 -right-10 w-32 h-32 bg-blue-100 rounded-full mix-blend-multiply filter blur-2xl opacity-70"></div>
-        <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-purple-100 rounded-full mix-blend-multiply filter blur-2xl opacity-70"></div>
+        <div class="absolute -top-10 -right-10 w-32 h-32 bg-neutral-200 rounded-full mix-blend-multiply filter blur-2xl opacity-70"></div>
+        <div class="absolute -bottom-10 -left-10 w-32 h-32 bg-neutral-200 rounded-full mix-blend-multiply filter blur-2xl opacity-70"></div>
         
         <div class="text-center mb-10 relative z-10">
-            <div class="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-tr from-slate-900 to-slate-700 text-white flex items-center justify-center text-xl font-black mb-5 shadow-lg shadow-slate-900/20">
+            <div class="mx-auto w-16 h-16 rounded-lg bg-gradient-to-tr from-neutral-900 to-neutral-700 text-white flex items-center justify-center text-xl font-black mb-5 shadow-lg ">
                 KS
             </div>
-            <h2 class="text-3xl font-black tracking-tight text-slate-900">AL KAUTSAR</h2>
-            <p class="text-sm text-slate-500 mt-2 font-medium tracking-wide">SECURE DASHBOARD</p>
+            <h2 class="text-3xl font-black tracking-tight text-neutral-900">AL KAUTSAR</h2>
+            <p class="text-sm text-neutral-500 mt-2 font-medium tracking-wide">SECURE DASHBOARD</p>
         </div>
 
         <form onsubmit="event.preventDefault(); adminLogin();" class="relative z-10">
-            <label for="admin-pin-input" class="block text-xs font-bold mb-3 text-slate-400 uppercase tracking-widest text-center">
+            <label for="admin-pin-input" class="block text-xs font-bold mb-3 text-neutral-400 text-center">
                 Kata sandi admin
             </label>
             <input
                 id="admin-pin-input" type="password" maxlength="128" autocomplete="current-password" name="admin-pin" placeholder="Kata sandi admin"
-                class="w-full px-4 py-4 rounded-2xl border border-slate-200 text-center text-xl tracking-normal font-bold text-slate-900 bg-white/50 focus:bg-white"
+                class="w-full px-4 py-4 rounded-lg border border-neutral-200 text-center text-xl tracking-normal font-bold text-neutral-900 bg-white/50 focus:bg-white"
             >
             <p id="admin-login-message" class="text-sm text-red-500 font-semibold mt-4 min-h-[20px] text-center"></p>
 
-            <button id="admin-login-button" type="submit" class="w-full mt-6 bg-slate-900 hover:bg-slate-800 text-white py-4 rounded-2xl font-bold shadow-float hover:shadow-xl transition-all duration-300">
+            <button id="admin-login-button" type="submit" class="w-full mt-6 bg-neutral-900 hover:bg-neutral-800 text-white py-4 rounded-lg font-bold shadow-float hover:shadow-xl transition-all duration-300">
                 Otorisasi Akses
             </button>
         </form>
@@ -251,13 +252,13 @@ button:active {
 <!-- MOBILE HEADER -->
 <header class="lg:hidden sticky top-0 z-50 glass-panel border-b border-white/40 px-5 py-4 flex items-center justify-between">
     <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-sm">KS</div>
+        <div class="w-10 h-10 rounded-md bg-neutral-900 text-white flex items-center justify-center font-bold text-sm">KS</div>
         <div>
             <h1 class="font-black text-lg tracking-tight">AL KAUTSAR</h1>
-            <p class="text-[10px] uppercase tracking-widest text-slate-500 font-semibold">Admin Panel</p>
+            <p class="text-[10px] text-neutral-500 font-semibold">Admin Panel</p>
         </div>
     </div>
-    <button onclick="toggleSidebar()" class="w-10 h-10 rounded-xl bg-white/50 border border-slate-200 flex items-center justify-center text-xl hover:bg-white transition">
+    <button onclick="toggleSidebar()" class="w-10 h-10 rounded-md bg-white/50 border border-neutral-200 flex items-center justify-center text-xl hover:bg-white transition">
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16"></path></svg>
     </button>
 </header>
@@ -265,67 +266,67 @@ button:active {
 <!-- SIDEBAR -->
 <aside id="sidebar" class="fixed left-0 top-0 bottom-0 z-50 w-72 glass-panel border-r border-white/50 transform -translate-x-full lg:translate-x-0 transition-transform duration-500 ease-out flex flex-col rounded-r-3xl lg:rounded-none">
     
-    <div class="px-7 py-8 border-b border-slate-200/50">
+    <div class="px-7 py-8 border-b border-neutral-200/50">
         <div class="flex items-center gap-4">
-            <div class="w-12 h-12 bg-gradient-to-tr from-slate-900 to-slate-700 text-white rounded-2xl flex items-center justify-center font-black shadow-lg shadow-slate-900/20">
+            <div class="w-12 h-12 bg-gradient-to-tr from-neutral-900 to-neutral-700 text-white rounded-lg flex items-center justify-center font-black shadow-lg ">
                 KS
             </div>
             <div>
-                <h1 class="font-black tracking-tight text-xl text-slate-900">AL KAUTSAR</h1>
-                <p class="text-[11px] font-bold uppercase tracking-[0.2em] text-slate-400 mt-0.5">Workspace</p>
+                <h1 class="font-black tracking-tight text-xl text-neutral-900">AL KAUTSAR</h1>
+                <p class="text-[11px] font-bold tracking-[0.2em] text-neutral-400 mt-0.5">Workspace</p>
             </div>
         </div>
     </div>
 
     <nav class="flex-1 p-5 space-y-2.5 overflow-y-auto scrollbar-hide">
-        <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3 ml-2">Manajemen Katalog</p>
+        <p class="text-[10px] font-bold text-neutral-400 mb-3 ml-2">Manajemen Katalog</p>
         
-        <button id="menu-tambah" onclick="showPage('tambah')" class="sidebar-item active w-full text-left px-4 py-3.5 rounded-2xl flex items-center gap-3.5 font-semibold text-sm">
+        <button id="menu-tambah" onclick="showPage('tambah')" class="sidebar-item active w-full text-left px-4 py-3.5 rounded-lg flex items-center gap-3.5 font-semibold text-sm">
             <span class="text-lg opacity-80">＋</span> Tambah Produk
         </button>
 
-        <button id="menu-semua" onclick="showPage('semua')" class="sidebar-item w-full text-left px-4 py-3.5 rounded-2xl flex items-center gap-3.5 font-semibold text-slate-600 text-sm">
+        <button id="menu-semua" onclick="showPage('semua')" class="sidebar-item w-full text-left px-4 py-3.5 rounded-lg flex items-center gap-3.5 font-semibold text-neutral-600 text-sm">
             <span class="text-lg opacity-80">▦</span> Semua Produk
         </button>
 
-        <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mt-6 mb-3 ml-2">Operasional</p>
+        <p class="text-[10px] font-bold text-neutral-400 mt-6 mb-3 ml-2">Operasional</p>
 
-        <button id="menu-pesanan" onclick="showPage('pesanan')" class="sidebar-item w-full text-left px-4 py-3.5 rounded-2xl flex items-center gap-3.5 font-semibold text-slate-600 text-sm">
-            <span class="text-lg opacity-80">🛒</span> Pesanan Masuk
+        <button id="menu-pesanan" onclick="showPage('pesanan')" class="sidebar-item w-full text-left px-4 py-3.5 rounded-lg flex items-center gap-3.5 font-semibold text-neutral-600 text-sm">
+            <span class="text-lg opacity-80"></span> Pesanan Masuk
         </button>
 
-        <button id="menu-pengunjung" onclick="showPage('pengunjung')" class="sidebar-item w-full text-left px-4 py-3.5 rounded-2xl flex items-center gap-3.5 font-semibold text-slate-600 text-sm">
-            <span class="text-lg opacity-80">👥</span> Data Pengunjung
+        <button id="menu-pengunjung" onclick="showPage('pengunjung')" class="sidebar-item w-full text-left px-4 py-3.5 rounded-lg flex items-center gap-3.5 font-semibold text-neutral-600 text-sm">
+            <span class="text-lg opacity-80"></span> Data Pengunjung
         </button>
 
-        <button id="menu-chat" onclick="openAdminChat()" class="sidebar-item w-full text-left px-4 py-3.5 rounded-2xl flex items-center gap-3.5 font-semibold text-slate-600 text-sm">
-            <span class="text-lg opacity-80">💬</span> Chat Pelanggan
+        <button id="menu-chat" onclick="openAdminChat()" class="sidebar-item w-full text-left px-4 py-3.5 rounded-lg flex items-center gap-3.5 font-semibold text-neutral-600 text-sm">
+            <span class="text-lg opacity-80"></span> Chat Pelanggan
             <span id="chat-unread-badge" class="hidden ml-auto bg-red-500 text-white text-[10px] font-black rounded-full px-2 py-1">0</span>
         </button>
 
-        <div class="my-4 border-t border-slate-200/50"></div>
+        <div class="my-4 border-t border-neutral-200/50"></div>
 
-        <button onclick="refreshProducts(); showToast('Data disinkronisasi.', 'success');" class="sidebar-item w-full text-left px-4 py-3.5 rounded-2xl flex items-center gap-3.5 font-semibold text-slate-600 text-sm">
+        <button onclick="refreshProducts(); showToast('Data disinkronisasi.', 'success');" class="sidebar-item w-full text-left px-4 py-3.5 rounded-lg flex items-center gap-3.5 font-semibold text-neutral-600 text-sm">
             <span class="text-lg opacity-80">↻</span> Sinkronisasi Data
         </button>
     </nav>
 
     <div class="p-5 mt-auto">
-        <div class="rounded-2xl bg-white/50 border border-white p-4 backdrop-blur-sm shadow-sm">
-            <p class="text-xs font-semibold text-slate-500 uppercase tracking-widest">Sistem</p>
+        <div class="rounded-lg bg-white/50 border border-white p-4 backdrop-blur-sm shadow-sm">
+            <p class="text-xs font-semibold text-neutral-500">Sistem</p>
             <div class="flex items-center gap-2.5 mt-2.5">
                 <span class="relative flex h-3 w-3">
                   <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                   <span class="relative inline-flex rounded-full h-3 w-3 bg-emerald-500"></span>
                 </span>
-                <span class="font-bold text-sm text-slate-800">Online & Sinkron</span>
+                <span class="font-bold text-sm text-neutral-800">Online & Sinkron</span>
             </div>
         </div>
     </div>
 </aside>
 
 <!-- OVERLAY -->
-<div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/20 backdrop-blur-sm z-40 hidden lg:hidden transition-opacity"></div>
+<div id="sidebar-overlay" onclick="toggleSidebar()" class="fixed inset-0 bg-neutral-900/20 backdrop-blur-sm z-40 hidden lg:hidden transition-opacity"></div>
 
 <!-- MAIN CONTENT -->
 <main class="lg:ml-72 min-h-screen flex flex-col">
@@ -334,17 +335,17 @@ button:active {
     <div class="hidden lg:flex sticky top-0 z-30 glass-panel border-b border-white/40 px-10 py-5 items-center justify-between">
         <div>
             <div class="flex items-center gap-2 mb-1">
-                <div class="w-1.5 h-1.5 rounded-full bg-slate-300"></div>
-                <p class="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Al Kautsar Dashboard</p>
+                <div class="w-1.5 h-1.5 rounded-full bg-neutral-300"></div>
+                <p class="text-[10px] font-bold text-neutral-400">Al Kautsar Dashboard</p>
             </div>
-            <h2 id="top-title" class="font-black text-2xl tracking-tight text-slate-900">Tambah Produk</h2>
+            <h2 id="top-title" class="font-black text-2xl tracking-tight text-neutral-900">Tambah Produk</h2>
         </div>
         <div class="flex items-center gap-4 bg-white/60 px-4 py-2 rounded-full border border-white shadow-sm">
             <div class="text-right">
-                <p class="font-bold text-sm text-slate-900">Administrator</p>
-                <p class="text-[10px] font-semibold uppercase tracking-wider text-slate-500">Akses Penuh</p>
+                <p class="font-bold text-sm text-neutral-900">Administrator</p>
+                <p class="text-[10px] font-semibold text-neutral-500">Akses Penuh</p>
             </div>
-            <div class="w-10 h-10 bg-gradient-to-tr from-slate-900 to-slate-700 text-white rounded-full flex items-center justify-center font-bold shadow-md">
+            <div class="w-10 h-10 bg-gradient-to-tr from-neutral-900 to-neutral-700 text-white rounded-full flex items-center justify-center font-bold shadow-md">
                 A
             </div>
         </div>
@@ -355,20 +356,20 @@ button:active {
 
         <!-- GLOBAL STATS -->
         <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
-            <div class="glass-panel rounded-3xl p-6 relative overflow-hidden group">
-                <div class="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity duration-300 transform group-hover:scale-110"><span class="text-6xl">📦</span></div>
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Total Produk</p>
-                <p id="stat-total" class="text-4xl font-black mt-3 text-slate-900">—</p>
+            <div class="glass-panel rounded-lg p-6 relative overflow-hidden group">
+                <div class="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity duration-300 transform"><span class="text-6xl"></span></div>
+                <p class="text-xs font-bold text-neutral-400">Total Produk</p>
+                <p id="stat-total" class="text-4xl font-black mt-3 text-neutral-900">—</p>
             </div>
-            <div class="glass-panel rounded-3xl p-6 relative overflow-hidden group">
-                <div class="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity duration-300 transform group-hover:scale-110"><span class="text-6xl">🇮🇩</span></div>
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Produk Lokal</p>
-                <p id="stat-lokal" class="text-4xl font-black mt-3 text-slate-900">—</p>
+            <div class="glass-panel rounded-lg p-6 relative overflow-hidden group">
+                <div class="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity duration-300 transform"><span class="text-6xl">🇮🇩</span></div>
+                <p class="text-xs font-bold text-neutral-400">Produk Lokal</p>
+                <p id="stat-lokal" class="text-4xl font-black mt-3 text-neutral-900">—</p>
             </div>
-            <div class="glass-panel rounded-3xl p-6 relative overflow-hidden group">
-                <div class="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity duration-300 transform group-hover:scale-110"><span class="text-6xl">☁️</span></div>
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Koneksi Database</p>
-                <p class="font-bold mt-4 text-slate-800 text-lg flex items-center gap-2">
+            <div class="glass-panel rounded-lg p-6 relative overflow-hidden group">
+                <div class="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-20 transition-opacity duration-300 transform"><span class="text-6xl"></span></div>
+                <p class="text-xs font-bold text-neutral-400">Koneksi Database</p>
+                <p class="font-bold mt-4 text-neutral-800 text-lg flex items-center gap-2">
                     <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Aktif
                 </p>
             </div>
@@ -381,10 +382,10 @@ button:active {
             <section class="mb-8">
                 <div class="flex flex-col md:flex-row md:items-end md:justify-between gap-5">
                     <div>
-                        <h1 class="text-3xl md:text-4xl font-black tracking-tight text-slate-900">Input Produk Baru</h1>
-                        <p class="text-slate-500 mt-2 max-w-xl font-medium leading-relaxed">Tambahkan rincian produk ke dalam katalog utama dengan mudah melalui formulir di bawah ini.</p>
+                        <h1 class="text-3xl md:text-4xl font-black tracking-tight text-neutral-900">Input Produk Baru</h1>
+                        <p class="text-neutral-500 mt-2 max-w-xl font-medium leading-relaxed">Tambahkan rincian produk ke dalam katalog utama dengan mudah melalui formulir di bawah ini.</p>
                     </div>
-                    <button onclick="resetForm()" class="px-6 py-3 rounded-2xl bg-white border border-slate-200 font-bold hover:bg-slate-50 shadow-sm transition hover:shadow-md text-slate-700">
+                    <button onclick="resetForm()" class="px-6 py-3 rounded-lg bg-white border border-neutral-200 font-bold hover:bg-neutral-50 shadow-sm transition hover:shadow-md text-neutral-700">
                         Bersihkan Form
                     </button>
                 </div>
@@ -394,48 +395,48 @@ button:active {
                 <!-- FORM KIRI -->
                 <section class="glass-panel rounded-[2rem] overflow-hidden">
                     <div class="px-8 py-6 border-b border-white/50 bg-white/30">
-                        <h2 class="font-black text-xl text-slate-900">Informasi Dasar</h2>
+                        <h2 class="font-black text-xl text-neutral-900">Informasi Dasar</h2>
                     </div>
 
                     <div class="p-8 space-y-8">
                         <div class="grid md:grid-cols-2 gap-6">
                             <div class="md:col-span-2">
-                                <label class="block text-sm font-bold mb-2.5 text-slate-700">Nama Produk <span class="text-red-500">*</span></label>
-                                <input id="nama" type="text" placeholder="Contoh: Adidas Campus 00s" class="w-full border border-slate-200/60 rounded-2xl px-5 py-4 font-medium placeholder-slate-400 shadow-sm">
+                                <label class="block text-sm font-bold mb-2.5 text-neutral-700">Nama Produk <span class="text-red-500">*</span></label>
+                                <input id="nama" type="text" placeholder="Contoh: Adidas Campus 00s" class="w-full border border-neutral-200/60 rounded-lg px-5 py-4 font-medium placeholder-neutral-400 shadow-sm">
                             </div>
                             <div>
-                                <label class="block text-sm font-bold mb-2.5 text-slate-700">Brand <span class="text-red-500">*</span></label>
-                                <input id="brand" type="text" placeholder="Adidas" class="w-full border border-slate-200/60 rounded-2xl px-5 py-4 font-medium placeholder-slate-400 shadow-sm">
+                                <label class="block text-sm font-bold mb-2.5 text-neutral-700">Brand <span class="text-red-500">*</span></label>
+                                <input id="brand" type="text" placeholder="Adidas" class="w-full border border-neutral-200/60 rounded-lg px-5 py-4 font-medium placeholder-neutral-400 shadow-sm">
                             </div>
                             <div>
-                                <label class="block text-sm font-bold mb-2.5 text-slate-700">Kategori Tipe</label>
-                                <select id="tipe" class="w-full border border-slate-200/60 rounded-2xl px-5 py-4 font-medium shadow-sm appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23111827%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px_12px] bg-no-repeat bg-[position:right_1.2rem_center]">
+                                <label class="block text-sm font-bold mb-2.5 text-neutral-700">Kategori Tipe</label>
+                                <select id="tipe" class="w-full border border-neutral-200/60 rounded-lg px-5 py-4 font-medium shadow-sm appearance-none bg-[url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23111827%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E')] bg-[length:12px_12px] bg-no-repeat bg-[position:right_1.2rem_center]">
                                     <option value="kasual">Kasual</option>
                                     <option value="running">Running</option>
                                     <option value="sandal">Sandal</option>
                                     <option value="tas">Tas</option>
                                     <option value="lainnya">Lainnya...</option>
                                 </select>
-                                <input id="tipe-lainnya" type="text" placeholder="Ketik tipe kustom..." class="hidden w-full border border-slate-200/60 rounded-2xl px-5 py-4 mt-3 shadow-sm font-medium" maxlength="50">
+                                <input id="tipe-lainnya" type="text" placeholder="Ketik tipe kustom..." class="hidden w-full border border-neutral-200/60 rounded-lg px-5 py-4 mt-3 shadow-sm font-medium" maxlength="50">
                             </div>
                         </div>
 
                         <!-- PRICE -->
-                        <div class="bg-slate-50/50 p-6 rounded-[1.5rem] border border-slate-100">
-                            <h3 class="font-black text-lg mb-4 text-slate-900">Penetapan Harga</h3>
+                        <div class="bg-neutral-50/50 p-6 rounded-[1.5rem] border border-neutral-100">
+                            <h3 class="font-black text-lg mb-4 text-neutral-900">Penetapan Harga</h3>
                             <div class="grid md:grid-cols-2 gap-6">
                                 <div>
-                                    <label class="block text-sm font-bold mb-2.5 text-slate-700">Harga Jual Aktual <span class="text-red-500">*</span></label>
+                                    <label class="block text-sm font-bold mb-2.5 text-neutral-700">Harga Jual Aktual <span class="text-red-500">*</span></label>
                                     <div class="relative">
-                                        <span class="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">Rp</span>
-                                        <input id="harga" type="number" min="0" placeholder="750000" class="w-full border border-slate-200/60 rounded-2xl pl-12 pr-5 py-4 font-bold text-slate-900 shadow-sm">
+                                        <span class="absolute left-5 top-1/2 -translate-y-1/2 text-neutral-400 font-bold">Rp</span>
+                                        <input id="harga" type="number" min="0" placeholder="750000" class="w-full border border-neutral-200/60 rounded-lg pl-12 pr-5 py-4 font-bold text-neutral-900 shadow-sm">
                                     </div>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-bold mb-2.5 text-slate-700">Harga Coret (Diskon)</label>
+                                    <label class="block text-sm font-bold mb-2.5 text-neutral-700">Harga Coret (Diskon)</label>
                                     <div class="relative">
-                                        <span class="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 font-bold">Rp</span>
-                                        <input id="harga_coret" type="number" min="0" placeholder="1000000" class="w-full border border-slate-200/60 rounded-2xl pl-12 pr-5 py-4 font-bold text-slate-500 shadow-sm line-through">
+                                        <span class="absolute left-5 top-1/2 -translate-y-1/2 text-neutral-400 font-bold">Rp</span>
+                                        <input id="harga_coret" type="number" min="0" placeholder="1000000" class="w-full border border-neutral-200/60 rounded-lg pl-12 pr-5 py-4 font-bold text-neutral-500 shadow-sm line-through">
                                     </div>
                                 </div>
                             </div>
@@ -444,15 +445,15 @@ button:active {
                         <!-- CATEGORY -->
                         <div class="grid md:grid-cols-2 gap-6">
                             <div>
-                                <label class="block text-sm font-bold mb-2.5 text-slate-700">Kategori Asal</label>
-                                <select id="asal" class="w-full border border-slate-200/60 rounded-2xl px-5 py-4 font-medium shadow-sm">
+                                <label class="block text-sm font-bold mb-2.5 text-neutral-700">Kategori Asal</label>
+                                <select id="asal" class="w-full border border-neutral-200/60 rounded-lg px-5 py-4 font-medium shadow-sm">
                                     <option value="internasional">Internasional</option>
                                     <option value="lokal">Lokal (Indonesia)</option>
                                 </select>
                             </div>
                             <div>
-                                <label class="block text-sm font-bold mb-2.5 text-slate-700">Target Pengguna</label>
-                                <select id="pengguna" class="w-full border border-slate-200/60 rounded-2xl px-5 py-4 font-medium shadow-sm">
+                                <label class="block text-sm font-bold mb-2.5 text-neutral-700">Target Pengguna</label>
+                                <select id="pengguna" class="w-full border border-neutral-200/60 rounded-lg px-5 py-4 font-medium shadow-sm">
                                     <option value="pria">Pria</option>
                                     <option value="wanita">Wanita</option>
                                     <option value="unisex">Unisex / General</option>
@@ -464,7 +465,7 @@ button:active {
                         <!-- SIZES -->
                         <div>
                             <div class="flex items-center justify-between mb-4">
-                                <h3 class="font-black text-lg text-slate-900">Ketersediaan Ukuran</h3>
+                                <h3 class="font-black text-lg text-neutral-900">Ketersediaan Ukuran</h3>
                             </div>
                             <div id="size-container" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3">
                                 <!-- Sizes generated by JS -->
@@ -474,25 +475,24 @@ button:active {
                         <!-- PHOTO -->
                         <div>
                             <div class="flex items-center justify-between mb-4">
-                                <h3 class="font-black text-lg text-slate-900">Galeri Produk</h3>
-                                <span id="photo-count" class="text-xs font-bold px-3 py-1 bg-slate-100 rounded-full text-slate-500">0 / 10 foto</span>
+                                <h3 class="font-black text-lg text-neutral-900">Galeri Produk</h3>
+                                <span id="photo-count" class="text-xs font-bold px-3 py-1 bg-neutral-100 rounded-full text-neutral-500">0 / 10 foto</span>
                             </div>
                             
-                            <div id="drop-zone" class="border-2 border-dashed border-slate-300 rounded-[2rem] p-10 text-center transition-all bg-slate-50/30 hover:bg-slate-50 cursor-pointer">
+                            <div id="drop-zone" class="border-2 border-dashed border-neutral-300 rounded-[2rem] p-10 text-center transition-all bg-neutral-50/30 hover:bg-neutral-50 cursor-pointer">
                                 <input type="file" id="gambar" accept="image/jpeg,image/png,image/webp" multiple class="hidden">
                                 
                                 <div id="upload-placeholder">
-                                    <div class="w-20 h-20 mx-auto bg-white rounded-[1.5rem] shadow-sm border border-slate-100 flex items-center justify-center text-3xl mb-5">
-                                        📸
-                                    </div>
-                                    <h4 class="font-black text-lg text-slate-900">Tarik & Letakkan Foto</h4>
-                                    <p class="text-sm text-slate-500 mt-1 font-medium">atau klik untuk menelusuri file</p>
-                                    <p class="text-[11px] font-bold text-slate-400 mt-4 uppercase tracking-wider bg-white/60 inline-block px-4 py-1.5 rounded-full">JPG, PNG, WEBP · Maks 5MB / foto</p>
+                                    <div class="w-20 h-20 mx-auto bg-white rounded-[1.5rem] shadow-sm border border-neutral-100 flex items-center justify-center text-3xl mb-5">
+                                                                            </div>
+                                    <h4 class="font-black text-lg text-neutral-900">Tarik & Letakkan Foto</h4>
+                                    <p class="text-sm text-neutral-500 mt-1 font-medium">atau klik untuk menelusuri file</p>
+                                    <p class="text-[11px] font-bold text-neutral-400 mt-4 bg-white/60 inline-block px-4 py-1.5 rounded-full">JPG, PNG, WEBP · Maks 5MB / foto</p>
                                 </div>
                                 
                                 <div id="image-preview-wrapper" class="hidden text-left">
                                     <div id="image-preview-grid" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4"></div>
-                                    <button type="button" onclick="clearAllImages(event)" class="mt-6 px-5 py-2.5 bg-red-50 text-red-600 rounded-xl text-sm font-bold hover:bg-red-100 transition shadow-sm border border-red-100">
+                                    <button type="button" onclick="clearAllImages(event)" class="mt-6 px-5 py-2.5 bg-red-50 text-red-600 rounded-md text-sm font-bold hover:bg-red-100 transition shadow-sm border border-red-100">
                                         Hapus Semua Galeri
                                     </button>
                                 </div>
@@ -501,17 +501,17 @@ button:active {
 
                         <!-- DESCRIPTION -->
                         <div>
-                            <label class="block text-sm font-bold mb-2.5 text-slate-700">Deskripsi Detail</label>
-                            <textarea id="deskripsi" rows="5" placeholder="Jelaskan spesifikasi, material, dan detail produk..." class="w-full border border-slate-200/60 rounded-2xl px-5 py-4 resize-none shadow-sm font-medium"></textarea>
+                            <label class="block text-sm font-bold mb-2.5 text-neutral-700">Deskripsi Detail</label>
+                            <textarea id="deskripsi" rows="5" placeholder="Jelaskan spesifikasi, material, dan detail produk..." class="w-full border border-neutral-200/60 rounded-lg px-5 py-4 resize-none shadow-sm font-medium"></textarea>
                         </div>
 
                         <!-- ACTION -->
-                        <div class="pt-8 border-t border-slate-200/50 flex flex-col sm:flex-row gap-4 sm:justify-end">
-                            <button type="button" onclick="resetForm()" class="px-8 py-4 rounded-2xl border border-slate-200 font-bold hover:bg-slate-50 text-slate-700 transition shadow-sm">
+                        <div class="pt-8 border-t border-neutral-200/50 flex flex-col sm:flex-row gap-4 sm:justify-end">
+                            <button type="button" onclick="resetForm()" class="px-8 py-4 rounded-lg border border-neutral-200 font-bold hover:bg-neutral-50 text-neutral-700 transition shadow-sm">
                                 Batal
                             </button>
-                            <button id="btn-tambah" type="button" onclick="saveProduct()" class="px-8 py-4 rounded-2xl bg-slate-900 text-white font-black hover:bg-slate-800 transition shadow-float hover:shadow-xl hover:-translate-y-1">
-                                💾 Simpan ke Database
+                            <button id="btn-tambah" type="button" onclick="saveProduct()" class="px-8 py-4 rounded-lg bg-neutral-900 text-white font-black hover:bg-neutral-800 transition shadow-float hover:shadow-xl">
+                                Simpan ke Database
                             </button>
                         </div>
                     </div>
@@ -521,40 +521,40 @@ button:active {
                 <aside class="space-y-6">
                     <section class="glass-panel rounded-[2rem] overflow-hidden sticky top-28">
                         <div class="px-7 py-5 border-b border-white/50 bg-white/30 flex justify-between items-center">
-                            <h2 class="font-black text-slate-900">Pratinjau Live</h2>
+                            <h2 class="font-black text-neutral-900">Pratinjau Live</h2>
                             <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
                         </div>
                         
                         <div class="p-6">
-                            <div class="bg-white rounded-3xl aspect-square flex items-center justify-center overflow-hidden relative shadow-sm border border-slate-100">
-                                <img id="card-preview-image" class="hidden w-full h-full object-cover transition-transform duration-700 hover:scale-105" alt="Preview">
-                                <div id="card-preview-placeholder" class="text-center text-slate-300">
-                                    <div class="text-6xl mb-3 opacity-50">🖼️</div>
-                                    <p class="text-xs font-bold uppercase tracking-widest">No Image</p>
+                            <div class="bg-white rounded-lg aspect-square flex items-center justify-center overflow-hidden relative shadow-sm border border-neutral-100">
+                                <img id="card-preview-image" class="hidden w-full h-full object-cover transition-transform duration-700" alt="Preview">
+                                <div id="card-preview-placeholder" class="text-center text-neutral-300">
+                                    <div class="text-6xl mb-3 opacity-50"></div>
+                                    <p class="text-xs font-bold">No Image</p>
                                 </div>
                             </div>
 
                             <div id="preview-thumbnail-container" class="preview-thumbnails mt-4 hidden"></div>
-                            <div id="main-photo-label" class="hidden mt-3 text-center text-[10px] font-bold uppercase tracking-widest text-slate-400">Foto Utama</div>
+                            <div id="main-photo-label" class="hidden mt-3 text-center text-[10px] font-bold text-neutral-400">Foto Utama</div>
 
                             <div class="pt-6">
-                                <p id="preview-brand" class="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">BRAND</p>
-                                <h3 id="preview-name" class="font-black text-2xl mt-1.5 text-slate-900 leading-tight">Nama Produk</h3>
+                                <p id="preview-brand" class="text-[11px] font-black text-neutral-400 tracking-[0.2em]">BRAND</p>
+                                <h3 id="preview-name" class="font-black text-2xl mt-1.5 text-neutral-900 leading-tight">Nama Produk</h3>
                                 
                                 <div class="flex items-end gap-3 mt-4">
-                                    <span id="preview-price" class="font-black text-xl text-slate-900">Rp0</span>
-                                    <span id="preview-old-price" class="text-sm font-semibold text-slate-400 line-through mb-0.5"></span>
+                                    <span id="preview-price" class="font-black text-xl text-neutral-900">Rp0</span>
+                                    <span id="preview-old-price" class="text-sm font-semibold text-neutral-400 line-through mb-0.5"></span>
                                 </div>
 
                                 <div class="flex gap-2 mt-5 flex-wrap">
-                                    <span id="preview-type" class="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold border border-slate-200/50">Kasual</span>
-                                    <span id="preview-user" class="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-xl text-xs font-bold border border-slate-200/50">Pria</span>
+                                    <span id="preview-type" class="px-3 py-1.5 bg-neutral-100 text-neutral-700 rounded-md text-xs font-bold border border-neutral-200/50">Kasual</span>
+                                    <span id="preview-user" class="px-3 py-1.5 bg-neutral-100 text-neutral-700 rounded-md text-xs font-bold border border-neutral-200/50">Pria</span>
                                 </div>
 
-                                <div class="mt-6 pt-6 border-t border-slate-100">
-                                    <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-3">Ukuran Tersedia</p>
+                                <div class="mt-6 pt-6 border-t border-neutral-100">
+                                    <p class="text-[10px] font-bold text-neutral-400 mb-3">Ukuran Tersedia</p>
                                     <div id="preview-sizes" class="flex flex-wrap gap-2">
-                                        <span class="text-xs text-slate-400 italic">Belum dipilih</span>
+                                        <span class="text-xs text-neutral-400 italic">Belum dipilih</span>
                                     </div>
                                 </div>
                             </div>
@@ -569,18 +569,18 @@ button:active {
              ============================================== -->
         <section id="page-semua" class="hidden fade-in">
             <div class="mb-8">
-                <h1 class="text-3xl md:text-4xl font-black tracking-tight text-slate-900">Katalog Utama</h1>
-                <p class="text-slate-500 mt-2 font-medium">Kelola, edit, dan awasi seluruh inventaris produk dalam satu tempat.</p>
+                <h1 class="text-3xl md:text-4xl font-black tracking-tight text-neutral-900">Katalog Utama</h1>
+                <p class="text-neutral-500 mt-2 font-medium">Kelola, edit, dan awasi seluruh inventaris produk dalam satu tempat.</p>
             </div>
 
             <section class="glass-panel rounded-[2rem] p-6 mb-8 border border-white/60">
                 <div class="grid md:grid-cols-[1fr_220px_auto] gap-4">
                     <div class="relative">
-                        <span class="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 text-lg">🔍</span>
-                        <input id="product-search" type="text" placeholder="Cari berdasarkan nama atau brand..." class="w-full bg-white/70 border border-slate-200/60 rounded-2xl pl-12 pr-5 py-4 font-medium shadow-sm">
+                        <span class="absolute left-5 top-1/2 -translate-y-1/2 text-neutral-400 text-lg"></span>
+                        <input id="product-search" type="text" placeholder="Cari berdasarkan nama atau brand..." class="w-full bg-white/70 border border-neutral-200/60 rounded-lg pl-12 pr-5 py-4 font-medium shadow-sm">
                     </div>
                     
-                    <select id="product-filter" class="bg-white/70 border border-slate-200/60 rounded-2xl px-5 py-4 font-bold text-slate-700 shadow-sm appearance-none">
+                    <select id="product-filter" class="bg-white/70 border border-neutral-200/60 rounded-lg px-5 py-4 font-bold text-neutral-700 shadow-sm appearance-none">
                         <option value="semua">Semua Kategori</option>
                         <option value="kasual">Kasual</option>
                         <option value="running">Running</option>
@@ -589,21 +589,21 @@ button:active {
                         <option value="lainnya">Lainnya...</option>
                     </select>
 
-                    <button onclick="refreshProducts()" class="px-6 py-4 rounded-2xl bg-slate-900 text-white font-bold hover:bg-slate-800 shadow-float transition-all">
+                    <button onclick="refreshProducts()" class="px-6 py-4 rounded-lg bg-neutral-900 text-white font-bold hover:bg-neutral-800 shadow-float transition-all">
                         ↻ Refresh
                     </button>
                 </div>
             </section>
 
             <div class="flex items-center justify-between mb-5 px-2">
-                <p id="product-count" class="text-sm font-bold text-slate-500 uppercase tracking-wide">Memuat data produk...</p>
+                <p id="product-count" class="text-sm font-bold text-neutral-500 tracking-wide">Memuat data produk...</p>
             </div>
 
             <div id="product-list" class="grid sm:grid-cols-2 xl:grid-cols-3 gap-6">
                 <!-- Data produk di-generate di sini via JS. -->
-                <div class="glass-panel rounded-3xl p-10 text-center sm:col-span-2 xl:col-span-3">
-                    <div class="w-10 h-10 border-4 border-slate-200 border-t-slate-900 rounded-full animate-spin mx-auto mb-4"></div>
-                    <p class="font-bold text-slate-700">Mengambil data dari server...</p>
+                <div class="glass-panel rounded-lg p-10 text-center sm:col-span-2 xl:col-span-3">
+                    <div class="w-10 h-10 border-4 border-neutral-200 border-t-neutral-900 rounded-full animate-spin mx-auto mb-4"></div>
+                    <p class="font-bold text-neutral-700">Mengambil data dari server...</p>
                 </div>
             </div>
         </section>
@@ -614,21 +614,21 @@ button:active {
         <section id="page-pesanan" class="hidden fade-in">
             <div class="mb-8 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
                 <div>
-                    <h2 class="text-3xl md:text-4xl font-black tracking-tight text-slate-900">Manajemen Pesanan</h2>
-                    <p class="text-slate-500 mt-2 font-medium">Pantau pesanan masuk, ubah status, dan kelola keterangan order.</p>
+                    <h2 class="text-3xl md:text-4xl font-black tracking-tight text-neutral-900">Manajemen Pesanan</h2>
+                    <p class="text-neutral-500 mt-2 font-medium">Pantau pesanan masuk, ubah status, dan kelola keterangan order.</p>
                 </div>
                 <div class="flex gap-3">
-                    <button onclick="loadOrders()" class="px-5 py-3 rounded-2xl bg-white border border-slate-200 font-bold text-slate-700 hover:bg-slate-50 shadow-sm transition">↻ Segarkan</button>
-                    <button onclick="deleteOrderHistory()" class="px-5 py-3 rounded-2xl bg-red-50 border border-red-100 font-bold text-red-600 hover:bg-red-100 shadow-sm transition">🗑 Hapus Riwayat</button>
+                    <button onclick="loadOrders()" class="px-5 py-3 rounded-lg bg-white border border-neutral-200 font-bold text-neutral-700 hover:bg-neutral-50 shadow-sm transition">↻ Segarkan</button>
+                    <button onclick="deleteOrderHistory()" class="px-5 py-3 rounded-lg bg-red-50 border border-red-100 font-bold text-red-600 hover:bg-red-100 shadow-sm transition">Hapus Riwayat</button>
                 </div>
             </div>
             
             <div class="glass-panel rounded-[2rem] overflow-hidden">
                 <div class="px-8 py-5 border-b border-white/50 bg-white/30">
-                    <h3 class="font-black text-lg text-slate-900">Daftar Transaksi</h3>
+                    <h3 class="font-black text-lg text-neutral-900">Daftar Transaksi</h3>
                 </div>
                 <div id="orders-list" class="p-6 md:p-8 space-y-4">
-                    <div class="text-center py-16 text-slate-400 font-medium">Memuat pesanan masuk...</div>
+                    <div class="text-center py-16 text-neutral-400 font-medium">Memuat pesanan masuk...</div>
                 </div>
             </div>
         </section>
@@ -639,42 +639,42 @@ button:active {
         <section id="page-pengunjung" class="hidden fade-in">
             <div class="mb-8 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
                 <div>
-                    <h2 class="text-3xl md:text-4xl font-black tracking-tight text-slate-900">Lalu Lintas Pengunjung</h2>
-                    <p class="text-slate-500 mt-2 font-medium">Analisis demografi pengunjung anonim, perangkat, dan rujukan.</p>
+                    <h2 class="text-3xl md:text-4xl font-black tracking-tight text-neutral-900">Lalu Lintas Pengunjung</h2>
+                    <p class="text-neutral-500 mt-2 font-medium">Analisis demografi pengunjung anonim, perangkat, dan rujukan.</p>
                 </div>
                 <div class="flex gap-3">
-                    <button onclick="loadAnalytics()" class="px-5 py-3 rounded-2xl bg-white border border-slate-200 font-bold text-slate-700 hover:bg-slate-50 shadow-sm transition">↻ Analisis Baru</button>
-                    <button onclick="deleteVisitHistory()" class="px-5 py-3 rounded-2xl bg-red-50 border border-red-100 font-bold text-red-600 hover:bg-red-100 shadow-sm transition">🗑 Bersihkan Log</button>
+                    <button onclick="loadAnalytics()" class="px-5 py-3 rounded-lg bg-white border border-neutral-200 font-bold text-neutral-700 hover:bg-neutral-50 shadow-sm transition">↻ Analisis Baru</button>
+                    <button onclick="deleteVisitHistory()" class="px-5 py-3 rounded-lg bg-red-50 border border-red-100 font-bold text-red-600 hover:bg-red-100 shadow-sm transition">Bersihkan Log</button>
                 </div>
             </div>
             
             <div class="grid sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
                 <div class="glass-panel rounded-[2rem] p-6">
-                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Total Kunjungan</p>
-                    <p id="stat-total-visits" class="text-3xl font-black text-slate-900 mt-2">—</p>
+                    <p class="text-[10px] font-black text-neutral-400">Total Kunjungan</p>
+                    <p id="stat-total-visits" class="text-3xl font-black text-neutral-900 mt-2">—</p>
                 </div>
                 <div class="glass-panel rounded-[2rem] p-6">
-                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Pengunjung Unik</p>
-                    <p id="stat-unique-visitors" class="text-3xl font-black text-slate-900 mt-2">—</p>
+                    <p class="text-[10px] font-black text-neutral-400">Pengunjung Unik</p>
+                    <p id="stat-unique-visitors" class="text-3xl font-black text-neutral-900 mt-2">—</p>
                 </div>
                 <div class="glass-panel rounded-[2rem] p-6">
-                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Via Referral</p>
-                    <p id="stat-referral-visits" class="text-3xl font-black text-slate-900 mt-2">—</p>
+                    <p class="text-[10px] font-black text-neutral-400">Via Referral</p>
+                    <p id="stat-referral-visits" class="text-3xl font-black text-neutral-900 mt-2">—</p>
                 </div>
                 <div class="glass-panel rounded-[2rem] p-6">
-                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Log Ditampilkan</p>
-                    <p id="stat-shown-visits" class="text-3xl font-black text-slate-900 mt-2">—</p>
+                    <p class="text-[10px] font-black text-neutral-400">Log Ditampilkan</p>
+                    <p id="stat-shown-visits" class="text-3xl font-black text-neutral-900 mt-2">—</p>
                 </div>
             </div>
 
             <div class="glass-panel rounded-[2rem] overflow-hidden">
                 <div class="px-8 py-5 border-b border-white/50 bg-white/30 flex justify-between items-center">
-                    <h3 class="font-black text-lg text-slate-900">Riwayat Akses Terakhir</h3>
-                    <span class="px-3 py-1 bg-slate-100 text-slate-500 rounded-full text-xs font-bold">500 Log Teratas</span>
+                    <h3 class="font-black text-lg text-neutral-900">Riwayat Akses Terakhir</h3>
+                    <span class="px-3 py-1 bg-neutral-100 text-neutral-500 rounded-full text-xs font-bold">500 Log Teratas</span>
                 </div>
                 <div class="overflow-x-auto">
                     <table class="w-full text-sm min-w-[1100px] text-left">
-                        <thead class="bg-white/40 text-slate-500 text-[10px] font-black uppercase tracking-widest border-b border-slate-200/50">
+                        <thead class="bg-white/40 text-neutral-500 text-[10px] font-black border-b border-neutral-200/50">
                             <tr>
                                 <th class="px-6 py-4">Waktu</th>
                                 <th class="px-6 py-4">ID Pengunjung</th>
@@ -686,8 +686,8 @@ button:active {
                                 <th class="px-6 py-4 text-right">Aksi</th>
                             </tr>
                         </thead>
-                        <tbody id="visits-list" class="divide-y divide-slate-100">
-                            <tr><td colspan="8" class="px-6 py-12 text-center text-slate-400 font-medium">Memuat data analitik...</td></tr>
+                        <tbody id="visits-list" class="divide-y divide-neutral-100">
+                            <tr><td colspan="8" class="px-6 py-12 text-center text-neutral-400 font-medium">Memuat data analitik...</td></tr>
                         </tbody>
                     </table>
                 </div>
@@ -702,75 +702,75 @@ button:active {
 <!-- EDIT MODAL -->
 <div id="edit-modal" class="fixed inset-0 z-[600] modal-bg hidden items-center justify-center p-4 sm:p-6 transition-opacity">
     <div class="glass-panel bg-white/90 rounded-[2rem] w-full max-w-5xl max-h-[92vh] overflow-hidden flex flex-col shadow-2xl border border-white">
-        <div class="px-8 py-6 border-b border-slate-200 flex justify-between items-center bg-white/50">
+        <div class="px-8 py-6 border-b border-neutral-200 flex justify-between items-center bg-white/50">
             <div>
-                <h2 class="font-black text-2xl text-slate-900">Edit Data Produk</h2>
-                <p id="edit-product-id" class="text-xs font-bold text-slate-400 uppercase tracking-wider mt-1"></p>
+                <h2 class="font-black text-2xl text-neutral-900">Edit Data Produk</h2>
+                <p id="edit-product-id" class="text-xs font-bold text-neutral-400 mt-1"></p>
             </div>
-            <button onclick="closeEditModal()" class="w-10 h-10 rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200 flex items-center justify-center text-xl transition">×</button>
+            <button onclick="closeEditModal()" class="w-10 h-10 rounded-full bg-neutral-100 text-neutral-500 hover:bg-neutral-200 flex items-center justify-center text-xl transition">×</button>
         </div>
         
         <div class="p-8 overflow-y-auto scrollbar-hide space-y-8">
             <div class="grid md:grid-cols-2 gap-6">
                 <div class="md:col-span-2">
-                    <label class="block text-sm font-bold mb-2 text-slate-700">Nama Produk</label>
-                    <input id="edit-nama" class="w-full border border-slate-200/60 rounded-2xl px-5 py-3.5 font-medium shadow-sm">
+                    <label class="block text-sm font-bold mb-2 text-neutral-700">Nama Produk</label>
+                    <input id="edit-nama" class="w-full border border-neutral-200/60 rounded-lg px-5 py-3.5 font-medium shadow-sm">
                 </div>
                 <div>
-                    <label class="block text-sm font-bold mb-2 text-slate-700">Brand</label>
-                    <input id="edit-brand" class="w-full border border-slate-200/60 rounded-2xl px-5 py-3.5 font-medium shadow-sm">
+                    <label class="block text-sm font-bold mb-2 text-neutral-700">Brand</label>
+                    <input id="edit-brand" class="w-full border border-neutral-200/60 rounded-lg px-5 py-3.5 font-medium shadow-sm">
                 </div>
                 <div>
-                    <label class="block text-sm font-bold mb-2 text-slate-700">Tipe</label>
-                    <select id="edit-tipe" class="w-full border border-slate-200/60 rounded-2xl px-5 py-3.5 font-medium shadow-sm">
+                    <label class="block text-sm font-bold mb-2 text-neutral-700">Tipe</label>
+                    <select id="edit-tipe" class="w-full border border-neutral-200/60 rounded-lg px-5 py-3.5 font-medium shadow-sm">
                         <option value="kasual">Kasual</option><option value="running">Running</option><option value="sandal">Sandal</option><option value="tas">Tas</option><option value="lainnya">Lainnya</option>
                     </select>
-                    <input id="edit-tipe-lainnya" type="text" class="hidden w-full border border-slate-200/60 rounded-2xl px-5 py-3.5 mt-3 shadow-sm font-medium">
+                    <input id="edit-tipe-lainnya" type="text" class="hidden w-full border border-neutral-200/60 rounded-lg px-5 py-3.5 mt-3 shadow-sm font-medium">
                 </div>
                 <div>
-                    <label class="block text-sm font-bold mb-2 text-slate-700">Harga Jual</label>
-                    <input id="edit-harga" type="number" min="0" class="w-full border border-slate-200/60 rounded-2xl px-5 py-3.5 font-bold shadow-sm">
+                    <label class="block text-sm font-bold mb-2 text-neutral-700">Harga Jual</label>
+                    <input id="edit-harga" type="number" min="0" class="w-full border border-neutral-200/60 rounded-lg px-5 py-3.5 font-bold shadow-sm">
                 </div>
                 <div>
-                    <label class="block text-sm font-bold mb-2 text-slate-700">Harga Coret</label>
-                    <input id="edit-harga-coret" type="number" min="0" class="w-full border border-slate-200/60 rounded-2xl px-5 py-3.5 font-bold text-slate-500 shadow-sm">
+                    <label class="block text-sm font-bold mb-2 text-neutral-700">Harga Coret</label>
+                    <input id="edit-harga-coret" type="number" min="0" class="w-full border border-neutral-200/60 rounded-lg px-5 py-3.5 font-bold text-neutral-500 shadow-sm">
                 </div>
                 <div>
-                    <label class="block text-sm font-bold mb-2 text-slate-700">Asal Produk</label>
-                    <select id="edit-asal" class="w-full border border-slate-200/60 rounded-2xl px-5 py-3.5 font-medium shadow-sm"><option value="internasional">Internasional</option><option value="lokal">Lokal</option></select>
+                    <label class="block text-sm font-bold mb-2 text-neutral-700">Asal Produk</label>
+                    <select id="edit-asal" class="w-full border border-neutral-200/60 rounded-lg px-5 py-3.5 font-medium shadow-sm"><option value="internasional">Internasional</option><option value="lokal">Lokal</option></select>
                 </div>
                 <div>
-                    <label class="block text-sm font-bold mb-2 text-slate-700">Pengguna</label>
-                    <select id="edit-pengguna" class="w-full border border-slate-200/60 rounded-2xl px-5 py-3.5 font-medium shadow-sm"><option value="pria">Pria</option><option value="wanita">Wanita</option><option value="unisex">Unisex</option><option value="anak">Anak</option></select>
+                    <label class="block text-sm font-bold mb-2 text-neutral-700">Pengguna</label>
+                    <select id="edit-pengguna" class="w-full border border-neutral-200/60 rounded-lg px-5 py-3.5 font-medium shadow-sm"><option value="pria">Pria</option><option value="wanita">Wanita</option><option value="unisex">Unisex</option><option value="anak">Anak</option></select>
                 </div>
             </div>
 
             <div>
-                <h3 class="font-black text-lg mb-4 text-slate-900">Penyesuaian Ukuran</h3>
+                <h3 class="font-black text-lg mb-4 text-neutral-900">Penyesuaian Ukuran</h3>
                 <div id="edit-size-container" class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3"></div>
             </div>
 
             <div>
                 <div class="flex items-center justify-between mb-4">
-                    <h3 class="font-black text-lg text-slate-900">Galeri Produk</h3>
-                    <span id="edit-photo-count" class="text-xs font-bold px-3 py-1 bg-slate-100 rounded-full text-slate-500">0 / 10 foto</span>
+                    <h3 class="font-black text-lg text-neutral-900">Galeri Produk</h3>
+                    <span id="edit-photo-count" class="text-xs font-bold px-3 py-1 bg-neutral-100 rounded-full text-neutral-500">0 / 10 foto</span>
                 </div>
                 <div id="edit-photo-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-5"></div>
                 
                 <div class="mt-4">
-                    <label class="block text-sm font-bold mb-2 text-slate-700">Tambah/Ganti Foto</label>
-                    <input id="edit-gambar" type="file" accept="image/jpeg,image/png,image/webp" multiple class="w-full border border-slate-200/60 rounded-2xl px-5 py-3 font-medium bg-white/50 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-slate-900 file:text-white hover:file:bg-slate-800">
+                    <label class="block text-sm font-bold mb-2 text-neutral-700">Tambah/Ganti Foto</label>
+                    <input id="edit-gambar" type="file" accept="image/jpeg,image/png,image/webp" multiple class="w-full border border-neutral-200/60 rounded-lg px-5 py-3 font-medium bg-white/50 text-sm file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-neutral-900 file:text-white hover:file:bg-neutral-800">
                 </div>
             </div>
 
             <div>
-                <label class="block text-sm font-bold mb-2 text-slate-700">Deskripsi Produk</label>
-                <textarea id="edit-deskripsi" rows="5" class="w-full border border-slate-200/60 rounded-2xl px-5 py-4 resize-none shadow-sm font-medium"></textarea>
+                <label class="block text-sm font-bold mb-2 text-neutral-700">Deskripsi Produk</label>
+                <textarea id="edit-deskripsi" rows="5" class="w-full border border-neutral-200/60 rounded-lg px-5 py-4 resize-none shadow-sm font-medium"></textarea>
             </div>
             
-            <div class="pt-6 mt-6 border-t border-slate-200 flex justify-end gap-4 pb-4">
-                <button onclick="closeEditModal()" class="px-6 py-3.5 rounded-2xl border border-slate-200 font-bold hover:bg-slate-50 text-slate-700 shadow-sm transition">Batal</button>
-                <button id="btn-save-edit" onclick="updateProduct()" class="px-8 py-3.5 rounded-2xl bg-slate-900 text-white font-black hover:bg-slate-800 shadow-float hover:shadow-xl hover:-translate-y-1 transition">Simpan Perubahan</button>
+            <div class="pt-6 mt-6 border-t border-neutral-200 flex justify-end gap-4 pb-4">
+                <button onclick="closeEditModal()" class="px-6 py-3.5 rounded-lg border border-neutral-200 font-bold hover:bg-neutral-50 text-neutral-700 shadow-sm transition">Batal</button>
+                <button id="btn-save-edit" onclick="updateProduct()" class="px-8 py-3.5 rounded-lg bg-neutral-900 text-white font-black hover:bg-neutral-800 shadow-float hover:shadow-xl transition">Simpan Perubahan</button>
             </div>
         </div>
     </div>
@@ -780,34 +780,33 @@ button:active {
 <div id="delete-modal" class="fixed inset-0 z-[610] modal-bg hidden items-center justify-center p-5">
     <div class="glass-panel bg-white/95 w-full max-w-sm rounded-[2rem] p-8 text-center shadow-2xl border border-white">
         <div class="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center text-4xl mx-auto mb-6 shadow-sm border border-red-100">
-            🗑️
-        </div>
-        <h2 class="text-2xl font-black text-slate-900">Hapus Produk?</h2>
-        <p class="text-slate-500 text-sm mt-3 font-medium leading-relaxed">Produk ini akan dihapus secara permanen dari katalog dan database:</p>
-        <p id="delete-product-name" class="font-black mt-2 text-lg text-slate-800"></p>
+                    </div>
+        <h2 class="text-2xl font-black text-neutral-900">Hapus Produk?</h2>
+        <p class="text-neutral-500 text-sm mt-3 font-medium leading-relaxed">Produk ini akan dihapus secara permanen dari katalog dan database:</p>
+        <p id="delete-product-name" class="font-black mt-2 text-lg text-neutral-800"></p>
         
         <div class="flex gap-3 mt-8">
-            <button onclick="closeDeleteModal()" class="flex-1 px-5 py-3.5 rounded-2xl border border-slate-200 font-bold hover:bg-slate-50 text-slate-700 transition">Batal</button>
-            <button id="btn-confirm-delete" onclick="confirmDelete()" class="flex-1 px-5 py-3.5 rounded-2xl bg-red-600 text-white font-bold hover:bg-red-700 shadow-md transition">Ya, Hapus</button>
+            <button onclick="closeDeleteModal()" class="flex-1 px-5 py-3.5 rounded-lg border border-neutral-200 font-bold hover:bg-neutral-50 text-neutral-700 transition">Batal</button>
+            <button id="btn-confirm-delete" onclick="confirmDelete()" class="flex-1 px-5 py-3.5 rounded-lg bg-red-600 text-white font-bold hover:bg-red-700 shadow-md transition">Ya, Hapus</button>
         </div>
     </div>
 </div>
 
 <!-- PANEL LIVE CHAT ADMIN -->
-<div id="admin-chat-modal" class="hidden fixed inset-0 z-[800] bg-slate-950/40 backdrop-blur-sm p-3 sm:p-6 items-center justify-center">
- <section class="w-full max-w-5xl h-[min(88vh,760px)] bg-white rounded-3xl shadow-2xl overflow-hidden flex flex-col">
-  <header class="px-5 py-4 border-b flex items-center justify-between gap-3"><div><h2 class="font-extrabold text-lg">Chat Pelanggan</h2><p class="text-xs text-slate-500">Pesan pelanggan masuk di sini; balasan dikirim langsung ke website.</p><p id="ks-chat-notify-status" class="text-xs text-slate-500 mt-1">Notifikasi belum diaktifkan di browser ini.</p></div><div class="flex items-center gap-2 flex-wrap justify-end"><button type="button" onclick="enableAdminChatNotifications()" class="text-xs sm:text-sm font-bold rounded-xl bg-blue-50 text-blue-700 px-3 py-2">🔔 Dering/getar</button><button id="ks-push-enable" type="button" onclick="enableAdminPush()" class="text-xs sm:text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl px-3 py-2">📲 Push latar</button><button type="button" onclick="closeAdminChat()" class="text-2xl px-2" aria-label="Tutup chat">×</button></div></header>
+<div id="admin-chat-modal" class="hidden fixed inset-0 z-[800] bg-neutral-950/40 backdrop-blur-sm p-3 sm:p-6 items-center justify-center">
+ <section class="w-full max-w-5xl h-[min(88vh,760px)] bg-white rounded-lg shadow-2xl overflow-hidden flex flex-col">
+  <header class="px-5 py-4 border-b flex items-center justify-between gap-3"><div><h2 class="font-extrabold text-lg">Chat Pelanggan</h2><p class="text-xs text-neutral-500">Pesan pelanggan masuk di sini; balasan dikirim langsung ke website.</p><p id="ks-chat-notify-status" class="text-xs text-neutral-500 mt-1">Notifikasi belum diaktifkan di browser ini.</p></div><div class="flex items-center gap-2 flex-wrap justify-end"><button type="button" onclick="enableAdminChatNotifications()" class="text-xs sm:text-sm font-bold rounded-md bg-neutral-100 text-neutral-700 px-3 py-2">Dering/getar</button><button id="ks-push-enable" type="button" onclick="enableAdminPush()" class="text-xs sm:text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-md px-3 py-2">Push latar</button><button type="button" onclick="closeAdminChat()" class="text-2xl px-2" aria-label="Tutup chat">×</button></div></header>
   <div class="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-[280px_1fr]">
-   <aside class="border-r overflow-y-auto" id="admin-chat-conversations"><p class="p-4 text-sm text-slate-500">Memuat percakapan…</p></aside>
-   <div class="min-h-0 flex flex-col"><div id="admin-chat-active-title" class="p-4 border-b text-sm font-bold text-slate-500">Pilih percakapan</div><div id="admin-chat-messages" class="flex-1 min-h-0 overflow-y-auto p-4 space-y-3 bg-slate-50"><p class="text-sm text-slate-500">Belum ada percakapan dipilih.</p></div><form id="admin-chat-form" class="p-3 border-t flex gap-2"><input id="admin-chat-input" maxlength="2000" placeholder="Balas pelanggan…" class="min-w-0 flex-1 border rounded-xl px-3 py-3 text-sm" disabled><button id="admin-chat-send" type="submit" class="bg-slate-900 text-white font-bold px-4 rounded-xl disabled:opacity-50" disabled>Kirim</button></form></div>
+   <aside class="border-r overflow-y-auto" id="admin-chat-conversations"><p class="p-4 text-sm text-neutral-500">Memuat percakapan…</p></aside>
+   <div class="min-h-0 flex flex-col"><div id="admin-chat-active-title" class="p-4 border-b text-sm font-bold text-neutral-500">Pilih percakapan</div><div id="admin-chat-messages" class="flex-1 min-h-0 overflow-y-auto p-4 space-y-3 bg-neutral-50"><p class="text-sm text-neutral-500">Belum ada percakapan dipilih.</p></div><form id="admin-chat-form" class="p-3 border-t flex gap-2"><input id="admin-chat-input" maxlength="2000" placeholder="Balas pelanggan…" class="min-w-0 flex-1 border rounded-md px-3 py-3 text-sm" disabled><button id="admin-chat-send" type="submit" class="bg-neutral-900 text-white font-bold px-4 rounded-md disabled:opacity-50" disabled>Kirim</button></form></div>
   </div>
  </section>
 </div>
 
 <!-- TOAST -->
 <div id="toast" class="fixed bottom-8 right-8 z-[1000] translate-y-20 opacity-0 transition-all duration-500 ease-out">
-    <div id="toast-box" class="bg-slate-900 text-white px-6 py-4 rounded-2xl shadow-[0_20px_40px_-10px_rgba(0,0,0,0.3)] flex items-center gap-4 border border-slate-700">
-        <span id="toast-icon" class="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500 text-white text-xs font-bold">✓</span>
+    <div id="toast-box" class="bg-neutral-900 text-white px-6 py-4 rounded-lg shadow-[0_20px_40px_-10px_rgba(0,0,0,0.3)] flex items-center gap-4 border border-neutral-700">
+        <span id="toast-icon" class="flex items-center justify-center w-6 h-6 rounded-full bg-emerald-500 text-white text-xs font-bold"></span>
         <span id="toast-message" class="font-bold text-sm tracking-wide">Pesan Notifikasi</span>
     </div>
 </div>
@@ -929,11 +928,11 @@ function showPage(page) {
     const tambah = document.getElementById("page-tambah"), semua = document.getElementById("page-semua"), pesanan = document.getElementById("page-pesanan"), pengunjung = document.getElementById("page-pengunjung");
     const menuTambah = document.getElementById("menu-tambah"), menuSemua = document.getElementById("menu-semua"), menuPesanan = document.getElementById("menu-pesanan"), menuPengunjung = document.getElementById("menu-pengunjung");
     [tambah, semua, pesanan, pengunjung].forEach(el => el && el.classList.add("hidden"));
-    [menuTambah, menuSemua, menuPesanan, menuPengunjung].forEach(el => { if (el) { el.classList.remove("active"); el.classList.add("text-slate-600"); } });
-    if (page === "tambah") { tambah.classList.remove("hidden"); menuTambah.classList.add("active"); menuTambah.classList.remove("text-slate-600"); document.getElementById("top-title").textContent = "Tambah Produk"; }
-    if (page === "semua") { semua.classList.remove("hidden"); menuSemua.classList.add("active"); menuSemua.classList.remove("text-slate-600"); document.getElementById("top-title").textContent = "Semua Produk"; loadProducts(); }
-    if (page === "pesanan") { pesanan.classList.remove("hidden"); menuPesanan.classList.add("active"); menuPesanan.classList.remove("text-slate-600"); document.getElementById("top-title").textContent = "Pesanan Masuk"; loadOrders(); }
-    if (page === "pengunjung") { pengunjung.classList.remove("hidden"); menuPengunjung.classList.add("active"); menuPengunjung.classList.remove("text-slate-600"); document.getElementById("top-title").textContent = "Data Pengunjung"; loadAnalytics(); }
+    [menuTambah, menuSemua, menuPesanan, menuPengunjung].forEach(el => { if (el) { el.classList.remove("active"); el.classList.add("text-neutral-600"); } });
+    if (page === "tambah") { tambah.classList.remove("hidden"); menuTambah.classList.add("active"); menuTambah.classList.remove("text-neutral-600"); document.getElementById("top-title").textContent = "Tambah Produk"; }
+    if (page === "semua") { semua.classList.remove("hidden"); menuSemua.classList.add("active"); menuSemua.classList.remove("text-neutral-600"); document.getElementById("top-title").textContent = "Semua Produk"; loadProducts(); }
+    if (page === "pesanan") { pesanan.classList.remove("hidden"); menuPesanan.classList.add("active"); menuPesanan.classList.remove("text-neutral-600"); document.getElementById("top-title").textContent = "Pesanan Masuk"; loadOrders(); }
+    if (page === "pengunjung") { pengunjung.classList.remove("hidden"); menuPengunjung.classList.add("active"); menuPengunjung.classList.remove("text-neutral-600"); document.getElementById("top-title").textContent = "Data Pengunjung"; loadAnalytics(); }
     if (window.innerWidth < 1024) { document.getElementById("sidebar").classList.add("-translate-x-full"); document.getElementById("sidebar-overlay").classList.add("hidden"); }
 }
 
@@ -954,7 +953,7 @@ function addCustomSize(targetSet, renderFunction, afterAdd) {
 function createCustomSizeButton(targetSet, renderFunction, afterAdd) {
     const button = document.createElement("button");
     button.type = "button"; button.textContent = "+ Lainnya";
-    button.className = "border-2 border-dashed border-slate-300 rounded-xl py-3 text-sm font-bold hover:border-slate-800 hover:bg-slate-50 text-slate-500 transition shadow-sm bg-white/50";
+    button.className = "border-2 border-dashed border-neutral-300 rounded-md py-3 text-sm font-bold hover:border-neutral-800 hover:bg-neutral-50 text-neutral-500 transition shadow-sm bg-white/50";
     button.addEventListener("click", () => { addCustomSize(targetSet, renderFunction, afterAdd); });
     return button;
 }
@@ -965,8 +964,8 @@ function renderSizes() {
     sizes.forEach(size => {
         const button = document.createElement("button");
         button.type = "button"; button.textContent = size;
-        button.className = "size-button border border-slate-200 bg-white/50 rounded-xl py-3 text-sm font-bold hover:border-slate-800 hover:shadow-md transition";
-        if (selectedSizes.has(size)) { button.classList.add("bg-slate-900", "text-white", "border-slate-900"); button.classList.remove("bg-white/50"); }
+        button.className = "size-button border border-neutral-200 bg-white/50 rounded-md py-3 text-sm font-bold hover:border-neutral-800 hover:shadow-md transition";
+        if (selectedSizes.has(size)) { button.classList.add("bg-neutral-900", "text-white", "border-neutral-900"); button.classList.remove("bg-white/50"); }
         button.addEventListener("click", () => {
             if (selectedSizes.has(size)) { selectedSizes.delete(size); } else { selectedSizes.add(size); }
             renderSizes(); updatePreview();
@@ -978,7 +977,7 @@ function renderSizes() {
     customSizes.forEach(size => {
         const button = document.createElement("button");
         button.type = "button"; button.textContent = size;
-        button.className = "border border-slate-900 bg-slate-900 text-white rounded-xl py-3 text-sm font-bold hover:bg-slate-800 transition shadow-md";
+        button.className = "border border-neutral-900 bg-neutral-900 text-white rounded-md py-3 text-sm font-bold hover:bg-neutral-800 transition shadow-md";
         button.title = "Klik untuk menghapus ukuran custom ini";
         button.addEventListener("click", () => { selectedSizes.delete(size); renderSizes(); updatePreview(); });
         container.appendChild(button);
@@ -1026,11 +1025,11 @@ function renderImagePreviews() {
     selectedImageFiles.forEach((file, index) => {
         const url = URL.createObjectURL(file);
         const item = document.createElement("div");
-        item.className = "photo-thumb bg-white rounded-[1rem] overflow-hidden aspect-square border border-slate-200 shadow-sm relative";
+        item.className = "photo-thumb bg-white rounded-[1rem] overflow-hidden aspect-square border border-neutral-200 shadow-sm relative";
         item.innerHTML = `
             <img src="${url}" class="w-full h-full object-cover" alt="Foto ${index + 1}">
-            <button type="button" onclick="removeSelectedImage(${index}, event)" class="w-7 h-7 rounded-full bg-slate-900/80 backdrop-blur text-white text-xs flex items-center justify-center hover:bg-red-500 absolute top-2 right-2">×</button>
-            <button type="button" onclick="setPreviewMain(${index}, event)" class="absolute bottom-2 left-2 bg-white/90 backdrop-blur text-slate-900 text-[9px] uppercase tracking-wider px-2 py-1 rounded-lg font-black shadow-sm">
+            <button type="button" onclick="removeSelectedImage(${index}, event)" class="w-7 h-7 rounded-full bg-neutral-900/80 backdrop-blur text-white text-xs flex items-center justify-center hover:bg-red-500 absolute top-2 right-2">×</button>
+            <button type="button" onclick="setPreviewMain(${index}, event)" class="absolute bottom-2 left-2 bg-white/90 backdrop-blur text-neutral-900 text-[9px] px-2 py-1 rounded-lg font-black shadow-sm">
                 ${index === 0 ? "UTAMA" : "JADIKAN UTAMA"}
             </button>
         `;
@@ -1045,7 +1044,7 @@ function renderAddPreviewGallery() {
     container.classList.remove("hidden"); container.classList.add("flex", "gap-2", "overflow-x-auto", "pb-2");
     selectedImageFiles.forEach((file, index) => {
         const url = URL.createObjectURL(file); const thumb = document.createElement("div");
-        thumb.className = "preview-thumbnail flex-shrink-0 w-14 h-14 rounded-xl overflow-hidden border-2 cursor-pointer transition-all " + (index === previewMainIndex ? " border-slate-900 shadow-md" : " border-transparent opacity-60 hover:opacity-100");
+        thumb.className = "preview-thumbnail flex-shrink-0 w-14 h-14 rounded-md overflow-hidden border-2 cursor-pointer transition-all " + (index === previewMainIndex ? " border-neutral-900 shadow-md" : " border-transparent opacity-60 hover:opacity-100");
         thumb.innerHTML = `<img src="${url}" alt="Thumbnail ${index + 1}" class="w-full h-full object-cover">`;
         thumb.addEventListener("click", () => { previewMainIndex = index; renderAddPreviewGallery(); updateMainAddPreview(); });
         container.appendChild(thumb);
@@ -1081,11 +1080,11 @@ function updatePreview() {
     document.getElementById("preview-user").textContent = capitalize(document.getElementById("pengguna").value);
 
     const sizeContainer = document.getElementById("preview-sizes");
-    if (selectedSizes.size === 0) { sizeContainer.innerHTML = `<span class="text-xs text-slate-400 italic">Belum dipilih</span>`; } else {
+    if (selectedSizes.size === 0) { sizeContainer.innerHTML = `<span class="text-xs text-neutral-400 italic">Belum dipilih</span>`; } else {
         sizeContainer.innerHTML = "";
         [...selectedSizes].sort((a, b) => Number(a) - Number(b)).forEach(size => {
             const span = document.createElement("span");
-            span.className = "px-3 py-1.5 bg-slate-900 text-white rounded-lg text-xs font-bold shadow-sm";
+            span.className = "px-3 py-1.5 bg-neutral-900 text-white rounded-lg text-xs font-bold shadow-sm";
             span.textContent = size;
             sizeContainer.appendChild(span);
         });
@@ -1150,7 +1149,7 @@ async function loadProducts() {
         allProducts = result.products || []; updateStats(); renderProducts();
     } catch (error) {
         console.error(error);
-        list.innerHTML = `<div class="glass-panel rounded-3xl p-10 text-center sm:col-span-2 xl:col-span-3 border border-red-100"><div class="text-4xl mb-4">⚠️</div><p class="font-black text-xl text-slate-900">Gagal memuat katalog</p><p class="text-slate-500 mt-2">Pastikan backend server berjalan dengan baik.</p><button onclick="loadProducts()" class="mt-6 px-6 py-3 rounded-2xl bg-slate-900 text-white font-bold shadow-md">Coba Lagi</button></div>`;
+        list.innerHTML = `<div class="glass-panel rounded-lg p-10 text-center sm:col-span-2 xl:col-span-3 border border-red-100"><div class="text-4xl mb-4"></div><p class="font-black text-xl text-neutral-900">Gagal memuat katalog</p><p class="text-neutral-500 mt-2">Pastikan backend server berjalan dengan baik.</p><button onclick="loadProducts()" class="mt-6 px-6 py-3 rounded-lg bg-neutral-900 text-white font-bold shadow-md">Coba Lagi</button></div>`;
         document.getElementById("product-count").textContent = "Data gagal dimuat.";
     }
 }
@@ -1185,7 +1184,7 @@ function renderProducts() {
     document.getElementById("product-count").textContent = `${filtered.length} produk ditampilkan (Total: ${allProducts.length})`;
 
     if (filtered.length === 0) {
-        list.innerHTML = `<div class="glass-panel border border-white rounded-3xl p-12 text-center sm:col-span-2 xl:col-span-3"><div class="text-5xl mb-4 opacity-50">🔍</div><h3 class="font-black text-xl text-slate-900">Tidak ada kecocokan</h3><p class="text-slate-500 mt-2">Ubah kata kunci pencarian atau filter kategori.</p></div>`;
+        list.innerHTML = `<div class="glass-panel border border-white rounded-lg p-12 text-center sm:col-span-2 xl:col-span-3"><div class="text-5xl mb-4 opacity-50"></div><h3 class="font-black text-xl text-neutral-900">Tidak ada kecocokan</h3><p class="text-neutral-500 mt-2">Ubah kata kunci pencarian atau filter kategori.</p></div>`;
         return;
     }
     list.innerHTML = "";
@@ -1203,35 +1202,35 @@ function createProductCard(product) {
 
     card.innerHTML = `
         <div class="gallery-wrapper bg-white/50 relative border-b border-white/50">
-            <div class="relative aspect-square overflow-hidden bg-slate-100">
-                ${image ? `<img src="${escapeHTML(image)}" alt="${escapeHTML(product.nama)}" loading="lazy" decoding="async" fetchpriority="low" class="gallery-image w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" onerror="this.style.display='none';">` : `<div class="absolute inset-0 flex items-center justify-center text-slate-300"><div class="text-center"><div class="text-5xl">👟</div><p class="text-[10px] font-bold uppercase tracking-widest mt-2">No Image</p></div></div>`}
-                <div class="absolute top-4 left-4"><span class="px-3 py-1.5 rounded-xl bg-white/90 backdrop-blur text-[11px] font-black shadow-sm text-slate-800">#${product.id}</span></div>
+            <div class="relative aspect-square overflow-hidden bg-neutral-100">
+                ${image ? `<img src="${escapeHTML(image)}" alt="${escapeHTML(product.nama)}" loading="lazy" decoding="async" fetchpriority="low" class="gallery-image w-full h-full object-cover transition-transform duration-700" onerror="this.style.display='none';">` : `<div class="absolute inset-0 flex items-center justify-center text-neutral-300"><div class="text-center"><div class="text-5xl"></div><p class="text-[10px] font-bold mt-2">No Image</p></div></div>`}
+                <div class="absolute top-4 left-4"><span class="px-3 py-1.5 rounded-md bg-white/90 backdrop-blur text-[11px] font-black shadow-sm text-neutral-800">#${product.id}</span></div>
                 ${images.length > 1 ? `
                     <button type="button" aria-label="Foto sebelumnya" onclick="changeProductImage(${Number(product.id)}, -1)" class="gallery-button left opacity-0 group-hover:opacity-100">‹</button>
                     <button type="button" aria-label="Foto berikutnya" onclick="changeProductImage(${Number(product.id)}, 1)" class="gallery-button right opacity-0 group-hover:opacity-100">›</button>
                     <div class="gallery-dots">${images.map((_, index) => `<span class="gallery-dot ${index === currentIndex ? "active" : ""}" data-gallery-index="${index}"></span>`).join("")}</div>
-                    <div class="absolute bottom-4 right-4"><span class="px-2.5 py-1 rounded-lg bg-slate-900/80 backdrop-blur text-white text-[10px] font-bold">📷 ${images.length}</span></div>
+                    <div class="absolute bottom-4 right-4"><span class="px-2.5 py-1 rounded-lg bg-neutral-900/80 backdrop-blur text-white text-[10px] font-bold">${images.length}</span></div>
                 ` : ""}
             </div>
         </div>
         <div class="p-6 flex flex-col flex-1">
-            <p class="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">${escapeHTML(product.brand || "BRAND")}</p>
-            <h3 class="font-black text-lg mt-1 text-slate-900 line-clamp-2 leading-tight">${escapeHTML(product.nama || "Tanpa nama")}</h3>
+            <p class="text-[10px] font-black text-neutral-400 tracking-[0.2em]">${escapeHTML(product.brand || "BRAND")}</p>
+            <h3 class="font-black text-lg mt-1 text-neutral-900 line-clamp-2 leading-tight">${escapeHTML(product.nama || "Tanpa nama")}</h3>
             <div class="flex items-center gap-2 mt-3 flex-wrap">
-                <span class="font-black text-xl text-slate-900">${formatRupiah(product.harga)}</span>
-                ${product.harga_coret ? `<span class="text-xs font-semibold text-slate-400 line-through">${formatRupiah(product.harga_coret)}</span>` : ""}
+                <span class="font-black text-xl text-neutral-900">${formatRupiah(product.harga)}</span>
+                ${product.harga_coret ? `<span class="text-xs font-semibold text-neutral-400 line-through">${formatRupiah(product.harga_coret)}</span>` : ""}
             </div>
             <div class="flex gap-2 flex-wrap mt-4">
-                <span class="px-3 py-1 bg-white/80 rounded-xl text-[10px] font-bold uppercase tracking-wider text-slate-600 border border-slate-200/50">${capitalize(product.tipe)}</span>
-                <span class="px-3 py-1 bg-white/80 rounded-xl text-[10px] font-bold uppercase tracking-wider text-slate-600 border border-slate-200/50">${capitalize(product.pengguna)}</span>
+                <span class="px-3 py-1 bg-white/80 rounded-md text-[10px] font-bold text-neutral-600 border border-neutral-200/50">${capitalize(product.tipe)}</span>
+                <span class="px-3 py-1 bg-white/80 rounded-md text-[10px] font-bold text-neutral-600 border border-neutral-200/50">${capitalize(product.pengguna)}</span>
             </div>
-            <div class="mt-5 pt-5 border-t border-slate-200/50 flex-1">
-                <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400 mb-2">Ukuran</p>
-                <p class="text-xs font-bold text-slate-700 leading-relaxed">${escapeHTML(sizesText)}</p>
+            <div class="mt-5 pt-5 border-t border-neutral-200/50 flex-1">
+                <p class="text-[10px] font-bold text-neutral-400 mb-2">Ukuran</p>
+                <p class="text-xs font-bold text-neutral-700 leading-relaxed">${escapeHTML(sizesText)}</p>
             </div>
             <div class="grid grid-cols-2 gap-3 mt-6">
-                <button onclick="openEditModal(${Number(product.id)})" class="px-4 py-3.5 rounded-xl bg-white border border-slate-200 font-bold text-sm text-slate-700 hover:bg-slate-50 shadow-sm transition hover:shadow-md">✏️ Edit</button>
-                <button onclick="openDeleteModal(${Number(product.id)})" class="px-4 py-3.5 rounded-xl bg-red-50 text-red-600 border border-red-100 font-bold text-sm hover:bg-red-100 shadow-sm transition">🗑️ Hapus</button>
+                <button onclick="openEditModal(${Number(product.id)})" class="px-4 py-3.5 rounded-md bg-white border border-neutral-200 font-bold text-sm text-neutral-700 hover:bg-neutral-50 shadow-sm transition hover:shadow-md">Edit</button>
+                <button onclick="openDeleteModal(${Number(product.id)})" class="px-4 py-3.5 rounded-md bg-red-50 text-red-600 border border-red-100 font-bold text-sm hover:bg-red-100 shadow-sm transition">Hapus</button>
             </div>
         </div>
     `;
@@ -1308,15 +1307,15 @@ function renderEditSizes() {
     const container = document.getElementById("edit-size-container"); container.innerHTML = "";
     sizes.forEach(size => {
         const button = document.createElement("button"); button.type = "button"; button.textContent = size;
-        button.className = "border border-slate-200 bg-white/50 rounded-xl py-3 text-sm font-bold hover:border-slate-800 transition";
-        if (editSelectedSizes.has(size)) { button.classList.add("bg-slate-900", "text-white", "border-slate-900"); button.classList.remove("bg-white/50"); }
+        button.className = "border border-neutral-200 bg-white/50 rounded-md py-3 text-sm font-bold hover:border-neutral-800 transition";
+        if (editSelectedSizes.has(size)) { button.classList.add("bg-neutral-900", "text-white", "border-neutral-900"); button.classList.remove("bg-white/50"); }
         button.addEventListener("click", () => { if (editSelectedSizes.has(size)) editSelectedSizes.delete(size); else editSelectedSizes.add(size); renderEditSizes(); });
         container.appendChild(button);
     });
     const customSizes = [...editSelectedSizes].filter(size => !sizes.includes(size));
     customSizes.forEach(size => {
         const button = document.createElement("button"); button.type = "button"; button.textContent = size;
-        button.className = "border border-slate-900 bg-slate-900 text-white rounded-xl py-3 text-sm font-bold hover:bg-slate-800 transition";
+        button.className = "border border-neutral-900 bg-neutral-900 text-white rounded-md py-3 text-sm font-bold hover:bg-neutral-800 transition";
         button.addEventListener("click", () => { editSelectedSizes.delete(size); renderEditSizes(); });
         container.appendChild(button);
     });
@@ -1326,17 +1325,17 @@ function renderEditSizes() {
 function renderEditPhotos() {
     const grid = document.getElementById("edit-photo-grid"); const count = document.getElementById("edit-photo-count"); grid.innerHTML = "";
     const total = editExistingImages.length + editNewImageFiles.length; count.textContent = `${total} / 10 foto`;
-    if (total === 0) { grid.innerHTML = `<div class="col-span-full border-2 border-dashed border-slate-200 rounded-2xl p-8 text-center bg-white/50"><div class="text-3xl mb-2">📷</div><p class="text-sm font-semibold text-slate-400">Belum ada foto</p></div>`; return; }
+    if (total === 0) { grid.innerHTML = `<div class="col-span-full border-2 border-dashed border-neutral-200 rounded-lg p-8 text-center bg-white/50"><div class="text-3xl mb-2"></div><p class="text-sm font-semibold text-neutral-400">Belum ada foto</p></div>`; return; }
     
     editExistingImages.forEach((image, index) => {
-        const item = document.createElement("div"); item.className = "photo-thumb bg-white rounded-xl overflow-hidden aspect-square border border-slate-200 shadow-sm relative";
-        item.innerHTML = `<img src="${escapeHTML(image)}" class="w-full h-full object-cover"><button type="button" onclick="removeExistingEditImage(${index}, event)" class="w-7 h-7 rounded-full bg-slate-900/80 backdrop-blur text-white flex items-center justify-center hover:bg-red-500 absolute top-2 right-2">×</button><button type="button" onclick="makeExistingEditImageMain(${index}, event)" class="absolute bottom-2 left-2 bg-white/90 backdrop-blur text-slate-900 text-[9px] uppercase font-black px-2 py-1 rounded-md shadow-sm">${index === 0 ? "UTAMA" : "JADIKAN UTAMA"}</button>`;
+        const item = document.createElement("div"); item.className = "photo-thumb bg-white rounded-md overflow-hidden aspect-square border border-neutral-200 shadow-sm relative";
+        item.innerHTML = `<img src="${escapeHTML(image)}" class="w-full h-full object-cover"><button type="button" onclick="removeExistingEditImage(${index}, event)" class="w-7 h-7 rounded-full bg-neutral-900/80 backdrop-blur text-white flex items-center justify-center hover:bg-red-500 absolute top-2 right-2">×</button><button type="button" onclick="makeExistingEditImageMain(${index}, event)" class="absolute bottom-2 left-2 bg-white/90 backdrop-blur text-neutral-900 text-[9px] font-black px-2 py-1 rounded-md shadow-sm">${index === 0 ? "UTAMA" : "JADIKAN UTAMA"}</button>`;
         grid.appendChild(item);
     });
     editNewImageFiles.forEach((file, index) => {
-        const url = URL.createObjectURL(file); const item = document.createElement("div"); item.className = "photo-thumb bg-white rounded-xl overflow-hidden aspect-square border border-slate-200 shadow-sm relative";
+        const url = URL.createObjectURL(file); const item = document.createElement("div"); item.className = "photo-thumb bg-white rounded-md overflow-hidden aspect-square border border-neutral-200 shadow-sm relative";
         const totalIndex = editExistingImages.length + index;
-        item.innerHTML = `<img src="${url}" class="w-full h-full object-cover"><button type="button" onclick="removeNewEditImage(${index}, event)" class="w-7 h-7 rounded-full bg-slate-900/80 backdrop-blur text-white flex items-center justify-center hover:bg-red-500 absolute top-2 right-2">×</button><button type="button" onclick="makeNewEditImageMain(${index}, event)" class="absolute bottom-2 left-2 bg-white/90 backdrop-blur text-slate-900 text-[9px] uppercase font-black px-2 py-1 rounded-md shadow-sm">${totalIndex === 0 ? "UTAMA" : "JADIKAN UTAMA"}</button>`;
+        item.innerHTML = `<img src="${url}" class="w-full h-full object-cover"><button type="button" onclick="removeNewEditImage(${index}, event)" class="w-7 h-7 rounded-full bg-neutral-900/80 backdrop-blur text-white flex items-center justify-center hover:bg-red-500 absolute top-2 right-2">×</button><button type="button" onclick="makeNewEditImageMain(${index}, event)" class="absolute bottom-2 left-2 bg-white/90 backdrop-blur text-neutral-900 text-[9px] font-black px-2 py-1 rounded-md shadow-sm">${totalIndex === 0 ? "UTAMA" : "JADIKAN UTAMA"}</button>`;
         grid.appendChild(item);
     });
 }
@@ -1430,11 +1429,11 @@ function showToast(message, type = "success") {
     const toast = document.getElementById("toast"); const box = document.getElementById("toast-box"); const icon = document.getElementById("toast-icon"); const text = document.getElementById("toast-message");
     text.textContent = message;
     if (type === "error") {
-        box.classList.remove("bg-slate-900", "border-slate-700"); box.classList.add("bg-white", "border-red-200");
-        icon.classList.remove("bg-emerald-500"); icon.classList.add("bg-red-500"); icon.textContent = "!"; text.classList.remove("text-white"); text.classList.add("text-slate-900");
+        box.classList.remove("bg-neutral-900", "border-neutral-700"); box.classList.add("bg-white", "border-red-200");
+        icon.classList.remove("bg-emerald-500"); icon.classList.add("bg-red-500"); icon.textContent = "!"; text.classList.remove("text-white"); text.classList.add("text-neutral-900");
     } else {
-        box.classList.add("bg-slate-900", "border-slate-700"); box.classList.remove("bg-white", "border-red-200");
-        icon.classList.add("bg-emerald-500"); icon.classList.remove("bg-red-500"); icon.textContent = "✓"; text.classList.add("text-white"); text.classList.remove("text-slate-900");
+        box.classList.add("bg-neutral-900", "border-neutral-700"); box.classList.remove("bg-white", "border-red-200");
+        icon.classList.add("bg-emerald-500"); icon.classList.remove("bg-red-500"); icon.textContent = ""; text.classList.add("text-white"); text.classList.remove("text-neutral-900");
     }
     toast.classList.remove("translate-y-20", "opacity-0");
     clearTimeout(toastTimeout); toastTimeout = setTimeout(() => { toast.classList.add("translate-y-20", "opacity-0"); }, 3000);
@@ -1444,41 +1443,43 @@ function showToast(message, type = "success") {
 const referralNames = { hsn: "Hasan AU", mrm: "Rosyad AU", amr: "Ammar GE", ajn: "Juna CTAF", roy: "Roy CTAF", king: "Risky CTAF", zkr: "Zaka UNDIP", udn: "Udin CTAF", amu: "Amru UNDIP", zni: "Zaini CTAF", anm: "Anam CTAF", rhn: "Rihan CTAF", bri: "Bara CTAF", ali: "Ali jogja", fth: "hahan", fiq: "faiq undip", eka: "Dhani CTAF", ky: "Fathan", wld: "Wildan CTAF" };
 function formatReferral(referral) { const code = String(referral || "").trim().toLowerCase(); if (!code) return "-"; return referralNames[code] ? `${referralNames[code]} (${code.toUpperCase()})` : code.toUpperCase(); }
 function escapeOrderText(value) { return String(value ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[c])); }
-function statusLabel(status) { return ({ baru: "Menunggu", diproses: "Diproses", selesai: "Sukses", batal: "Batal" }[status] || status || "Menunggu"); }
+const ORDER_STATUS_LABELS = { baru: "Menunggu", wa_baru: "WA (belum dikonfirmasi)", menunggu_pembayaran: "Menunggu bayar", dibayar: "Dibayar", diproses: "Diproses", selesai: "Sukses", batal: "Batal", dibatalkan: "Dibatalkan", kedaluwarsa: "Kedaluwarsa", refund: "Refund", gagal: "Gagal" };
+const ORDER_STATUS_CHOICES = ["wa_baru", "menunggu_pembayaran", "dibayar", "diproses", "selesai", "batal", "dibatalkan", "kedaluwarsa", "refund"];
+function statusLabel(status) { return (ORDER_STATUS_LABELS[status] || status || "Menunggu"); }
 
 async function loadOrders() {
     const box = document.getElementById("orders-list"); if (!box) return;
-    box.innerHTML = '<div class="text-center py-16"><div class="w-8 h-8 border-4 border-slate-200 border-t-slate-900 rounded-full animate-spin mx-auto mb-4"></div><p class="font-bold text-slate-500">Sinkronisasi data pesanan...</p></div>';
+    box.innerHTML = '<div class="text-center py-16"><div class="w-8 h-8 border-4 border-neutral-200 border-t-neutral-900 rounded-full animate-spin mx-auto mb-4"></div><p class="font-bold text-neutral-500">Sinkronisasi data pesanan...</p></div>';
     try {
         const response = await authFetch(`${API_URL}/api/orders`); const data = await response.json();
         if (!response.ok || !data.success) throw new Error(data.message || "Gagal mengambil pesanan.");
         const orders = Array.isArray(data.orders) ? data.orders : [];
-        if (!orders.length) { box.innerHTML = '<div class="border-2 border-dashed border-slate-200 bg-white/50 rounded-[1.5rem] py-16 text-center text-slate-400 font-bold">Tidak ada pesanan masuk.</div>'; return; }
+        if (!orders.length) { box.innerHTML = '<div class="border-2 border-dashed border-neutral-200 bg-white/50 rounded-[1.5rem] py-16 text-center text-neutral-400 font-bold">Tidak ada pesanan masuk.</div>'; return; }
         window.ksOrderNotes = new Map(orders.map(o => [Number(o.id), o.keterangan || ""]));
         if (!box.dataset.noteBound) { box.dataset.noteBound = "1"; box.addEventListener("click", e => { const b = e.target.closest("[data-note-id]"); if (!b) return; const id = Number(b.dataset.noteId); setOrderNote(id, window.ksOrderNotes.get(id) || ""); }); }
         box.innerHTML = orders.map(order => {
             const items = Array.isArray(order.items) ? order.items : []; const date = order.created_at ? new Date(order.created_at).toLocaleString("id-ID") : "-";
-            return `<article class="bg-white/80 border border-slate-200/60 rounded-[1.5rem] p-6 shadow-sm hover:shadow-md transition">
+            return `<article class="bg-white/80 border border-neutral-200/60 rounded-[1.5rem] p-6 shadow-sm hover:shadow-md transition">
                 <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
                     <div class="min-w-0">
                         <div class="flex items-center gap-3 flex-wrap mb-1">
-                            <p class="font-black text-xl text-slate-900">#${escapeOrderText(order.id)}</p>
-                            <span class="px-3 py-1 rounded-full border border-slate-200 bg-slate-50 text-[10px] font-black uppercase tracking-widest text-slate-600">${escapeOrderText(statusLabel(order.status))}</span>
+                            <p class="font-black text-xl text-neutral-900">#${escapeOrderText(order.id)}</p>
+                            <span class="px-3 py-1 rounded-full border border-neutral-200 bg-neutral-50 text-[10px] font-black text-neutral-600">${escapeOrderText(statusLabel(order.status))}</span>
                         </div>
-                        <p class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">${escapeOrderText(date)}</p>
-                        <p class="text-xs font-semibold text-slate-500 mt-2">Ref: <span class="font-black text-slate-800 bg-slate-100 px-2 py-0.5 rounded-md">${escapeOrderText(formatReferral(order.referral))}</span></p>
+                        <p class="text-[11px] font-semibold text-neutral-400">${escapeOrderText(date)}</p>
+                        <p class="text-xs font-semibold text-neutral-500 mt-2">Ref: <span class="font-black text-neutral-800 bg-neutral-100 px-2 py-0.5 rounded-md">${escapeOrderText(formatReferral(order.referral))}</span></p>
                     </div>
                     <div class="flex flex-wrap gap-2">
-                        <select onchange="updateOrderStatus(${Number(order.id)}, this.value)" class="border border-slate-200 bg-white rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm">
-                            ${["baru","diproses","selesai","batal"].map(st => `<option value="${st}" ${order.status === st ? "selected" : ""}>${statusLabel(st)}</option>`).join("")}
+                        <select onchange="updateOrderStatus(${Number(order.id)}, this.value)" class="border border-neutral-200 bg-white rounded-md px-4 py-2.5 text-sm font-bold text-neutral-700 shadow-sm">
+                            ${(ORDER_STATUS_CHOICES.includes(order.status) ? ORDER_STATUS_CHOICES : [order.status, ...ORDER_STATUS_CHOICES]).map(st => `<option value="${escapeOrderText(st)}" ${order.status === st ? "selected" : ""}>${escapeOrderText(statusLabel(st))}</option>`).join("")}
                         </select>
-                        <button type="button" data-note-id="${Number(order.id)}" class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-700 hover:bg-slate-50 shadow-sm transition">✍️ Catatan</button>
-                        <button onclick="deleteOrder(${Number(order.id)})" class="px-4 py-2.5 rounded-xl border border-red-100 bg-red-50 text-sm font-bold text-red-600 hover:bg-red-100 shadow-sm transition">Hapus</button>
+                        <button type="button" data-note-id="${Number(order.id)}" class="px-4 py-2.5 rounded-md border border-neutral-200 bg-white text-sm font-bold text-neutral-700 hover:bg-neutral-50 shadow-sm transition">Catatan</button>
+                        <button onclick="deleteOrder(${Number(order.id)})" class="px-4 py-2.5 rounded-md border border-red-100 bg-red-50 text-sm font-bold text-red-600 hover:bg-red-100 shadow-sm transition">Hapus</button>
                     </div>
                 </div>
-                <div class="mt-5 space-y-2">${items.map(item => `<div class="flex justify-between items-center gap-4 bg-slate-50/80 border border-slate-100 rounded-xl px-5 py-3.5"><span class="text-slate-700 font-semibold text-sm">${escapeOrderText(item.name)} <span class="text-slate-400 mx-1">|</span> Size ${escapeOrderText(item.size)} <span class="text-slate-400 mx-1">×</span> ${Number(item.qty || 0)}</span><b class="text-slate-900">${formatRupiah(Number(item.price || 0) * Number(item.qty || 0))}</b></div>`).join("")}</div>
-                <div class="mt-5 pt-5 border-t border-slate-200/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                    <p class="text-sm font-medium text-slate-500">${order.keterangan ? `📝 <span class="text-slate-800 font-bold ml-1">${escapeOrderText(order.keterangan)}</span>` : "<i class='opacity-60'>Tidak ada catatan.</i>"}</p>
+                <div class="mt-5 space-y-2">${items.map(item => `<div class="flex justify-between items-center gap-4 bg-neutral-50/80 border border-neutral-100 rounded-md px-5 py-3.5"><span class="text-neutral-700 font-semibold text-sm">${escapeOrderText(item.name)} <span class="text-neutral-400 mx-1">|</span> Size ${escapeOrderText(item.size)} <span class="text-neutral-400 mx-1">×</span> ${Number(item.qty || 0)}</span><b class="text-neutral-900">${formatRupiah(Number(item.price || 0) * Number(item.qty || 0))}</b></div>`).join("")}</div>
+                <div class="mt-5 pt-5 border-t border-neutral-200/50 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                    <p class="text-sm font-medium text-neutral-500">${order.keterangan ? `<span class="text-neutral-800 font-bold ml-1">${escapeOrderText(order.keterangan)}</span>` : "<i class='opacity-60'>Tidak ada catatan.</i>"}</p>
                     <p class="font-black text-2xl text-emerald-600 tracking-tight">${formatRupiah(order.total)}</p>
                 </div>
             </article>`;
@@ -1511,10 +1512,10 @@ async function loadAnalytics() {
         document.getElementById("stat-referral-visits").textContent = Number(a.referral_visits || 0).toLocaleString("id-ID");
         const visits = Array.isArray(data.visits) ? data.visits : [];
         const shown = document.getElementById("stat-shown-visits"); if (shown) shown.textContent = visits.length.toLocaleString("id-ID");
-        if (!visits.length) { visitsBox.innerHTML = '<tr><td colspan="8" class="px-6 py-10 text-center font-bold text-slate-400">Belum ada lalu lintas tercatat.</td></tr>'; return; }
+        if (!visits.length) { visitsBox.innerHTML = '<tr><td colspan="8" class="px-6 py-10 text-center font-bold text-neutral-400">Belum ada lalu lintas tercatat.</td></tr>'; return; }
         visitsBox.innerHTML = visits.map((v, index) => {
             const ua = parseUserAgent(v.user_agent); const location = v.location || [v.city, v.region, v.country].filter(Boolean).join(", ") || "Unknown";
-            return `<tr class="hover:bg-slate-50/50 transition"><td class="px-6 py-4 text-xs font-semibold text-slate-500 whitespace-nowrap">${escapeOrderText(new Date(v.created_at).toLocaleString("id-ID"))}</td><td class="px-6 py-4 text-xs font-black text-slate-900 whitespace-nowrap">Guest #${visits.length - index}</td><td class="px-6 py-4 text-xs font-semibold text-slate-600">${escapeOrderText(location)}</td><td class="px-6 py-4 text-xs font-semibold text-slate-600">${escapeOrderText(ua.model || ua.device)}</td><td class="px-6 py-4 text-xs font-semibold text-slate-600">${escapeOrderText(ua.os)}</td><td class="px-6 py-4 text-xs font-semibold text-slate-600">${escapeOrderText(ua.browser)}</td><td class="px-6 py-4 text-[10px] font-black uppercase tracking-wider text-slate-800 bg-slate-100 rounded-md inline-block mt-2 mb-2 ml-4">${escapeOrderText(formatReferral(v.referral))}</td><td class="px-6 py-4 text-right whitespace-nowrap"><button type="button" onclick="deleteVisit(${Number(v.id)})" class="px-3 py-1.5 rounded-lg border border-red-100 bg-white text-red-500 text-[11px] font-black uppercase tracking-widest hover:bg-red-50 transition shadow-sm">Drop</button></td></tr>`;
+            return `<tr class="hover:bg-neutral-50/50 transition"><td class="px-6 py-4 text-xs font-semibold text-neutral-500 whitespace-nowrap">${escapeOrderText(new Date(v.created_at).toLocaleString("id-ID"))}</td><td class="px-6 py-4 text-xs font-black text-neutral-900 whitespace-nowrap">Guest #${visits.length - index}</td><td class="px-6 py-4 text-xs font-semibold text-neutral-600">${escapeOrderText(location)}</td><td class="px-6 py-4 text-xs font-semibold text-neutral-600">${escapeOrderText(ua.model || ua.device)}</td><td class="px-6 py-4 text-xs font-semibold text-neutral-600">${escapeOrderText(ua.os)}</td><td class="px-6 py-4 text-xs font-semibold text-neutral-600">${escapeOrderText(ua.browser)}</td><td class="px-6 py-4 text-[10px] font-black text-neutral-800 bg-neutral-100 rounded-md inline-block mt-2 mb-2 ml-4">${escapeOrderText(formatReferral(v.referral))}</td><td class="px-6 py-4 text-right whitespace-nowrap"><button type="button" onclick="deleteVisit(${Number(v.id)})" class="px-3 py-1.5 rounded-lg border border-red-100 bg-white text-red-500 text-[11px] font-black hover:bg-red-50 transition shadow-sm">Drop</button></td></tr>`;
         }).join("");
     } catch (error) { visitsBox.innerHTML = `<tr><td colspan="8" class="px-6 py-10 text-center font-bold text-red-500">${escapeOrderText(error.message || "Gagal memuat log.")}</td></tr>`; }
 }
@@ -1627,12 +1628,12 @@ async function refreshAdminConversations() {
     const signature = JSON.stringify({ activeId: ksChatActiveId, list: list.map(item => [item.id, item.visitor_name, item.customer_name, item.last_message, item.last_message_at, item.unread_admin, item.status]) });
     if (signature === ksChatConversationSignature) return;
     ksChatConversationSignature = signature;
-    if (!list.length) { box.innerHTML = '<p class="p-4 text-sm text-slate-500">Belum ada chat dari pelanggan.</p>'; return; }
+    if (!list.length) { box.innerHTML = '<p class="p-4 text-sm text-neutral-500">Belum ada chat dari pelanggan.</p>'; return; }
     box.innerHTML = list.map(item => {
       const id = String(item.id);
       const date = item.last_message_at ? new Date(item.last_message_at).toLocaleString('id-ID') : '';
       const count = Number(item.unread_admin || 0);
-      return `<button type="button" data-chat-id="${ksChatAttr(id)}" data-chat-name="${ksChatAttr(item.visitor_name || item.customer_name || 'Pelanggan')}" class="w-full text-left p-4 border-b hover:bg-slate-50 ${ksChatActiveId === id ? 'bg-blue-50' : ''}"><div class="flex items-center justify-between gap-2"><b class="text-sm">${ksChatEsc(item.visitor_name || item.customer_name || 'Pelanggan')}</b>${count ? `<span class="bg-red-500 text-white rounded-full px-2 py-0.5 text-xs">${count}</span>` : ''}</div><p class="text-xs text-slate-500 truncate mt-1">${ksChatEsc(item.last_message || 'Belum ada pesan')}</p><div class="flex items-center justify-between gap-2 mt-1"><span class="text-[10px] rounded-full px-2 py-0.5 ${item.status === 'closed' ? 'bg-slate-100 text-slate-500' : 'bg-emerald-50 text-emerald-700'}">${item.status === 'closed' ? 'Ditutup' : 'Terbuka'}</span><span class="text-[10px] text-slate-400">${ksChatEsc(date)}</span></div></button>`;
+      return `<button type="button" data-chat-id="${ksChatAttr(id)}" data-chat-name="${ksChatAttr(item.visitor_name || item.customer_name || 'Pelanggan')}" class="w-full text-left p-4 border-b hover:bg-neutral-50 ${ksChatActiveId === id ? 'bg-neutral-100' : ''}"><div class="flex items-center justify-between gap-2"><b class="text-sm">${ksChatEsc(item.visitor_name || item.customer_name || 'Pelanggan')}</b>${count ? `<span class="bg-red-500 text-white rounded-full px-2 py-0.5 text-xs">${count}</span>` : ''}</div><p class="text-xs text-neutral-500 truncate mt-1">${ksChatEsc(item.last_message || 'Belum ada pesan')}</p><div class="flex items-center justify-between gap-2 mt-1"><span class="text-[10px] rounded-full px-2 py-0.5 ${item.status === 'closed' ? 'bg-neutral-100 text-neutral-500' : 'bg-emerald-50 text-emerald-700'}">${item.status === 'closed' ? 'Ditutup' : 'Terbuka'}</span><span class="text-[10px] text-neutral-400">${ksChatEsc(date)}</span></div></button>`;
     }).join('');
   } catch (error) {
     console.error('Chat list gagal dimuat:', error);
@@ -1664,7 +1665,7 @@ async function loadAdminChatMessages() {
     const signature = JSON.stringify(messages);
     if (signature === ksChatMessagesSignature) return;
     ksChatMessagesSignature = signature;
-    box.innerHTML = messages.map(message => `<div class="flex ${message.sender === 'admin' ? 'justify-end' : 'justify-start'}"><div class="max-w-[85%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap break-words ${message.sender === 'admin' ? 'bg-slate-900 text-white' : 'bg-white border'}">${ksChatEsc(message.message)}<div class="text-[10px] opacity-60 mt-1">${ksChatEsc(new Date(message.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }))}</div></div></div>`).join('') || '<p class="text-sm text-slate-500">Belum ada pesan.</p>';
+    box.innerHTML = messages.map(message => `<div class="flex ${message.sender === 'admin' ? 'justify-end' : 'justify-start'}"><div class="max-w-[85%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap break-words ${message.sender === 'admin' ? 'bg-neutral-900 text-white' : 'bg-white border'}">${ksChatEsc(message.message)}<div class="text-[10px] opacity-60 mt-1">${ksChatEsc(new Date(message.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }))}</div></div></div>`).join('') || '<p class="text-sm text-neutral-500">Belum ada pesan.</p>';
     box.scrollTop = box.scrollHeight;
   } catch (error) { console.error('Isi chat gagal dimuat:', error); }
 }
@@ -1743,12 +1744,12 @@ async function enableAdminPush() {
     });
     const saveData = await saveResponse.json();
     if (!saveResponse.ok || !saveData.success) throw new Error(saveData.message || 'Langganan notifikasi gagal disimpan.');
-    if (button) button.textContent = '✓ Push aktif';
+    if (button) button.textContent = 'Push aktif';
     showToast('Notifikasi latar aktif di perangkat ini.', 'success');
     try { await registration.showNotification('Kicks Station', { body: 'Notifikasi chat berhasil diaktifkan di perangkat ini.', icon: './icons/icon-192.png', badge: './icons/icon-192.png', tag: 'kicks-push-ready' }); } catch (_) {}
   } catch (error) {
     console.error('Aktivasi Web Push gagal:', error);
-    if (button) button.textContent = originalText || '📲 Push latar';
+    if (button) button.textContent = originalText || 'Push latar';
     showToast(error.message || 'Notifikasi gagal diaktifkan.', 'error');
   } finally { if (button) button.disabled = false; }
 }

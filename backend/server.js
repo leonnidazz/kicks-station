@@ -32,9 +32,16 @@ const MAX_IMAGES = 10;
 const MAX_REQUEST_SIZE = 60 * 1024 * 1024;
 
 const ADMIN_PIN = String(process.env.ADMIN_PIN || "").trim();
-if (ADMIN_PIN && (ADMIN_PIN.length < 12 || /^\d+$/.test(ADMIN_PIN))) {
+const ADMIN_PIN_WEAK = Boolean(ADMIN_PIN) && (ADMIN_PIN.length < 12 || /^\d+$/.test(ADMIN_PIN));
+// Secara default PIN lemah hanya diberi peringatan. Isi STRICT_ADMIN_PIN=true di Render
+// kalau suatu saat ingin login admin dinonaktifkan otomatis saat PIN kurang dari 12 karakter.
+const STRICT_ADMIN_PIN = String(process.env.STRICT_ADMIN_PIN || "").trim().toLowerCase() === "true";
+const ADMIN_ENABLED = Boolean(ADMIN_PIN) && !(STRICT_ADMIN_PIN && ADMIN_PIN_WEAK);
+if (ADMIN_PIN_WEAK) {
     console.warn(
-        "[KEAMANAN] ADMIN_PIN terlalu lemah. Ganti di Render dengan kata sandi acak minimal 12 karakter."
+        STRICT_ADMIN_PIN
+            ? "[KEAMANAN] ADMIN_PIN terlalu lemah, LOGIN ADMIN DINONAKTIFKAN (STRICT_ADMIN_PIN aktif)."
+            : "[KEAMANAN] ADMIN_PIN lemah (kurang dari 12 karakter atau angka saja). Login tetap diizinkan; disarankan diganti."
     );
 }
 const VAPID_PUBLIC_KEY = String(process.env.VAPID_PUBLIC_KEY || "").trim();
@@ -341,11 +348,11 @@ function isAdminAuthenticated(req) {
 }
 
 function requireAdmin(req, res) {
-    if (!ADMIN_PIN || !isAdminAuthenticated(req)) {
+    if (!ADMIN_ENABLED || !isAdminAuthenticated(req)) {
         sendJSON(res, 401, {
             success: false,
-            message: !ADMIN_PIN
-                ? "Admin authentication belum dikonfigurasi di server."
+            message: !ADMIN_ENABLED
+                ? "Admin authentication belum dikonfigurasi dengan benar di server."
                 : "Unauthorized. Silakan login sebagai admin.",
         });
         return false;
@@ -1108,13 +1115,15 @@ function mapOrder(row) {
     };
 }
 
-async function createOrder(order) {
+// Pesanan dari alur WhatsApp lama tidak melewati pembayaran, jadi diberi status
+// terpisah ('wa_baru') agar tidak tercampur dengan pesanan Midtrans yang lunas.
+async function createOrder(order, status = "wa_baru") {
     await ensureOrdersTable();
     const result = await pool.query(
         `INSERT INTO orders (referral, items, total, status)
-         VALUES ($1, $2::jsonb, $3, 'baru')
+         VALUES ($1, $2::jsonb, $3, $4)
          RETURNING id, created_at, referral, items, total, status, keterangan`,
-        [order.referral, JSON.stringify(order.items), order.total]
+        [order.referral, JSON.stringify(order.items), order.total, status]
     );
     return result.rows[0];
 }
@@ -1130,11 +1139,15 @@ async function getOrders() {
 
 async function updateOrderStatus(id, status, keterangan) {
     await ensureOrdersTable();
-    const allowedStatuses = ["baru", "diproses", "selesai", "batal"];
-    if (!allowedStatuses.includes(status)) throw new Error("Status pesanan tidak valid.");
+    const allowedStatuses = [
+        "baru", "wa_baru", "menunggu_pembayaran", "dibayar", "diproses", "selesai",
+        "batal", "dibatalkan", "kedaluwarsa", "refund", "gagal",
+    ];
+    // status === null berarti "jangan ubah status" (mis. hanya edit catatan).
+    if (status !== null && !allowedStatuses.includes(status)) throw new Error("Status pesanan tidak valid.");
     const result = await pool.query(
         `UPDATE orders
-         SET status=$2, keterangan=COALESCE($3, keterangan)
+         SET status=COALESCE($2, status), keterangan=COALESCE($3, keterangan)
          WHERE id=$1
          RETURNING id, created_at, referral, items, total, status, keterangan`,
         [id, status, keterangan === undefined ? null : String(keterangan).slice(0, 1000)]
@@ -1442,7 +1455,6 @@ const server = http.createServer(async (req, res) => {
     }
     const requestOrigin = String(req.headers.origin || "");
     const allowedOrigins = new Set([
-        "https://leonnidazz.github.io",
         "https://kicks-station.onrender.com",
         ...String(process.env.CORS_ALLOWED_ORIGINS || "").split(",").map(value => value.trim()).filter(Boolean),
     ]);
@@ -1603,10 +1615,12 @@ const server = http.createServer(async (req, res) => {
         if (req.method === "POST" && pathname === "/api/admin/login") {
             const ip = getClientIP(req);
 
-            if (!ADMIN_PIN) {
+            if (!ADMIN_ENABLED) {
                 sendJSON(res, 503, {
                     success: false,
-                    message: "ADMIN_PIN belum diset di server.",
+                    message: ADMIN_PIN_WEAK
+                        ? "Login admin dinonaktifkan: ADMIN_PIN terlalu lemah (minimal 12 karakter, bukan angka saja)."
+                        : "ADMIN_PIN belum diset di server.",
                 });
                 return;
             }
@@ -2143,7 +2157,8 @@ const server = http.createServer(async (req, res) => {
                 const id = Number(pathname.split("/").pop());
                 if (!Number.isInteger(id) || id <= 0) throw new Error("ID pesanan tidak valid.");
                 const data = await readBody(req);
-                const order = await updateOrderStatus(id, String(data?.status || "baru").trim(), data?.keterangan);
+                const st = data?.status ? String(data.status).trim() : null;
+                const order = await updateOrderStatus(id, st, data?.keterangan);
                 sendJSON(res, 200, { success:true, message:"Pesanan berhasil diperbarui.", order });
             } catch (error) { console.error("Gagal memperbarui pesanan:", error); sendJSON(res, 400, { success:false, message:publicErrorMessage(error) || "Pesanan tidak dapat diperbarui." }); }
             return;
@@ -2506,6 +2521,38 @@ initializeDatabase().catch(() => {
         "Server tetap dijalankan, tetapi database belum siap. Render akan dapat mencoba lagi."
     );
 });
+
+// =====================================================
+// PEMBERSIHAN TERJADWAL
+// 1) Baris yatim checkout (menunggu_pembayaran/gagal > 2 hari; Midtrans kedaluwarsa 24 jam).
+// 2) Masa simpan data pelanggan: nama, WA, dan alamat dikosongkan untuk pesanan yang sudah
+//    selesai/batal/kedaluwarsa/refund lebih lama dari ORDER_RETENTION_DAYS (default 730 hari,
+//    isi 0 untuk mematikan). Total dan item tetap disimpan untuk pembukuan.
+// =====================================================
+async function runMaintenance() {
+    if (!pool) return;
+    try {
+        const r = await pool.query(
+            `DELETE FROM orders WHERE status IN ('menunggu_pembayaran','gagal') AND created_at < NOW() - INTERVAL '2 days'`
+        );
+        if (r.rowCount) console.log(`[Pembersihan] ${r.rowCount} pesanan yatim dihapus.`);
+    } catch (e) { console.warn("[Pembersihan] gagal hapus pesanan yatim:", e.message); }
+
+    const days = Number(process.env.ORDER_RETENTION_DAYS ?? 730);
+    if (!Number.isFinite(days) || days < 30) return;
+    try {
+        const r = await pool.query(
+            `UPDATE orders SET customer_name='', customer_phone='', keterangan=''
+             WHERE status IN ('selesai','batal','dibatalkan','kedaluwarsa','refund','gagal')
+               AND created_at < NOW() - make_interval(days => $1::int)
+               AND (customer_name <> '' OR customer_phone <> '' OR keterangan <> '')`,
+            [Math.floor(days)]
+        );
+        if (r.rowCount) console.log(`[Pembersihan] data pelanggan dikosongkan pada ${r.rowCount} pesanan lama.`);
+    } catch (e) { console.warn("[Pembersihan] masa simpan dilewati:", e.message); }
+}
+setTimeout(runMaintenance, 60 * 1000).unref();
+setInterval(runMaintenance, 6 * 60 * 60 * 1000).unref();
 
 server.listen(PORT, () => {
     console.log("=================================");

@@ -3,10 +3,10 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Plus Jakarta Sans", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
+        sans: ["Archivo", "system-ui", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
       },
       colors: {
-        brand: { 50: "#f6f7f9", 100: "#eceef2", 900: "#0f172a", 950: "#020617" },
+        brand: { 50: "#fafafa", 100: "#f5f5f5", 900: "#171717", 950: "#000000" },
       },
       boxShadow: {
         glass: "0 8px 32px 0 rgba(0, 0, 0, 0.03)",

@@ -4,25 +4,25 @@
 <meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="theme-color" content="#2563eb">
+<meta name="theme-color" content="#000000">
 <title>Informasi Toko | Kicks Station</title>
 <meta name="description" content="Tentang Kicks Station, cara pesan, pengiriman, garansi dan retur, FAQ, kebijakan privasi, serta syarat dan ketentuan.">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@90..100,400..700&display=swap');
 
 :root{
-  --bg:#f8fafc; --card:#ffffff; --text:#0f172a; --muted:#475569;
-  --line:#e2e8f0; --blue:#2563eb; --blue-soft:#dbeafe; --note:#fef3c7; --note-text:#78350f;
+  --bg:#fafafa; --card:#ffffff; --text:#171717; --muted:#525252;
+  --line:#e5e5e5; --blue:#000000; --soft:#e5e5e5; --note:#fef3c7; --note-text:#78350f;
 }
 html.dark{
-  --bg:#030712; --card:#0f172a; --text:#f1f5f9; --muted:#94a3b8;
-  --line:#1e293b; --blue:#60a5fa; --blue-soft:#172554; --note:#422006; --note-text:#fde68a;
+  --bg:#0a0a0a; --card:#171717; --text:#f5f5f5; --muted:#a3a3a3;
+  --line:#262626; --blue:#d4d4d4; --soft:#262626; --note:#422006; --note-text:#fde68a;
 }
 *{box-sizing:border-box}
 html{scroll-behavior:smooth;scroll-padding-top:76px}
 body{
   margin:0; background:var(--bg); color:var(--text);
-  font-family:'Plus Jakarta Sans',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+  font-family:'Archivo',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
   line-height:1.7; font-size:16px;
 }
 a{color:var(--blue)}
@@ -201,7 +201,10 @@ try{
     </ul>
 
     <h3>Pihak ketiga</h3>
-    <p>Alamat IP dikirim ke layanan pencarian lokasi IP pihak ketiga untuk mendapatkan perkiraan lokasi. Pembayaran diproses oleh Midtrans. Kami tidak menyimpan nomor kartu, akun e-wallet, atau data rekeningmu; data itu diproses oleh Midtrans dan penyedia pembayaran sesuai kebijakan mereka. Data situs disimpan pada penyedia hosting dan database yang kami gunakan. Kami tidak menjual datamu.</p>
+    <p>Alamat IP pengunjung dikirim ke ipapi.co (layanan pencarian lokasi IP pihak ketiga) untuk mendapatkan perkiraan lokasi. Pembayaran diproses oleh Midtrans. Kami tidak menyimpan nomor kartu, akun e-wallet, atau data rekeningmu; data itu diproses oleh Midtrans dan penyedia pembayaran sesuai kebijakan mereka. Data situs disimpan pada penyedia hosting dan database yang kami gunakan. Kami tidak menjual datamu.</p>
+
+    <h3>Berapa lama data disimpan</h3>
+    <p>Nama, nomor WhatsApp, dan alamat pada pesanan yang sudah selesai, dibatalkan, kedaluwarsa, atau di-refund kami kosongkan otomatis setelah 24 bulan. Data total belanja dan produk tetap disimpan untuk pembukuan. Pesanan yang tidak pernah dibayar dihapus otomatis setelah 2 hari.</p>
 
     <h3>Hak kamu</h3>
     <p>Kamu dapat meminta kami menghapus data pesanan atau chat-mu lewat chat atau kontak di bawah. Kami akan menanggapi permintaan tersebut secepatnya.</p>
@@ -240,7 +243,7 @@ try{
    ============================================================ */
 var CFG = {
   nama: "Kicks Station",
-  tanggalUpdate: "15 November 2026",
+  tanggalUpdate: "16 November 2026",
   jamLayanan: "Setiap hari, 08.00–21.00 WIB",
   prosesHari: "1–2 hari kerja",
   kirimHari: "2–5 hari kerja",

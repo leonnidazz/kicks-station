@@ -8,6 +8,27 @@ const isProd = () => process.env.MIDTRANS_IS_PRODUCTION === "true";
 const base = () => (isProd() ? "https://app.midtrans.com" : "https://app.sandbox.midtrans.com");
 const shippingFee = () => Math.max(0, Math.round(Number(process.env.SHIPPING_FEE) || 0));
 const TEN_MIN = 10 * 60 * 1000;
+const turnstileSecret = () => String(process.env.TURNSTILE_SECRET || "").trim();
+const turnstileSiteKey = () => String(process.env.TURNSTILE_SITE_KEY || "").trim();
+
+// CAPTCHA aktif hanya jika TURNSTILE_SECRET dan TURNSTILE_SITE_KEY diisi di Render.
+async function verifyTurnstile(token, ip) {
+    if (!turnstileSecret() || !turnstileSiteKey()) return true;
+    const t = String(token || "");
+    if (!t || t.length > 2048) return false;
+    try {
+        const r = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({ secret: turnstileSecret(), response: t, remoteip: String(ip || "") }),
+            signal: AbortSignal.timeout(8000),
+        });
+        return Boolean((await r.json().catch(() => ({}))).success);
+    } catch (e) {
+        console.error("Verifikasi Turnstile gagal:", e.message);
+        return false;
+    }
+}
 
 let columnsReady = null;
 function ensureColumns(d) {
@@ -29,14 +50,14 @@ async function handlePaymentRoutes(req, res, pathname, d) {
     const { pool, sendJSON, readBody, getClientIP, isRateLimited, publicErrorMessage } = d;
 
     if (req.method === "GET" && pathname === "/api/checkout/config") {
-        sendJSON(res, 200, { success: true, shipping_fee: shippingFee(), ready: Boolean(serverKey() && clientKey()) });
+        sendJSON(res, 200, { success: true, shipping_fee: shippingFee(), ready: Boolean(serverKey() && clientKey()), turnstile_site_key: turnstileSiteKey() });
         return true;
     }
 
     if (req.method === "POST" && pathname === "/api/checkout") {
         try {
             const ip = getClientIP(req);
-            if (isRateLimited(`checkout:${ip}`, 8, TEN_MIN) || isRateLimited("checkout:global", 100, TEN_MIN)) {
+            if (isRateLimited(`checkout:${ip}`, 8, TEN_MIN)) {
                 sendJSON(res, 429, { success: false, message: "Terlalu banyak permintaan. Coba lagi nanti." });
                 return true;
             }
@@ -45,6 +66,15 @@ async function handlePaymentRoutes(req, res, pathname, d) {
                 return true;
             }
             const body = await readBody(req, 100 * 1024);
+            // CAPTCHA dicek SEBELUM kuota global dipakai, supaya bot tidak bisa menghabiskan kuota pembeli asli.
+            if (!(await verifyTurnstile(body.cf_token, ip))) {
+                sendJSON(res, 400, { success: false, message: "Verifikasi keamanan gagal. Muat ulang halaman lalu coba lagi." });
+                return true;
+            }
+            if (isRateLimited("checkout:global", 100, TEN_MIN)) {
+                sendJSON(res, 429, { success: false, message: "Terlalu banyak permintaan. Coba lagi nanti." });
+                return true;
+            }
             const name = String(body.name || "").trim();
             const phone = String(body.phone || "").replace(/[\s-]/g, "");
             const address = String(body.address || "").trim();
@@ -128,7 +158,7 @@ async function handlePaymentRoutes(req, res, pathname, d) {
                 await pool.query(
                     `UPDATE orders SET status=$2::text, payment_status=$3::text, payment_type=$4::text,
                             paid_at = CASE WHEN $2::text='dibayar' THEN NOW() ELSE paid_at END
-                     WHERE id=$1 AND NOT (status='dibayar' AND $2::text IN ('menunggu_pembayaran','kedaluwarsa','dibatalkan'))`,
+                     WHERE id=$1 AND NOT (status IN ('dibayar','diproses','selesai','batal') AND $2::text IN ('menunggu_pembayaran','kedaluwarsa','dibatalkan'))`,
                     [row.id, status, String(pay).slice(0, 40), String(b.payment_type || "").slice(0, 40)]
                 );
             }

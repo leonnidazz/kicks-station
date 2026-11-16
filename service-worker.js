@@ -33,7 +33,7 @@ self.addEventListener('fetch', event => {
   // Service worker hanya melayani panel admin; halaman toko tidak disentuh.
   if (!/\/(admin\.html|manifest\.webmanifest|icons\/[^/]+)$/i.test(url.pathname)) return;
 
-  // Network-first: halaman admin tetap diperbarui dari GitHub Pages; cache hanya fallback offline.
+  // Network-first: halaman admin tetap diperbarui dari server; cache hanya fallback offline.
   event.respondWith(
     fetch(request).then(response => {
       if (response && response.ok && (request.destination === 'document' || /\.(?:html|webmanifest|png|svg|css|js|ico)$/i.test(url.pathname))) {
