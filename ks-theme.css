@@ -24,14 +24,13 @@ p,li{max-width:68ch}
 /* bar kepercayaan: teks saja, dipisah garis tipis */
 .ks-trust{background:var(--ks-paper);padding:0 16px}
 .ks-trust-grid{gap:0;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
-.ks-trust-item{padding:22px 24px 22px 0;border-right:1px solid var(--ks-line)}
-.ks-trust-item:last-child{border-right:0}
+.ks-trust-item{padding:22px 24px 22px 0}
 .ks-trust-item b{font-size:15px;font-weight:600}
 .ks-trust-item span{max-width:34ch}
 .ks-trust-note{padding:0 0 22px}
 .ks-trust-note a{color:inherit;text-decoration:underline;text-underline-offset:3px}
-@media(max-width:640px){.ks-trust-item{border-right:0;border-bottom:1px solid var(--ks-line);padding:16px 0}}
-.dark .ks-trust{background:#0a0a0a}.dark .ks-trust-item{border-color:#262626}
+@media(max-width:640px){.ks-trust-item{padding:12px 0}}
+.dark .ks-trust{background:#0a0a0a}
 /* fokus keyboard terlihat */
 :focus-visible{outline:2px solid currentColor;outline-offset:2px}
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
