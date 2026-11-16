@@ -288,6 +288,9 @@ button:active {
             <span class="text-lg opacity-80"></span> Pesanan Masuk
         </button>
 
+        <button id="menu-ulasan" onclick="showReviewsPage()" class="sidebar-item w-full text-left px-4 py-3.5 rounded-lg flex items-center gap-3.5 font-semibold text-neutral-600 text-sm">
+            Ulasan Pembeli
+        </button>
         <button id="menu-pengunjung" onclick="showPage('pengunjung')" class="sidebar-item w-full text-left px-4 py-3.5 rounded-lg flex items-center gap-3.5 font-semibold text-neutral-600 text-sm">
             <span class="text-lg opacity-80"></span> Data Pengunjung
         </button>
@@ -629,6 +632,14 @@ button:active {
         <!-- ==============================================
              PAGE: DATA PENGUNJUNG
              ============================================== -->
+        <section id="page-ulasan" class="hidden fade-in">
+            <div class="mb-8">
+                <h2 class="text-3xl md:text-4xl font-bold tracking-tight text-neutral-900">Ulasan Pembeli</h2>
+                <p class="text-neutral-500 mt-2 font-medium">Ulasan terbit otomatis dari pembeli terverifikasi. Sembunyikan atau hapus yang tidak pantas.</p>
+            </div>
+            <div id="reviews-admin-list" class="space-y-3"></div>
+        </section>
+
         <section id="page-pengunjung" class="hidden fade-in">
             <div class="mb-8 flex flex-col lg:flex-row lg:items-end lg:justify-between gap-5">
                 <div>
@@ -921,12 +932,65 @@ function showPage(page) {
     const tambah = document.getElementById("page-tambah"), semua = document.getElementById("page-semua"), pesanan = document.getElementById("page-pesanan"), pengunjung = document.getElementById("page-pengunjung");
     const menuTambah = document.getElementById("menu-tambah"), menuSemua = document.getElementById("menu-semua"), menuPesanan = document.getElementById("menu-pesanan"), menuPengunjung = document.getElementById("menu-pengunjung");
     [tambah, semua, pesanan, pengunjung].forEach(el => el && el.classList.add("hidden"));
+    const pUlasan = document.getElementById("page-ulasan"), mUlasan = document.getElementById("menu-ulasan");
+    if (pUlasan) pUlasan.classList.add("hidden");
+    if (mUlasan) { mUlasan.classList.remove("active"); mUlasan.classList.add("text-neutral-600"); }
     [menuTambah, menuSemua, menuPesanan, menuPengunjung].forEach(el => { if (el) { el.classList.remove("active"); el.classList.add("text-neutral-600"); } });
     if (page === "tambah") { tambah.classList.remove("hidden"); menuTambah.classList.add("active"); menuTambah.classList.remove("text-neutral-600"); document.getElementById("top-title").textContent = "Tambah Produk"; }
     if (page === "semua") { semua.classList.remove("hidden"); menuSemua.classList.add("active"); menuSemua.classList.remove("text-neutral-600"); document.getElementById("top-title").textContent = "Semua Produk"; loadProducts(); }
     if (page === "pesanan") { pesanan.classList.remove("hidden"); menuPesanan.classList.add("active"); menuPesanan.classList.remove("text-neutral-600"); document.getElementById("top-title").textContent = "Pesanan Masuk"; loadOrders(); }
     if (page === "pengunjung") { pengunjung.classList.remove("hidden"); menuPengunjung.classList.add("active"); menuPengunjung.classList.remove("text-neutral-600"); document.getElementById("top-title").textContent = "Data Pengunjung"; loadAnalytics(); }
     if (window.innerWidth < 1024) { document.getElementById("sidebar").classList.add("-translate-x-full"); document.getElementById("sidebar-overlay").classList.add("hidden"); }
+}
+
+function showReviewsPage() {
+    showPage("pesanan");
+    document.getElementById("page-pesanan").classList.add("hidden");
+    document.getElementById("menu-pesanan").classList.remove("active");
+    document.getElementById("menu-pesanan").classList.add("text-neutral-600");
+    document.getElementById("page-ulasan").classList.remove("hidden");
+    const mu = document.getElementById("menu-ulasan"); mu.classList.add("active"); mu.classList.remove("text-neutral-600");
+    document.getElementById("top-title").textContent = "Ulasan Pembeli";
+    loadReviewsAdmin();
+}
+async function loadReviewsAdmin() {
+    const box = document.getElementById("reviews-admin-list");
+    box.textContent = "Memuat...";
+    try {
+        const res = await authFetch(`${API_URL}/api/admin/reviews`);
+        const data = await res.json();
+        if (!res.ok || !data.success) throw new Error();
+        box.textContent = "";
+        if (!data.reviews.length) { box.textContent = "Belum ada ulasan."; return; }
+        data.reviews.forEach(v => {
+            const row = document.createElement("div");
+            row.className = "bg-white border border-neutral-200 rounded-lg p-5 flex flex-col md:flex-row md:items-start md:justify-between gap-4";
+            const info = document.createElement("div"); info.className = "min-w-0";
+            const t = document.createElement("p"); t.className = "font-bold text-neutral-900";
+            t.textContent = `${v.product_name}  ${"\u2605".repeat(v.rating)}${"\u2606".repeat(5 - v.rating)}`;
+            const c = document.createElement("p"); c.className = "text-sm text-neutral-600 mt-1 break-words"; c.textContent = v.comment || "(tanpa komentar)";
+            const m = document.createElement("p"); m.className = "text-xs text-neutral-400 mt-2";
+            m.textContent = `${v.reviewer_name} / pesanan #${v.order_id} / ${new Date(v.created_at).toLocaleDateString("id-ID")} / ${v.status === "approved" ? "Tampil" : "Disembunyikan"}`;
+            info.append(t, c, m);
+            const acts = document.createElement("div"); acts.className = "flex gap-2 shrink-0";
+            const toggle = document.createElement("button"); toggle.type = "button";
+            toggle.className = "px-4 py-2.5 rounded-md border border-neutral-200 bg-white text-sm font-bold text-neutral-700";
+            toggle.textContent = v.status === "approved" ? "Sembunyikan" : "Tampilkan";
+            toggle.onclick = () => reviewAction(v.id, "PATCH", { status: v.status === "approved" ? "hidden" : "approved" });
+            const del = document.createElement("button"); del.type = "button";
+            del.className = "px-4 py-2.5 rounded-md border border-red-100 bg-red-50 text-sm font-bold text-red-600";
+            del.textContent = "Hapus";
+            del.onclick = () => { if (confirm("Hapus ulasan ini permanen?")) reviewAction(v.id, "DELETE"); };
+            acts.append(toggle, del); row.append(info, acts); box.appendChild(row);
+        });
+    } catch (e) { box.textContent = "Gagal memuat ulasan."; }
+}
+async function reviewAction(id, method, body) {
+    try {
+        const res = await authFetch(`${API_URL}/api/admin/reviews/${id}`, { method, headers: { "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
+        if (!res.ok) throw new Error();
+        showToast("Tersimpan.", "success"); loadReviewsAdmin();
+    } catch (e) { showToast("Gagal.", "error"); }
 }
 
 const sizes = ["35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46"];

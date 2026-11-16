@@ -5,6 +5,7 @@ const path = require("path");
 const crypto = require("crypto");
 const { Pool } = require("pg");
 const { handlePaymentRoutes } = require("./payment");
+const { handleReviewRoutes } = require("./reviews");
 const webpush = require("web-push");
 
 const PORT = process.env.PORT || 3000;
@@ -1586,6 +1587,11 @@ const server = http.createServer(async (req, res) => {
         if (await handlePaymentRoutes(req, res, pathname, {
             pool, sendJSON, readBody, getClientIP, isRateLimited, publicErrorMessage,
             validateOrderData, applyCatalogPrices, ensureOrdersTable,
+        })) return;
+
+        if (await handleReviewRoutes(req, res, pathname, {
+            pool, sendJSON, readBody, getClientIP, isRateLimited, publicErrorMessage,
+            ensureOrdersTable, lockDownTables, requireAdmin,
         })) return;
 
         if (req.method === "POST" && pathname === "/api/orders") {

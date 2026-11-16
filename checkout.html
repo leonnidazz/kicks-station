@@ -110,9 +110,11 @@ textarea{min-height:96px;resize:vertical}input:focus,textarea:focus{outline:2px 
     var d = $("done"); d.classList.remove("hide"); d.textContent = "";
     d.appendChild(el("h1", "", kind === "paid" ? "Pembayaran berhasil" : "Menunggu pembayaran"));
     d.appendChild(el("p", "", "Nomor pesanan: " + orderId));
+    try { localStorage.setItem("ks_last_order", String(orderId)); } catch (e) {}
     d.appendChild(el("p", "", kind === "paid"
       ? "Terima kasih! Admin akan menghubungi lewat WhatsApp untuk konfirmasi pengiriman."
       : "Selesaikan pembayaran sebelum batas waktu. Status pesanan diperbarui otomatis setelah pembayaran diterima."));
+    d.appendChild(el("p", "", "Setelah barang diterima dan pesanan ditandai selesai, kamu bisa menulis ulasan di halaman Ulasan. Simpan nomor pesanan ini."));
     var a = el("a", "", "Kembali ke toko"); a.href = "index.html"; d.appendChild(a);
   }
 

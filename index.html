@@ -261,6 +261,7 @@
                     class="nav-link text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-colors">
                     Cara Pesan
                 </a>
+                <a href="#ulasan" onclick="setActiveNav(this)" class="nav-link text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-colors">Ulasan</a>
                 <a
     href="info.html"
     class="nav-link text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-colors">
@@ -324,6 +325,7 @@
                 class="nav-link block text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white py-2">
                 Cara Pesan
             </a>
+            <a href="#ulasan" onclick="setActiveNav(this)" class="nav-link block text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white py-2">Ulasan</a>
             <a
     href="info.html"
     class="nav-link block text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white py-2">
@@ -613,6 +615,21 @@
 
         </div>
 
+    </section>
+
+    <!-- ULASAN PEMBELI -->
+    <section id="ulasan" class="py-16 bg-white dark:bg-neutral-900 border-t border-neutral-200 dark:border-neutral-800 scroll-mt-24 text-left">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 mb-8">
+                <div>
+                    <h2 class="text-3xl font-bold text-neutral-900 dark:text-white">Ulasan pembeli</h2>
+                    <p class="text-neutral-500 dark:text-neutral-400 mt-2">Hanya dari pembeli yang memesan lewat website ini.</p>
+                </div>
+                <a href="ulasan.html" class="inline-block self-start sm:self-auto bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 px-5 py-3 rounded-md font-semibold text-sm">Tulis ulasan</a>
+            </div>
+            <div id="review-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+            <p id="review-empty" class="hidden text-neutral-500 dark:text-neutral-400">Belum ada ulasan. Pembeli bisa menulis ulasan setelah pesanan selesai.</p>
+        </div>
     </section>
 
     <!-- =========================
@@ -2804,6 +2821,46 @@
     if (typeof window.openKickChat === 'function') window.openKickChat();
     history.replaceState(null, '', location.pathname);
   });
+})();
+</script>
+<script>
+/* Ulasan: rating di kartu produk + daftar ulasan terbaru (semua teks lewat textContent) */
+(function () {
+  var base = (typeof API !== 'undefined') ? API : 'https://kicks-station.onrender.com';
+  var summary = {}, loaded = false;
+  var key = function (n) { return String(n || '').trim().toLocaleLowerCase('id-ID'); };
+  var stars = function (n) { var r = Math.round(n); return '\u2605'.repeat(r) + '\u2606'.repeat(5 - r); };
+  function decorate() {
+    if (!loaded) return;
+    document.querySelectorAll('#product-grid .product-card').forEach(function (card) {
+      if (card.dataset.ksRated) return;
+      var btn = card.querySelector('[onclick^="addToCart"]'); var h = card.querySelector('h3');
+      var m = btn && /addToCart\(this,\s*("(?:[^"\\]|\\.)*")/.exec(btn.getAttribute('onclick') || '');
+      var name = ''; try { name = m ? JSON.parse(m[1]) : (h ? h.textContent : ''); } catch (e) { name = h ? h.textContent : ''; }
+      var s = summary[key(name)]; card.dataset.ksRated = '1';
+      if (!s || !h) return;
+      var p = document.createElement('p'); p.className = 'text-sm text-neutral-600 dark:text-neutral-300 mt-1';
+      p.textContent = stars(s.avg) + ' ' + s.avg.toFixed(1) + ' (' + s.count + ' ulasan)'; p.setAttribute('aria-label', 'Rating ' + s.avg + ' dari 5, ' + s.count + ' ulasan');
+      h.insertAdjacentElement('afterend', p);
+    });
+  }
+  var grid = document.getElementById('product-grid');
+  if (grid) new MutationObserver(decorate).observe(grid, { childList: true });
+  fetch(base + '/api/reviews/summary').then(function (r) { return r.json(); }).then(function (j) { summary = j.summary || {}; loaded = true; decorate(); }).catch(function () {});
+  fetch(base + '/api/reviews?limit=6').then(function (r) { return r.json(); }).then(function (j) {
+    var list = document.getElementById('review-list'), empty = document.getElementById('review-empty');
+    var rows = (j && j.reviews) || [];
+    if (!rows.length) { empty.classList.remove('hidden'); return; }
+    rows.forEach(function (v) {
+      var c = document.createElement('article'); c.className = 'border border-neutral-200 dark:border-neutral-700 rounded-lg p-5';
+      var st = document.createElement('p'); st.className = 'text-neutral-900 dark:text-white'; st.textContent = stars(v.rating); st.setAttribute('aria-label', 'Rating ' + v.rating + ' dari 5');
+      var pn = document.createElement('h3'); pn.className = 'font-semibold text-neutral-900 dark:text-white mt-2'; pn.textContent = v.product_name;
+      c.appendChild(st); c.appendChild(pn);
+      if (v.comment) { var t = document.createElement('p'); t.className = 'text-sm text-neutral-600 dark:text-neutral-300 mt-2'; t.textContent = v.comment; c.appendChild(t); }
+      var by = document.createElement('p'); by.className = 'text-xs text-neutral-500 dark:text-neutral-400 mt-3';
+      by.textContent = v.reviewer_name + ', pembeli terverifikasi'; c.appendChild(by); list.appendChild(c);
+    });
+  }).catch(function () {});
 })();
 </script>
 </body>
