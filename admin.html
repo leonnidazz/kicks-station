@@ -458,6 +458,13 @@ button:active {
                             </div>
                         </div>
 
+                        <!-- COLORS -->
+                        <div>
+                            <h3 class="font-black text-lg text-neutral-900 mb-2">Warna Produk</h3>
+                            <p class="text-xs text-neutral-500 mb-4">Pilih satu atau beberapa warna dominan. Warna dikelompokkan otomatis di katalog.</p>
+                            <div id="color-container" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
+                        </div>
+
                         <!-- SIZES -->
                         <div>
                             <div class="flex items-center justify-between mb-4">
@@ -585,6 +592,9 @@ button:active {
                         <option value="lainnya">Lainnya...</option>
                     </select>
 
+                    <select id="product-color-filter" onchange="renderProducts()" class="bg-white/70 border border-neutral-200/60 rounded-lg px-5 py-4 font-bold text-neutral-700 shadow-sm">
+                        <option value="semua">Semua Warna</option>
+                    </select>
                     <button onclick="refreshProducts()" class="px-6 py-4 rounded-lg bg-neutral-900 text-white font-bold hover:bg-neutral-800 shadow-float transition-all">
                         ↻ Refresh
                     </button>
@@ -747,6 +757,12 @@ button:active {
                     <label class="block text-sm font-bold mb-2 text-neutral-700">Pengguna</label>
                     <select id="edit-pengguna" class="w-full border border-neutral-200/60 rounded-lg px-5 py-3.5 font-medium shadow-sm"><option value="pria">Pria</option><option value="wanita">Wanita</option><option value="unisex">Unisex</option><option value="anak">Anak</option></select>
                 </div>
+            </div>
+
+            <div>
+                <h3 class="font-black text-lg text-neutral-900 mb-2">Warna Produk</h3>
+                <p class="text-xs text-neutral-500 mb-4">Pilih satu atau beberapa warna dominan.</p>
+                <div id="edit-color-container" class="grid grid-cols-2 sm:grid-cols-3 gap-3"></div>
             </div>
 
             <div>
@@ -1174,6 +1190,7 @@ async function saveProduct() {
         if (!finalTipe) throw new Error("Silakan isi tipe produk.");
 
         const productData = {
+            colors: getSelectedColors("color-container"),
             nama: document.getElementById("nama").value.trim(), brand: document.getElementById("brand").value.trim(),
             harga: Number(document.getElementById("harga").value), harga_coret: Number(document.getElementById("harga_coret").value) || 0,
             tipe: finalTipe, asal: document.getElementById("asal").value, pengguna: document.getElementById("pengguna").value,
@@ -1193,9 +1210,36 @@ function clearForm() {
     document.getElementById("tipe").value = "kasual"; document.getElementById("tipe-lainnya").value = ""; toggleCustomTipeInput();
     document.getElementById("asal").value = "internasional"; document.getElementById("pengguna").value = "pria";
     selectedSizes.clear(); selectedImageFiles = []; imageInput.value = ""; previewMainIndex = 0;
-    renderSizes(); renderImagePreviews(); updatePreview();
+    renderSizes(); renderColorOptions("color-container"); renderImagePreviews(); updatePreview();
 }
 function resetForm() { if (confirm("Kosongkan semua data yang sudah diisi?")) { clearForm(); showToast("Form berhasil dikosongkan.", "success"); } }
+
+const PRODUCT_COLOR_GROUPS = {
+    "Netral": ["Hitam", "Putih", "Abu-abu", "Krem", "Cokelat"],
+    "Warna hangat": ["Merah", "Oranye", "Kuning", "Pink"],
+    "Warna dingin": ["Biru", "Navy", "Hijau", "Ungu", "Toska"],
+    "Lainnya": ["Multiwarna"]
+};
+const ALL_PRODUCT_COLORS = Object.values(PRODUCT_COLOR_GROUPS).flat();
+function renderColorOptions(containerId, selected = []) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    container.innerHTML = Object.entries(PRODUCT_COLOR_GROUPS).map(([group, colors]) => `
+        <div class="col-span-full text-xs font-black uppercase tracking-wider text-neutral-400 mt-2">${group}</div>
+        ${colors.map(color => `<label class="flex items-center gap-2.5 border border-neutral-200 rounded-lg px-3 py-2.5 bg-white cursor-pointer hover:border-neutral-400 text-sm font-semibold"><input type="checkbox" value="${color}" ${selected.includes(color) ? 'checked' : ''} class="product-color-choice accent-neutral-900">${color}</label>`).join('')}
+    `).join('');
+}
+function getSelectedColors(containerId) {
+    return [...document.querySelectorAll(`#${containerId} .product-color-choice:checked`)].map(input => input.value);
+}
+function renderAdminColorFilter() {
+    const select = document.getElementById('product-color-filter');
+    if (!select) return;
+    const current = select.value;
+    const colors = [...new Set(allProducts.flatMap(p => Array.isArray(p.colors) ? p.colors : []))].sort();
+    select.innerHTML = `<option value="semua">Semua Warna</option>${colors.map(c => `<option value="${c}">${c}</option>`).join('')}<option value="__unset">Belum ditentukan</option>`;
+    select.value = [...select.options].some(o => o.value === current) ? current : 'semua';
+}
 
 let allProducts = [];
 async function loadProducts() {
@@ -1203,7 +1247,7 @@ async function loadProducts() {
     try {
         const response = await fetch(`${API_URL}/api/products`); const result = await response.json();
         if (!response.ok || !result.success) throw new Error(result.message || "Gagal membaca produk.");
-        allProducts = result.products || []; updateStats(); renderProducts();
+        allProducts = result.products || []; updateStats(); renderAdminColorFilter(); renderProducts();
     } catch (error) {
         console.error(error);
         list.innerHTML = `<div class="glass-panel rounded-lg p-10 text-center sm:col-span-2 xl:col-span-3 border border-red-100"><div class="text-4xl mb-4"></div><p class="font-black text-xl text-neutral-900">Gagal memuat katalog</p><p class="text-neutral-500 mt-2">Pastikan backend server berjalan dengan baik.</p><button onclick="loadProducts()" class="mt-6 px-6 py-3 rounded-lg bg-neutral-900 text-white font-bold shadow-md">Coba Lagi</button></div>`;
@@ -1230,12 +1274,15 @@ function renderProducts() {
     const list = document.getElementById("product-list");
     const search = (document.getElementById("product-search").value || "").toLowerCase().trim();
     const filter = document.getElementById("product-filter").value;
+    const colorFilter = document.getElementById("product-color-filter")?.value || "semua";
 
     const filtered = allProducts.filter(product => {
         const name = String(product.nama || "").toLowerCase(); const brand = String(product.brand || "").toLowerCase();
         const searchMatch = name.includes(search) || brand.includes(search);
         const filterMatch = filter === "semua" || product.tipe === filter;
-        return searchMatch && filterMatch;
+        const productColors = Array.isArray(product.colors) ? product.colors : [];
+        const colorMatch = colorFilter === "semua" || (colorFilter === "__unset" ? productColors.length === 0 : productColors.includes(colorFilter));
+        return searchMatch && filterMatch && colorMatch;
     });
 
     document.getElementById("product-count").textContent = `${filtered.length} produk ditampilkan (Total: ${allProducts.length})`;
@@ -1280,6 +1327,7 @@ function createProductCard(product) {
             <div class="flex gap-2 flex-wrap mt-4">
                 <span class="px-3 py-1 bg-white/80 rounded-md text-[10px] font-bold text-neutral-600 border border-neutral-200/50">${capitalize(product.tipe)}</span>
                 <span class="px-3 py-1 bg-white/80 rounded-md text-[10px] font-bold text-neutral-600 border border-neutral-200/50">${capitalize(product.pengguna)}</span>
+                ${(Array.isArray(product.colors) && product.colors.length ? product.colors : ["Belum ditentukan"]).map(c => `<span class="px-3 py-1 bg-neutral-100 rounded-md text-[10px] font-bold text-neutral-600 border border-neutral-200">${escapeHTML(c)}</span>`).join("")}
             </div>
             <div class="mt-5 pt-5 border-t border-neutral-200/50 flex-1">
                 <p class="text-[10px] font-bold text-neutral-400 mb-2">Ukuran</p>
@@ -1423,6 +1471,7 @@ function openEditModal(id) {
     document.getElementById("edit-harga").value = product.harga || 0; document.getElementById("edit-harga-coret").value = product.harga_coret || 0;
     document.getElementById("edit-asal").value = product.asal || "internasional"; document.getElementById("edit-pengguna").value = product.pengguna || "unisex";
     document.getElementById("edit-deskripsi").value = product.deskripsi || "";
+    renderColorOptions("edit-color-container", Array.isArray(product.colors) ? product.colors : []);
     editSelectedSizes.clear(); if (Array.isArray(product.sizes)) product.sizes.forEach(size => { editSelectedSizes.add(String(size)); });
     editExistingImages = getProductImages(product); editNewImageFiles = [];
     renderEditSizes(); renderEditPhotos(); document.getElementById("edit-gambar").value = "";
@@ -1442,6 +1491,7 @@ async function updateProduct() {
         if (!finalEditTipe) throw new Error("Silakan isi tipe produk.");
 
         const data = {
+            colors: getSelectedColors("edit-color-container"),
             nama: document.getElementById("edit-nama").value.trim(), brand: document.getElementById("edit-brand").value.trim(),
             harga: Number(document.getElementById("edit-harga").value), harga_coret: Number(document.getElementById("edit-harga-coret").value) || 0,
             tipe: finalEditTipe, asal: document.getElementById("edit-asal").value, pengguna: document.getElementById("edit-pengguna").value,
@@ -1584,7 +1634,7 @@ async function setOrderNote(id, current) { const note = prompt("Keterangan:", cu
 async function deleteOrder(id) { if (!confirm(`Hapus pesanan #${id}?`)) return; try { await authFetch(`${API_URL}/api/orders/${id}`, { method: "DELETE" }); showToast("Dihapus.", "success"); loadOrders(); } catch (error) { showToast("Gagal.", "error"); } }
 async function deleteOrderHistory() { if (!confirm("Hapus semua riwayat?")) return; try { await authFetch(`${API_URL}/api/orders`, { method: "DELETE" }); showToast("Dihapus.", "success"); loadOrders(); } catch (error) { showToast("Gagal.", "error"); } }
 
-renderSizes(); renderImagePreviews(); updatePreview();
+renderSizes(); renderColorOptions("color-container"); renderImagePreviews(); updatePreview();
 checkAdminAuth().then(authenticated => {
     if (authenticated) {
         loadProducts();

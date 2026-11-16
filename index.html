@@ -505,6 +505,11 @@
 
                     </div>
 
+                    <div class="w-full pt-3 border-t border-neutral-200 dark:border-neutral-700">
+                        <p class="text-xs uppercase tracking-wider font-black text-neutral-400 mb-3">Filter Warna</p>
+                        <div id="color-filter-options" class="flex flex-wrap gap-2"></div>
+                    </div>
+
                     <button
                         onclick="resetAllFilters()"
                         class="text-xs text-red-500 dark:text-red-400 hover:underline font-semibold ml-auto">
@@ -1566,11 +1571,34 @@
             document.getElementById('no-result-msg');
 
         let activeCategory = 'semua';
-
+        let activeColor = 'semua';
         let activeFilters = {
             asal: 'semua',
             pengguna: 'semua'
         };
+        const COLOR_GROUPS = {
+            "Netral": ["Hitam", "Putih", "Abu-abu", "Krem", "Cokelat"],
+            "Hangat": ["Merah", "Oranye", "Kuning", "Pink"],
+            "Dingin": ["Biru", "Navy", "Hijau", "Ungu", "Toska"],
+            "Lainnya": ["Multiwarna"]
+        };
+        function renderColorFilters(products) {
+            const container = document.getElementById('color-filter-options');
+            const available = new Set((products || []).flatMap(p => Array.isArray(p.colors) ? p.colors : []));
+            const groupsHTML = Object.entries(COLOR_GROUPS).map(([group, colors]) => {
+                const present = colors.filter(color => available.has(color));
+                if (!present.length) return '';
+                return `<div class="flex flex-wrap items-center gap-2 mr-3"><span class="text-[10px] uppercase tracking-wider text-neutral-400">${group}</span>${present.map(color => `<button type="button" onclick="setColorFilter('${color}')" class="rounded-full border px-3 py-1.5 text-xs font-bold transition ${activeColor === color ? 'bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-neutral-900' : 'border-neutral-300 dark:border-neutral-600 text-neutral-600 dark:text-neutral-300'}">${color}</button>`).join('')}</div>`;
+            }).join('');
+            container.innerHTML = groupsHTML || '<span class="text-xs text-neutral-400">Warna belum ditentukan pada produk.</span>';
+        }
+        function setColorFilter(color) {
+            activeColor = activeColor === color ? 'semua' : color;
+            const cached = getCachedProducts();
+            const source = getCachedProducts();
+            if (source?.products) renderColorFilters(source.products);
+            runSmartFilter();
+        }
 
 
         function setCategory(category) {
@@ -1701,6 +1729,7 @@
         function resetAllFilters() {
 
             activeCategory = 'semua';
+            activeColor = 'semua';
 
             activeFilters = {
                 asal: 'semua',
@@ -1764,6 +1793,7 @@
                 const pPengguna =
                     (card.getAttribute('data-pengguna') || '')
                         .toLowerCase();
+                const pColors = (card.getAttribute('data-colors') || '').split('|').filter(Boolean);
 
                 const pName =
                     (
@@ -1819,13 +1849,15 @@
                         activeFilters.pengguna === 'semua' ||
                         pPengguna === activeFilters.pengguna
                     );
+                const matchColor = activeColor === 'semua' || pColors.includes(activeColor);
 
 
                 if (
                     matchSearch &&
                     matchCategory &&
                     matchAsal &&
-                    matchPengguna
+                    matchPengguna &&
+                    matchColor
                 ) {
 
                     card.style.display = 'flex';
@@ -2342,7 +2374,7 @@
         function renderProducts(products) {
 
             productGrid.innerHTML = '';
-
+            renderColorFilters(products);
 
             products.forEach(product => {
 
@@ -2371,6 +2403,7 @@
 
                 card.dataset.pengguna =
                     product.pengguna || '';
+                card.dataset.colors = Array.isArray(product.colors) ? product.colors.join('|') : '';
 
 
                 /* =========================

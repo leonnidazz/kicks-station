@@ -761,12 +761,14 @@ async function ensureDatabaseOnce() {
             asal TEXT DEFAULT 'internasional',
             pengguna TEXT DEFAULT 'unisex',
             sizes JSONB NOT NULL DEFAULT '[]'::jsonb,
+            colors JSONB NOT NULL DEFAULT '[]'::jsonb,
             gambar JSONB NOT NULL DEFAULT '[]'::jsonb,
             deskripsi TEXT DEFAULT '',
             upload_order INTEGER NOT NULL
         )
     `);
 
+    await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS colors JSONB NOT NULL DEFAULT '[]'::jsonb`);
     await pool.query(`ALTER TABLE products DROP COLUMN IF EXISTS stok`);
     await pool.query(`ALTER TABLE products ENABLE ROW LEVEL SECURITY`);
     await lockDownTables(["public.products"]);
@@ -788,6 +790,7 @@ async function getProducts() {
             asal,
             pengguna,
             sizes,
+            colors,
             gambar,
             deskripsi,
             upload_order
@@ -800,6 +803,7 @@ async function getProducts() {
         harga: Number(row.harga),
         harga_coret: Number(row.harga_coret || 0),
         sizes: Array.isArray(row.sizes) ? row.sizes : [],
+        colors: Array.isArray(row.colors) ? row.colors : [],
         gambar: normalizeImages(row.gambar),
         upload_order: Number(row.upload_order),
     }));
@@ -809,8 +813,8 @@ async function insertProduct(product) {
     await pool.query(
         `
         INSERT INTO products
-        (id, nama, brand, harga, harga_coret, tipe, asal, pengguna, sizes, gambar, deskripsi, upload_order)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10::jsonb,$11,$12)
+        (id, nama, brand, harga, harga_coret, tipe, asal, pengguna, sizes, colors, gambar, deskripsi, upload_order)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10::jsonb,$11::jsonb,$12,$13)
         `,
         [
             product.id,
@@ -822,6 +826,7 @@ async function insertProduct(product) {
             product.asal,
             product.pengguna,
             JSON.stringify(product.sizes),
+            JSON.stringify(product.colors || []),
             JSON.stringify(product.gambar),
             product.deskripsi,
             product.upload_order,
@@ -841,9 +846,10 @@ async function updateProductRow(product) {
             asal=$7,
             pengguna=$8,
             sizes=$9::jsonb,
-            gambar=$10::jsonb,
-            deskripsi=$11,
-            upload_order=$12
+            colors=$10::jsonb,
+            gambar=$11::jsonb,
+            deskripsi=$12,
+            upload_order=$13
         WHERE id=$1
         `,
         [
@@ -856,6 +862,7 @@ async function updateProductRow(product) {
             product.asal,
             product.pengguna,
             JSON.stringify(product.sizes),
+            JSON.stringify(product.colors || []),
             JSON.stringify(product.gambar),
             product.deskripsi,
             product.upload_order,
@@ -931,6 +938,7 @@ async function migrateProductsFromJSONIfNeeded() {
             tipe: old.tipe || "kasual",
             asal: old.asal || "internasional",
             pengguna: old.pengguna || "unisex",
+            colors: Array.isArray(old.colors) ? old.colors : [],
             sizes: Array.isArray(old.sizes)
                 ? old.sizes.map(String)
                 : [],
@@ -1760,6 +1768,7 @@ const server = http.createServer(async (req, res) => {
                 tipe: data.tipe || "kasual",
                 asal: data.asal || "internasional",
                 pengguna: data.pengguna || "unisex",
+                colors: Array.isArray(data.colors) ? data.colors.map(String) : [],
                 sizes: data.sizes.map((size) => String(size)),
                 gambar: imagePaths,
                 deskripsi: String(data.deskripsi || "").trim(),
@@ -1975,6 +1984,8 @@ const server = http.createServer(async (req, res) => {
                     data.pengguna !== undefined
                         ? data.pengguna
                         : oldProduct.pengguna,
+                colors:
+                    Array.isArray(data.colors) ? data.colors.map(String) : (oldProduct.colors || []),
                 sizes:
                     Array.isArray(data.sizes)
                         ? data.sizes.map(String)
