@@ -18,6 +18,11 @@ const SUPABASE_SERVICE_ROLE_KEY = String(
 const SUPABASE_BUCKET = "product-images";
 
 const DATABASE_URL = String(process.env.DATABASE_URL || "").trim();
+// Opsional: isi isi file sertifikat CA Supabase (format PEM) agar koneksi DB diverifikasi penuh.
+const DATABASE_SSL_CA = String(process.env.DATABASE_SSL_CA || "").replace(/\\n/g, "\n").trim();
+if (DATABASE_URL && !DATABASE_SSL_CA) {
+    console.warn("[KEAMANAN] DATABASE_SSL_CA belum diset: sertifikat database tidak diverifikasi.");
+}
 
 const productsFile = path.join(__dirname, "..", "products.json");
 const imagesFolder = path.join(__dirname, "..", "images");
@@ -64,7 +69,9 @@ if (!DATABASE_URL) {
 } else {
     pool = new Pool({
         connectionString: DATABASE_URL,
-        ssl: { rejectUnauthorized: false },
+        ssl: DATABASE_SSL_CA
+            ? { ca: DATABASE_SSL_CA, rejectUnauthorized: true }
+            : { rejectUnauthorized: false },
         max: 5,
         idleTimeoutMillis: 30000,
         connectionTimeoutMillis: 10000,
@@ -269,7 +276,6 @@ function resetGlobalLoginWindowIfNeeded(now) {
 function canAttemptLogin(ip) {
     const now = Date.now();
     resetGlobalLoginWindowIfNeeded(now);
-    if (globalLoginAttempts.failures >= MAX_GLOBAL_LOGIN_FAILURES) return false;
 
     const attempts = loginAttempts.get(ip);
     if (!attempts || now - attempts.windowStart >= LOGIN_WINDOW) {
@@ -496,6 +502,18 @@ function validateImageData(imageData) {
 
     if (buffer.length > MAX_IMAGE_SIZE) {
         throw new Error(`Ukuran foto "${cleanName}" maksimal 5 MB.`);
+    }
+
+    const isJpeg = buffer.length > 3 && buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff;
+    const isPng = buffer.length > 8 && buffer.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+    const isWebp = buffer.length > 12 && buffer.subarray(0, 4).toString("latin1") === "RIFF" && buffer.subarray(8, 12).toString("latin1") === "WEBP";
+    const declaredMime = mimeMatch[1].toLowerCase();
+    const signatureOk =
+        (declaredMime === "image/jpeg" && isJpeg) ||
+        (declaredMime === "image/png" && isPng) ||
+        (declaredMime === "image/webp" && isWebp);
+    if (!signatureOk) {
+        throw new Error(`Isi file "${cleanName}" bukan gambar JPG, PNG, atau WEBP yang valid.`);
     }
 
     const extension = path.extname(cleanName).toLowerCase();
@@ -1022,15 +1040,33 @@ async function applyCatalogPrices(order) {
     if (!Array.isArray(products) || products.length === 0) {
         throw new Error("Katalog produk belum tersedia. Checkout sementara dinonaktifkan.");
     }
-    const priceByName = new Map(
-        products.map((product) => [String(product.nama).trim().toLocaleLowerCase("id-ID"), Number(product.harga)])
-    );
+    const byName = new Map();
+    for (const product of products) {
+        const key = String(product.nama).trim().toLocaleLowerCase("id-ID");
+        if (!byName.has(key)) byName.set(key, []);
+        byName.get(key).push(product);
+    }
 
     order.items = order.items.map((item) => {
         const key = item.name.trim().toLocaleLowerCase("id-ID");
-        const realPrice = priceByName.get(key);
-        if (realPrice === undefined || !Number.isFinite(realPrice) || realPrice < 0) {
+        const matches = byName.get(key);
+        if (!matches || !matches.length) {
             throw new Error(`Produk "${item.name}" tidak ditemukan di katalog. Muat ulang toko sebelum checkout.`);
+        }
+        const prices = new Set(matches.map((product) => Number(product.harga)));
+        if (prices.size > 1) {
+            throw new Error(`Produk "${item.name}" ambigu di katalog. Hubungi admin lewat chat.`);
+        }
+        const realPrice = [...prices][0];
+        if (!Number.isFinite(realPrice) || realPrice < 0) {
+            throw new Error(`Produk "${item.name}" tidak ditemukan di katalog. Muat ulang toko sebelum checkout.`);
+        }
+        // Ukuran harus benar-benar tersedia pada produk tersebut.
+        const sizeOk = matches.some(
+            (product) => Array.isArray(product.sizes) && product.sizes.map((value) => String(value).trim()).includes(item.size)
+        );
+        if (!sizeOk) {
+            throw new Error(`Ukuran "${item.size}" untuk "${item.name}" tidak tersedia. Muat ulang toko sebelum checkout.`);
         }
         return { ...item, price: realPrice };
     });
@@ -1586,6 +1622,11 @@ const server = http.createServer(async (req, res) => {
 
             const data = await readBody(req, 1024);
             const pin = String(data?.pin || "").trim();
+
+            // Serangan terdistribusi: perlambat semua percobaan, tapi jangan kunci admin sah.
+            if (globalLoginAttempts.failures >= MAX_GLOBAL_LOGIN_FAILURES) {
+                await new Promise((resolve) => setTimeout(resolve, 1500));
+            }
 
             if (pin.length < 6 || pin.length > 128 || !pinMatches(pin)) {
                 recordLoginFailure(ip);

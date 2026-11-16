@@ -1,6 +1,9 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
+<meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'self'; form-action 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self' https://kicks-station.onrender.com">
+<meta name="robots" content="noindex, nofollow">
+<script>if (window.top !== window.self) { document.documentElement.style.display = "none"; try { window.top.location = window.self.location; } catch (e) {} }</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#0f172a">
@@ -1451,6 +1454,8 @@ async function loadOrders() {
         if (!response.ok || !data.success) throw new Error(data.message || "Gagal mengambil pesanan.");
         const orders = Array.isArray(data.orders) ? data.orders : [];
         if (!orders.length) { box.innerHTML = '<div class="border-2 border-dashed border-slate-200 bg-white/50 rounded-[1.5rem] py-16 text-center text-slate-400 font-bold">Tidak ada pesanan masuk.</div>'; return; }
+        window.ksOrderNotes = new Map(orders.map(o => [Number(o.id), o.keterangan || ""]));
+        if (!box.dataset.noteBound) { box.dataset.noteBound = "1"; box.addEventListener("click", e => { const b = e.target.closest("[data-note-id]"); if (!b) return; const id = Number(b.dataset.noteId); setOrderNote(id, window.ksOrderNotes.get(id) || ""); }); }
         box.innerHTML = orders.map(order => {
             const items = Array.isArray(order.items) ? order.items : []; const date = order.created_at ? new Date(order.created_at).toLocaleString("id-ID") : "-";
             return `<article class="bg-white/80 border border-slate-200/60 rounded-[1.5rem] p-6 shadow-sm hover:shadow-md transition">
@@ -1467,7 +1472,7 @@ async function loadOrders() {
                         <select onchange="updateOrderStatus(${Number(order.id)}, this.value)" class="border border-slate-200 bg-white rounded-xl px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm">
                             ${["baru","diproses","selesai","batal"].map(st => `<option value="${st}" ${order.status === st ? "selected" : ""}>${statusLabel(st)}</option>`).join("")}
                         </select>
-                        <button onclick="setOrderNote(${Number(order.id)}, ${JSON.stringify(order.keterangan || "")})" class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-700 hover:bg-slate-50 shadow-sm transition">✍️ Catatan</button>
+                        <button type="button" data-note-id="${Number(order.id)}" class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-sm font-bold text-slate-700 hover:bg-slate-50 shadow-sm transition">✍️ Catatan</button>
                         <button onclick="deleteOrder(${Number(order.id)})" class="px-4 py-2.5 rounded-xl border border-red-100 bg-red-50 text-sm font-bold text-red-600 hover:bg-red-100 shadow-sm transition">Hapus</button>
                     </div>
                 </div>

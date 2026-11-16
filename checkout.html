@@ -2,6 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'self'; form-action 'self'">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Checkout | Kicks Station</title>
 <meta name="robots" content="noindex">
@@ -123,6 +124,7 @@ textarea{min-height:96px;resize:vertical}input:focus,textarea:focus{outline:2px 
   function loadSnap(s) {
     return new Promise(function (ok, fail) {
       if (window.snap) return ok();
+      if (!/^https:\/\/app(\.sandbox)?\.midtrans\.com\/snap\/snap\.js$/.test(String(s.snap_url))) return fail(new Error("Alamat halaman pembayaran tidak valid."));
       var t = document.createElement("script"); t.src = s.snap_url; t.setAttribute("data-client-key", s.client_key);
       t.onload = ok; t.onerror = function () { fail(new Error("Halaman pembayaran gagal dimuat. Periksa koneksi lalu coba lagi.")); };
       document.head.appendChild(t);

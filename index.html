@@ -2,11 +2,11 @@
 <html lang="id" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
+    <meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'self'; form-action 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self' https://kicks-station.onrender.com">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#2563eb">
-    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="manifest" href="manifest-store.webmanifest">
     <link rel="apple-touch-icon" href="icons/icon-192.png">
-    <link rel="preconnect" href="https://unpkg.com">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <title>Kicks Station | Premium Urban Footwear</title>
@@ -15,18 +15,13 @@
     <meta property="og:title" content="Kicks Station | Premium Urban Footwear">
     <meta property="og:description" content="Sepatu pilihan dari brand pilihan dengan harga di bawah retail. Pesan mudah lewat WhatsApp.">
     
-    <title>Kicks Station - Sepatu Running & Kasual Original Harga Terbaik</title>
-    <meta name="description" content="Beli sepatu Nike, Skechers, New Balance, Adidas, dan Diadora 100% original dengan harga jauh di bawah retail. Pembayaran aman via Midtrans." />
-    <meta name="keywords" content="kicks station, sepatu lari original, nike, skechers, new balance, adidas, toko sepatu diskon" />
-    <meta name="robots" content="index, follow" />
-
 
     <!-- Tailwind CSS CDN -->
     
 
     <!-- Ionicons -->
-    <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
-    <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+    <script type="module" src="vendor/ionicons/ionicons.esm.js"></script>
+    <script nomodule src="vendor/ionicons/ionicons.js"></script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
@@ -2286,8 +2281,7 @@
                 // Perangkat admin/pemilik tidak dihitung sebagai pengunjung.
                 // admin.html memberi flag ini pada perangkat yang digunakan untuk admin.
                 const isAdminDevice =
-                    localStorage.getItem("kickstation_admin_device") === "1" &&
-                    !location.search.includes("track=1");
+                    localStorage.getItem("kickstation_admin_device") === "1";
 
                 if (isAdminDevice) {
                     return;
@@ -2866,7 +2860,8 @@
    finally{sending=false;if(button)button.disabled=false;}
  };
  window.submitKickChatMessage=async function(){const input=document.getElementById('kick-chat-input');if(!input||sending)return;const value=input.value.trim();if(!value)return;await window.sendKickChatMessage(value);};
- if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('./service-worker.js').catch(()=>{});
+ // Toko tidak memakai service worker. Hapus SW/cache lama (yang dulu ikut menyimpan halaman admin) dari perangkat pelanggan.
+ if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});}).catch(function(){});if(window.caches){caches.keys().then(function(ks){ks.filter(function(k){return k.indexOf('kicks-station-shell-')===0;}).forEach(function(k){caches.delete(k);});}).catch(function(){});}}
 })();;
 </script>
 <script>

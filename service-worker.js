@@ -1,7 +1,5 @@
-const CACHE_NAME = 'kicks-station-shell-v7';
+const CACHE_NAME = 'kicks-station-shell-v8';
 const APP_SHELL = [
-  './',
-  './index.html',
   './admin.html',
   './manifest.webmanifest',
   './icons/icon-192.png',
@@ -32,6 +30,8 @@ self.addEventListener('fetch', event => {
   if (request.method !== 'GET') return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+  // Service worker hanya melayani panel admin; halaman toko tidak disentuh.
+  if (!/\/(admin\.html|manifest\.webmanifest|icons\/[^/]+)$/i.test(url.pathname)) return;
 
   // Network-first: halaman admin tetap diperbarui dari GitHub Pages; cache hanya fallback offline.
   event.respondWith(
