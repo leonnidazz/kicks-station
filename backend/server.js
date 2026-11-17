@@ -7,6 +7,7 @@ const { Pool } = require("pg");
 const { handlePaymentRoutes } = require("./payment");
 const { handleReviewRoutes } = require("./reviews");
 const webpush = require("web-push");
+const KSColors = require("../ks-colors.js");
 
 const PORT = process.env.PORT || 3000;
 const PUBLIC_BASE_URL =
@@ -761,15 +762,38 @@ async function ensureDatabaseOnce() {
             asal TEXT DEFAULT 'internasional',
             pengguna TEXT DEFAULT 'unisex',
             sizes JSONB NOT NULL DEFAULT '[]'::jsonb,
-            colors JSONB NOT NULL DEFAULT '[]'::jsonb,
             gambar JSONB NOT NULL DEFAULT '[]'::jsonb,
             deskripsi TEXT DEFAULT '',
             upload_order INTEGER NOT NULL
         )
     `);
 
-    await pool.query(`ALTER TABLE products ADD COLUMN IF NOT EXISTS colors JSONB NOT NULL DEFAULT '[]'::jsonb`);
     await pool.query(`ALTER TABLE products DROP COLUMN IF EXISTS stok`);
+
+    // Kolom warna: daftar kelompok warna (mis. ["hitam","putih"]).
+    // Saat kolom baru dibuat, produk lama dikelompokkan otomatis dari namanya (sekali saja).
+    const warnaColumn = await pool.query(`
+        SELECT 1 FROM information_schema.columns
+        WHERE table_schema = 'public' AND table_name = 'products' AND column_name = 'warna'
+    `);
+    const warnaBaru = warnaColumn.rowCount === 0;
+    await pool.query(
+        `ALTER TABLE products ADD COLUMN IF NOT EXISTS warna JSONB NOT NULL DEFAULT '[]'::jsonb`
+    );
+    if (warnaBaru) {
+        const existing = await pool.query(`SELECT id, nama FROM products`);
+        for (const row of existing.rows) {
+            const detected = KSColors.detect(row.nama);
+            if (detected.length) {
+                await pool.query(`UPDATE products SET warna=$2::jsonb WHERE id=$1`, [
+                    row.id,
+                    JSON.stringify(detected),
+                ]);
+            }
+        }
+        console.log(`Kolom warna dibuat; ${existing.rowCount} produk lama dikelompokkan warnanya.`);
+    }
+
     await pool.query(`ALTER TABLE products ENABLE ROW LEVEL SECURITY`);
     await lockDownTables(["public.products"]);
 
@@ -790,10 +814,10 @@ async function getProducts() {
             asal,
             pengguna,
             sizes,
-            colors,
             gambar,
             deskripsi,
-            upload_order
+            upload_order,
+            warna
         FROM products
         ORDER BY upload_order ASC, id ASC
     `);
@@ -803,9 +827,9 @@ async function getProducts() {
         harga: Number(row.harga),
         harga_coret: Number(row.harga_coret || 0),
         sizes: Array.isArray(row.sizes) ? row.sizes : [],
-        colors: Array.isArray(row.colors) ? row.colors : [],
         gambar: normalizeImages(row.gambar),
         upload_order: Number(row.upload_order),
+        warna: KSColors.normalize(row.warna),
     }));
 }
 
@@ -813,8 +837,8 @@ async function insertProduct(product) {
     await pool.query(
         `
         INSERT INTO products
-        (id, nama, brand, harga, harga_coret, tipe, asal, pengguna, sizes, colors, gambar, deskripsi, upload_order)
-        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10::jsonb,$11::jsonb,$12,$13)
+        (id, nama, brand, harga, harga_coret, tipe, asal, pengguna, sizes, gambar, deskripsi, upload_order, warna)
+        VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9::jsonb,$10::jsonb,$11,$12,$13::jsonb)
         `,
         [
             product.id,
@@ -826,10 +850,10 @@ async function insertProduct(product) {
             product.asal,
             product.pengguna,
             JSON.stringify(product.sizes),
-            JSON.stringify(product.colors || []),
             JSON.stringify(product.gambar),
             product.deskripsi,
             product.upload_order,
+            JSON.stringify(KSColors.normalize(product.warna)),
         ]
     );
 }
@@ -846,10 +870,10 @@ async function updateProductRow(product) {
             asal=$7,
             pengguna=$8,
             sizes=$9::jsonb,
-            colors=$10::jsonb,
-            gambar=$11::jsonb,
-            deskripsi=$12,
-            upload_order=$13
+            gambar=$10::jsonb,
+            deskripsi=$11,
+            upload_order=$12,
+            warna=$13::jsonb
         WHERE id=$1
         `,
         [
@@ -862,10 +886,10 @@ async function updateProductRow(product) {
             product.asal,
             product.pengguna,
             JSON.stringify(product.sizes),
-            JSON.stringify(product.colors || []),
             JSON.stringify(product.gambar),
             product.deskripsi,
             product.upload_order,
+            JSON.stringify(KSColors.normalize(product.warna)),
         ]
     );
 }
@@ -938,13 +962,15 @@ async function migrateProductsFromJSONIfNeeded() {
             tipe: old.tipe || "kasual",
             asal: old.asal || "internasional",
             pengguna: old.pengguna || "unisex",
-            colors: Array.isArray(old.colors) ? old.colors : [],
             sizes: Array.isArray(old.sizes)
                 ? old.sizes.map(String)
                 : [],
             gambar: migratedImages,
             deskripsi: String(old.deskripsi || "").trim(),
             upload_order: Number(old.upload_order) || index + 1,
+            warna: KSColors.normalize(old.warna).length
+                ? KSColors.normalize(old.warna)
+                : KSColors.detect(old.nama),
         };
 
         if (!product.nama || !product.brand || product.harga <= 0) {
@@ -1768,11 +1794,14 @@ const server = http.createServer(async (req, res) => {
                 tipe: data.tipe || "kasual",
                 asal: data.asal || "internasional",
                 pengguna: data.pengguna || "unisex",
-                colors: Array.isArray(data.colors) ? data.colors.map(String) : [],
                 sizes: data.sizes.map((size) => String(size)),
                 gambar: imagePaths,
                 deskripsi: String(data.deskripsi || "").trim(),
                 upload_order: maxOrder + 1,
+                // Warna dipilih admin; bila kosong, kelompokkan otomatis dari nama produk.
+                warna: Array.isArray(data.warna) || typeof data.warna === "string"
+                    ? KSColors.normalize(data.warna)
+                    : KSColors.detect(data.nama),
             };
 
             try {
@@ -1984,8 +2013,6 @@ const server = http.createServer(async (req, res) => {
                     data.pengguna !== undefined
                         ? data.pengguna
                         : oldProduct.pengguna,
-                colors:
-                    Array.isArray(data.colors) ? data.colors.map(String) : (oldProduct.colors || []),
                 sizes:
                     Array.isArray(data.sizes)
                         ? data.sizes.map(String)
@@ -1995,6 +2022,10 @@ const server = http.createServer(async (req, res) => {
                     data.deskripsi !== undefined
                         ? String(data.deskripsi).trim()
                         : oldProduct.deskripsi,
+                warna:
+                    data.warna !== undefined
+                        ? KSColors.normalize(data.warna)
+                        : oldProduct.warna,
             };
 
             try {

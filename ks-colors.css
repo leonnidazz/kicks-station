@@ -1,0 +1,134 @@
+/* Kicks Station - gaya filter & pemilih warna (dipakai index.html dan admin.html) */
+
+/* Bulatan warna */
+.ks-swatch {
+    display: inline-block;
+    flex: 0 0 auto;
+    width: 14px;
+    height: 14px;
+    border-radius: 9999px;
+    border: 1px solid rgba(120, 120, 120, 0.55);
+    box-sizing: border-box;
+    vertical-align: middle;
+}
+.ks-swatch-lg { width: 22px; height: 22px; }
+
+/* ===== Toko: baris filter warna ===== */
+.ks-color-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 10px;
+    padding-top: 12px;
+    margin-top: 4px;
+    border-top: 1px solid rgba(120, 120, 120, 0.25);
+}
+.ks-color-bar[hidden] { display: none; }
+.ks-color-bar-title {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    opacity: 0.7;
+    margin-right: 2px;
+}
+.ks-color-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 11px 5px 7px;
+    border-radius: 9999px;
+    border: 1px solid rgba(120, 120, 120, 0.4);
+    background: transparent;
+    color: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+.ks-color-chip:hover { border-color: rgba(120, 120, 120, 0.9); transform: translateY(-1px); }
+.ks-color-chip:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.ks-color-chip .ks-count { opacity: 0.55; font-weight: 500; }
+.ks-color-chip[aria-pressed="true"] {
+    background: #171717;
+    border-color: #171717;
+    color: #fff;
+}
+.dark .ks-color-chip[aria-pressed="true"] {
+    background: #f5f5f5;
+    border-color: #f5f5f5;
+    color: #171717;
+}
+
+/* Titik warna di kartu produk */
+.ks-card-colors { display: inline-flex; gap: 4px; align-items: center; margin-left: 8px; vertical-align: middle; }
+.ks-card-colors .ks-swatch { width: 11px; height: 11px; }
+
+/* ===== Admin: pemilih warna ===== */
+.ks-picker-section + .ks-picker-section { margin-top: 14px; }
+.ks-picker-section-title {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #a3a3a3;
+    margin-bottom: 8px;
+}
+.ks-picker-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.ks-pick {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 14px 8px 9px;
+    border-radius: 9999px;
+    border: 1px solid rgba(212, 212, 212, 0.9);
+    background: rgba(255, 255, 255, 0.6);
+    color: #404040;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+.ks-pick:hover { border-color: #737373; }
+.ks-pick[aria-pressed="true"] {
+    background: #171717;
+    border-color: #171717;
+    color: #fff;
+    box-shadow: 0 6px 14px -6px rgba(0, 0, 0, 0.45);
+}
+.ks-picker-tools { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
+.ks-tool-btn {
+    padding: 7px 14px;
+    border-radius: 9999px;
+    border: 1px solid rgba(212, 212, 212, 0.9);
+    background: #fff;
+    color: #404040;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+}
+.ks-tool-btn:hover { background: #f5f5f5; }
+.ks-hint { font-size: 12px; color: #a3a3a3; font-weight: 500; }
+
+/* Label warna pada kartu produk admin & pratinjau */
+.ks-tag-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.ks-color-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 9px 3px 6px;
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid rgba(212, 212, 212, 0.6);
+    border-radius: 6px;
+    font-size: 10px;
+    font-weight: 700;
+    color: #525252;
+}
+.ks-color-tag .ks-swatch { width: 10px; height: 10px; }
+.ks-color-tag.ks-empty { color: #b45309; background: #fffbeb; border-color: #fde68a; }
+
+/* Baris filter admin: tambahkan kolom filter warna */
+.ks-admin-filter-grid { display: grid; gap: 1rem; grid-template-columns: 1fr; }
+@media (min-width: 768px) {
+    .ks-admin-filter-grid { grid-template-columns: 1fr 200px 200px auto; }
+}

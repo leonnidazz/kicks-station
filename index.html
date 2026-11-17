@@ -188,6 +188,8 @@
     </style>
     <link rel="stylesheet" href="tailwind-index.css">
     <link rel="stylesheet" href="ks-theme.css">
+    <link rel="stylesheet" href="ks-colors.css">
+    <script src="ks-colors.js"></script>
 </head>
 
 <body class="bg-neutral-100 dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200 font-grotesk antialiased selection:bg-neutral-900 selection:text-white relative transition-colors duration-300 text-left">
@@ -505,17 +507,18 @@
 
                     </div>
 
-                    <div class="w-full pt-3 border-t border-neutral-200 dark:border-neutral-700">
-                        <p class="text-xs uppercase tracking-wider font-black text-neutral-400 mb-3">Filter Warna</p>
-                        <div id="color-filter-options" class="flex flex-wrap gap-2"></div>
-                    </div>
-
                     <button
                         onclick="resetAllFilters()"
                         class="text-xs text-red-500 dark:text-red-400 hover:underline font-semibold ml-auto">
                         Reset Filter
                     </button>
 
+                </div>
+
+                <!-- FILTER WARNA (diisi otomatis dari data produk) -->
+                <div id="color-filter-bar" class="ks-color-bar" hidden>
+                    <span class="ks-color-bar-title">Warna</span>
+                    <div id="color-filter-list" class="contents" style="display:contents"></div>
                 </div>
 
             </div>
@@ -1571,33 +1574,97 @@
             document.getElementById('no-result-msg');
 
         let activeCategory = 'semua';
-        let activeColor = 'semua';
+
         let activeFilters = {
             asal: 'semua',
             pengguna: 'semua'
         };
-        const COLOR_GROUPS = {
-            "Netral": ["Hitam", "Putih", "Abu-abu", "Krem", "Cokelat"],
-            "Hangat": ["Merah", "Oranye", "Kuning", "Pink"],
-            "Dingin": ["Biru", "Navy", "Hijau", "Ungu", "Toska"],
-            "Lainnya": ["Multiwarna"]
-        };
-        function renderColorFilters(products) {
-            const container = document.getElementById('color-filter-options');
-            const available = new Set((products || []).flatMap(p => Array.isArray(p.colors) ? p.colors : []));
-            const groupsHTML = Object.entries(COLOR_GROUPS).map(([group, colors]) => {
-                const present = colors.filter(color => available.has(color));
-                if (!present.length) return '';
-                return `<div class="flex flex-wrap items-center gap-2 mr-3"><span class="text-[10px] uppercase tracking-wider text-neutral-400">${group}</span>${present.map(color => `<button type="button" onclick="setColorFilter('${color}')" class="rounded-full border px-3 py-1.5 text-xs font-bold transition ${activeColor === color ? 'bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-neutral-900' : 'border-neutral-300 dark:border-neutral-600 text-neutral-600 dark:text-neutral-300'}">${color}</button>`).join('')}</div>`;
-            }).join('');
-            container.innerHTML = groupsHTML || '<span class="text-xs text-neutral-400">Warna belum ditentukan pada produk.</span>';
-        }
-        function setColorFilter(color) {
-            activeColor = activeColor === color ? 'semua' : color;
-            const cached = getCachedProducts();
-            const source = getCachedProducts();
-            if (source?.products) renderColorFilters(source.products);
+
+        /* Filter warna: boleh pilih lebih dari satu (cocok dengan salah satu) */
+        let activeColors = new Set();
+
+
+        function toggleColor(key) {
+
+            if (activeColors.has(key)) {
+                activeColors.delete(key);
+            } else {
+                activeColors.add(key);
+            }
+
+            updateColorUI();
+
             runSmartFilter();
+
+        }
+
+
+        function updateColorUI() {
+
+            document.querySelectorAll('.ks-color-chip').forEach(chip => {
+
+                chip.setAttribute(
+                    'aria-pressed',
+                    activeColors.has(chip.dataset.color)
+                        ? 'true'
+                        : 'false'
+                );
+
+            });
+
+        }
+
+
+        /* Bangun chip warna hanya untuk warna yang benar-benar dipakai produk */
+        function buildColorFilter(products) {
+
+            const bar = document.getElementById('color-filter-bar');
+            const list = document.getElementById('color-filter-list');
+
+            if (!bar || !list || !window.KSColors) return;
+
+            const counts = {};
+
+            (products || []).forEach(product => {
+
+                KSColors.normalize(product.warna).forEach(key => {
+                    counts[key] = (counts[key] || 0) + 1;
+                });
+
+            });
+
+            list.innerHTML = '';
+
+            KSColors.COLORS.forEach(color => {
+
+                if (!counts[color.key]) return;
+
+                const chip = document.createElement('button');
+
+                chip.type = 'button';
+                chip.className = 'ks-color-chip';
+                chip.dataset.color = color.key;
+                chip.setAttribute('aria-pressed', 'false');
+
+                chip.innerHTML =
+                    `<span class="ks-swatch" style="${KSColors.swatchStyle(color.key)}"></span>` +
+                    `${color.label} <span class="ks-count">${counts[color.key]}</span>`;
+
+                chip.addEventListener('click', () => toggleColor(color.key));
+
+                list.appendChild(chip);
+
+            });
+
+            /* Buang pilihan warna yang sudah tidak ada produknya */
+            activeColors.forEach(key => {
+                if (!counts[key]) activeColors.delete(key);
+            });
+
+            bar.hidden = list.children.length === 0;
+
+            updateColorUI();
+
         }
 
 
@@ -1729,12 +1796,15 @@
         function resetAllFilters() {
 
             activeCategory = 'semua';
-            activeColor = 'semua';
 
             activeFilters = {
                 asal: 'semua',
                 pengguna: 'semua'
             };
+
+            activeColors = new Set();
+
+            updateColorUI();
 
             searchInput.value = '';
 
@@ -1793,7 +1863,11 @@
                 const pPengguna =
                     (card.getAttribute('data-pengguna') || '')
                         .toLowerCase();
-                const pColors = (card.getAttribute('data-colors') || '').split('|').filter(Boolean);
+
+                const pWarna =
+                    (card.getAttribute('data-warna') || '')
+                        .split(',')
+                        .filter(Boolean);
 
                 const pName =
                     (
@@ -1849,7 +1923,13 @@
                         activeFilters.pengguna === 'semua' ||
                         pPengguna === activeFilters.pengguna
                     );
-                const matchColor = activeColor === 'semua' || pColors.includes(activeColor);
+
+
+                const matchWarna =
+                    (
+                        activeColors.size === 0 ||
+                        pWarna.some(key => activeColors.has(key))
+                    );
 
 
                 if (
@@ -1857,7 +1937,7 @@
                     matchCategory &&
                     matchAsal &&
                     matchPengguna &&
-                    matchColor
+                    matchWarna
                 ) {
 
                     card.style.display = 'flex';
@@ -2374,7 +2454,7 @@
         function renderProducts(products) {
 
             productGrid.innerHTML = '';
-            renderColorFilters(products);
+
 
             products.forEach(product => {
 
@@ -2403,7 +2483,14 @@
 
                 card.dataset.pengguna =
                     product.pengguna || '';
-                card.dataset.colors = Array.isArray(product.colors) ? product.colors.join('|') : '';
+
+                const productColors =
+                    window.KSColors
+                        ? KSColors.normalize(product.warna)
+                        : [];
+
+                card.dataset.warna =
+                    productColors.join(',');
 
 
                 /* =========================
@@ -2449,6 +2536,15 @@
 
                 const brand =
                     escapeHTML(product.brand);
+
+                const colorDots =
+                    productColors.length
+                        ? `<span class="ks-card-colors" aria-label="Warna: ${productColors.map(KSColors.label).join(', ')}">${
+                            productColors.map(key =>
+                                `<span class="ks-swatch" title="${KSColors.label(key)}" style="${KSColors.swatchStyle(key)}"></span>`
+                            ).join('')
+                        }</span>`
+                        : '';
 
                 const oldPrice =
                     Number(product.harga_coret || 0);
@@ -2587,7 +2683,7 @@
 
                         <span class="text-xs text-neutral-500 dark:text-neutral-400 font-medium block mt-3">
 
-                            ${brand}
+                            ${brand}${colorDots}
 
                         </span>
 
@@ -2676,6 +2772,8 @@
                     document.querySelectorAll('.product-card')
                 );
 
+
+            buildColorFilter(products);
 
             runSmartFilter();
 
