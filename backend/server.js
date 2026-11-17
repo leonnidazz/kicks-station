@@ -1515,7 +1515,7 @@ const server = http.createServer(async (req, res) => {
     try {
         const pathname = new URL(req.url, "http://localhost").pathname;
 
-        if (req.method === "GET" && pathname === "/") {
+        if ((req.method === "GET" || req.method === "HEAD") && pathname === "/") {
             sendJSON(res, 200, {
                 status: "online",
                 message: "Kicks Station Backend berhasil berjalan!",

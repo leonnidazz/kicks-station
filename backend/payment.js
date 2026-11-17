@@ -49,7 +49,7 @@ function ensureColumns(d) {
 async function handlePaymentRoutes(req, res, pathname, d) {
     const { pool, sendJSON, readBody, getClientIP, isRateLimited, publicErrorMessage } = d;
 
-    if (req.method === "GET" && pathname === "/api/checkout/config") {
+    if ((req.method === "GET" || req.method === "HEAD") && pathname === "/api/checkout/config") {
         sendJSON(res, 200, { success: true, shipping_fee: shippingFee(), ready: Boolean(serverKey() && clientKey()), turnstile_site_key: turnstileSiteKey() });
         return true;
     }
