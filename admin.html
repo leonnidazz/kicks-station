@@ -1115,6 +1115,7 @@ async function bulkGroupColors() {
 }
 
 function buildAdminColorFilter() {
+    if (typeof KSColors === "undefined") return;
     const select = document.getElementById("product-color-filter"); if (!select) return;
     const current = select.value;
     select.innerHTML = `<option value="semua">Semua Warna</option>` +
@@ -1732,7 +1733,7 @@ async function setOrderNote(id, current) { const note = prompt("Keterangan:", cu
 async function deleteOrder(id) { if (!confirm(`Hapus pesanan #${id}?`)) return; try { await authFetch(`${API_URL}/api/orders/${id}`, { method: "DELETE" }); showToast("Dihapus.", "success"); loadOrders(); } catch (error) { showToast("Gagal.", "error"); } }
 async function deleteOrderHistory() { if (!confirm("Hapus semua riwayat?")) return; try { await authFetch(`${API_URL}/api/orders`, { method: "DELETE" }); showToast("Dihapus.", "success"); loadOrders(); } catch (error) { showToast("Gagal.", "error"); } }
 
-renderColorPicker("color-picker", selectedColors, onFormColorsChanged); buildAdminColorFilter();
+try { renderColorPicker("color-picker", selectedColors, onFormColorsChanged); buildAdminColorFilter(); } catch (e) { console.error("Fitur warna gagal dimuat (cek ks-colors.js ter-deploy):", e); }
 renderSizes(); renderImagePreviews(); updatePreview();
 checkAdminAuth().then(authenticated => {
     if (authenticated) {
