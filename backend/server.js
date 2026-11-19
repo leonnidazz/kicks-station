@@ -164,101 +164,74 @@ function formatLocation(data) {
         .join(", ");
 }
 
+const EMPTY_LOCATION = Object.freeze({
+    location: "",
+    city: "",
+    region: "",
+    country: "",
+    country_code: "",
+    latitude: null,
+    longitude: null
+});
+
+function buildLocation(city, region, country, countryCode, lat, lon) {
+    const clean = value => String(value || "").trim();
+    const num = value => (value == null || value === "" || !Number.isFinite(Number(value)) ? null : Number(value));
+    return {
+        location: [city, region, country].map(clean).filter(Boolean).join(", "),
+        city: clean(city),
+        region: clean(region),
+        country: clean(country),
+        country_code: clean(countryCode),
+        latitude: num(lat),
+        longitude: num(lon)
+    };
+}
+
+// Provider 1: ipwho.is (gratis, tanpa API key)
+async function lookupIpwho(ip) {
+    const data = await fetchJSON(`https://ipwho.is/${encodeURIComponent(ip)}`);
+    if (!data || data.success === false) {
+        throw new Error(`ipwho.is: ${data?.message || "gagal"}`);
+    }
+    return buildLocation(data.city, data.region, data.country, data.country_code, data.latitude, data.longitude);
+}
+
+// Provider 2 (cadangan): ipapi.co
+async function lookupIpapi(ip) {
+    const data = await fetchJSON(`https://ipapi.co/${encodeURIComponent(ip)}/json/`);
+    if (!data || data.error) {
+        throw new Error(`ipapi.co: ${data?.reason || data?.message || "gagal"}`);
+    }
+    return buildLocation(data.city, data.region, data.country_name, data.country_code, data.latitude, data.longitude);
+}
+
 async function getVisitorLocation(ip) {
     const safeIP = normalizeClientIP(ip);
-
-    if (!safeIP) {
-        return {
-            location: "",
-            city: "",
-            region: "",
-            country: "",
-            country_code: "",
-            latitude: null,
-            longitude: null
-        };
-    }
+    if (!safeIP) return { ...EMPTY_LOCATION };
 
     const cached = geoCache.get(safeIP);
+    if (cached && cached.expiresAt > Date.now()) return cached.data;
 
-    if (cached && cached.expiresAt > Date.now()) {
-        return cached.data;
+    let result = null;
+    for (const lookup of [lookupIpwho, lookupIpapi]) {
+        try {
+            const found = await lookup(safeIP);
+            if (found.location) { result = found; break; }
+        } catch (error) {
+            console.warn("Geolocation tidak tersedia:", error.message);
+        }
     }
 
-    // ipapi.co digunakan untuk lookup lokasi berdasarkan IP publik.
-    const url = `https://ipapi.co/${encodeURIComponent(safeIP)}/json/`;
+    if (!result) return { ...EMPTY_LOCATION }; // gagal: jangan di-cache
 
-    try {
-        const data = await fetchJSON(url);
-
-        if (data?.error) {
-            throw new Error(
-                data?.reason ||
-                data?.message ||
-                "ipapi.co mengembalikan error."
-            );
-        }
-
-        const result = {
-            location: [
-                data?.city,
-                data?.region,
-                data?.country_name
-            ]
-                .map(value => String(value || "").trim())
-                .filter(Boolean)
-                .join(", "),
-
-            city: String(data?.city || "").trim(),
-
-            region: String(data?.region || "").trim(),
-
-            country: String(data?.country_name || "").trim(),
-
-            country_code: String(data?.country_code || "").trim(),
-
-            latitude:
-                data?.latitude == null
-                    ? null
-                    : Number(data.latitude),
-
-            longitude:
-                data?.longitude == null
-                    ? null
-                    : Number(data.longitude)
-        };
-
-        geoCache.set(safeIP, {
-            data: result,
-            expiresAt: Date.now() + GEO_CACHE_TTL
-        });
-
-        while (geoCache.size > GEO_CACHE_MAX) {
-            const firstKey = geoCache.keys().next().value;
-
-            if (firstKey === undefined) break;
-
-            geoCache.delete(firstKey);
-        }
-
-        return result;
-
-    } catch (error) {
-        console.warn(
-            "Geolocation tidak tersedia:",
-            error.message
-        );
-
-        return {
-            location: "",
-            city: "",
-            region: "",
-            country: "",
-            country_code: "",
-            latitude: null,
-            longitude: null
-        };
+    geoCache.set(safeIP, { data: result, expiresAt: Date.now() + GEO_CACHE_TTL });
+    while (geoCache.size > GEO_CACHE_MAX) {
+        const firstKey = geoCache.keys().next().value;
+        if (firstKey === undefined) break;
+        geoCache.delete(firstKey);
     }
+    return result;
 }
 
 function cleanupAdminSessions() {
@@ -1587,7 +1560,11 @@ const server = http.createServer(async (req, res) => {
 
         console.log(
             "KICKSTATION LOCATION DATA:",
-            JSON.stringify(locationData)
+            JSON.stringify(locationData),
+            "| XFF entries:",
+            String(req.headers["x-forwarded-for"] || "").split(",").filter(Boolean).length,
+            "| TRUSTED_PROXY_HOPS:",
+            TRUSTED_PROXY_HOPS
         );
 
         await recordVisit(
