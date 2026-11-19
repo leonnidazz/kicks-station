@@ -214,6 +214,12 @@ button:active {
     <link rel="stylesheet" href="ks-theme.css">
 <link rel="stylesheet" href="ks-colors.css">
 <script src="ks-colors.js"></script>
+<style id="ks-chat-scroll-fix">
+/* Saat chat terbuka: halaman di belakang tidak ikut ter-scroll */
+html.ks-chat-open, html.ks-chat-open body { overflow: hidden !important; overscroll-behavior: none; scrollbar-gutter: stable; }
+#admin-chat-modal { overscroll-behavior: contain; }
+#admin-chat-messages, #admin-chat-conversations { overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
+</style>
 </head>
 
 <body class="text-neutral-800 relative">
@@ -1880,6 +1886,7 @@ async function openAdminChat() {
   if (!adminToken) { showAdminLogin('Silakan login sebagai admin terlebih dahulu.'); return; }
   const modal = document.getElementById('admin-chat-modal');
   modal.classList.remove('hidden'); modal.classList.add('flex');
+  document.documentElement.classList.add('ks-chat-open');
   await refreshAdminConversations();
   if (ksChatTimer) clearInterval(ksChatTimer);
   ksChatTimer = setInterval(async () => {
@@ -1892,6 +1899,7 @@ async function openAdminChat() {
 function closeAdminChat() {
   const modal = document.getElementById('admin-chat-modal');
   modal.classList.add('hidden'); modal.classList.remove('flex');
+  document.documentElement.classList.remove('ks-chat-open');
   if (ksChatTimer) clearInterval(ksChatTimer);
   ksChatTimer = null;
 }
