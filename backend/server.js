@@ -7,6 +7,15 @@ const { Pool } = require("pg");
 const { handlePaymentRoutes } = require("./payment");
 const { handleReviewRoutes } = require("./reviews");
 const webpush = require("web-push");
+
+// Database IP offline (tanpa API eksternal, tanpa rate limit). Jika paket belum
+// terpasang, server tetap jalan dan memakai lookup online sebagai cadangan.
+let geoipLite = null;
+try {
+    geoipLite = require("geoip-lite");
+} catch (error) {
+    console.warn("geoip-lite tidak terpasang; memakai lookup online saja.");
+}
 const KSColors = require("../ks-colors.js");
 
 const PORT = process.env.PORT || 3000;
@@ -188,6 +197,46 @@ function buildLocation(city, region, country, countryCode, lat, lon) {
     };
 }
 
+// Kode provinsi Indonesia (ISO 3166-2:ID) -> nama
+const ID_PROVINCES = {
+    AC: "Aceh", SU: "Sumatera Utara", SB: "Sumatera Barat", RI: "Riau",
+    KR: "Kepulauan Riau", JA: "Jambi", SS: "Sumatera Selatan",
+    BB: "Kepulauan Bangka Belitung", BE: "Bengkulu", LA: "Lampung",
+    JK: "DKI Jakarta", JB: "Jawa Barat", BT: "Banten", JT: "Jawa Tengah",
+    YO: "DI Yogyakarta", JI: "Jawa Timur", BA: "Bali",
+    NB: "Nusa Tenggara Barat", NT: "Nusa Tenggara Timur",
+    KB: "Kalimantan Barat", KT: "Kalimantan Tengah", KS: "Kalimantan Selatan",
+    KI: "Kalimantan Timur", KU: "Kalimantan Utara",
+    SA: "Sulawesi Utara", ST: "Sulawesi Tengah", SN: "Sulawesi Selatan",
+    SG: "Sulawesi Tenggara", GO: "Gorontalo", SR: "Sulawesi Barat",
+    MA: "Maluku", MU: "Maluku Utara", PA: "Papua", PB: "Papua Barat",
+    PS: "Papua Selatan", PT: "Papua Tengah", PE: "Papua Pegunungan", PD: "Papua Barat Daya"
+};
+
+let countryNames = null;
+try {
+    countryNames = new Intl.DisplayNames(["id"], { type: "region" });
+} catch (error) {
+    countryNames = null;
+}
+
+// Provider utama: database offline geoip-lite (instan, tanpa batas permintaan)
+function lookupOffline(ip) {
+    if (!geoipLite) throw new Error("geoip-lite tidak tersedia");
+    const found = geoipLite.lookup(ip);
+    if (!found || !found.country) throw new Error("IP tidak ada di database offline");
+
+    let country = found.country;
+    try {
+        country = (countryNames && countryNames.of(found.country)) || found.country;
+    } catch (error) {
+        country = found.country;
+    }
+    const region = found.country === "ID" ? (ID_PROVINCES[found.region] || "") : "";
+    const [lat, lon] = Array.isArray(found.ll) ? found.ll : [null, null];
+    return buildLocation(found.city, region, country, found.country, lat, lon);
+}
+
 // Provider 1: ipwho.is (gratis, tanpa API key)
 async function lookupIpwho(ip) {
     const data = await fetchJSON(`https://ipwho.is/${encodeURIComponent(ip)}`);
@@ -214,7 +263,7 @@ async function getVisitorLocation(ip) {
     if (cached && cached.expiresAt > Date.now()) return cached.data;
 
     let result = null;
-    for (const lookup of [lookupIpwho, lookupIpapi]) {
+    for (const lookup of [lookupOffline, lookupIpwho, lookupIpapi]) {
         try {
             const found = await lookup(safeIP);
             if (found.location) { result = found; break; }
