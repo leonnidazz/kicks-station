@@ -2394,8 +2394,30 @@ html.ks-chat-open, html.ks-chat-open body { overflow: hidden !important; overscr
                     }
                 }
 
-                getBrowserGeo().then(geo => {
-                    const body = { visitor_id: visitorId, referral: ref || "", user_agent: navigator.userAgent };
+                // Chrome Android menyamarkan model perangkat menjadi "K" di User-Agent.
+                // Model asli diminta lewat User-Agent Client Hints (tanpa izin pengguna),
+                // lalu dipasang kembali ke string UA agar admin bisa membacanya.
+                async function getRealUserAgent() {
+                    const ua = navigator.userAgent;
+                    try {
+                        const uad = navigator.userAgentData;
+                        if (!uad || typeof uad.getHighEntropyValues !== "function" || !/Android/i.test(ua)) return ua;
+                        const hints = await Promise.race([
+                            uad.getHighEntropyValues(["model", "platformVersion"]),
+                            new Promise(resolve => setTimeout(() => resolve(null), 1500))
+                        ]);
+                        if (!hints) return ua;
+                        const model = String(hints.model || "").replace(/[^\w .+\-\/]/g, "").trim().slice(0, 40);
+                        const version = String(hints.platformVersion || "").split(".")[0].replace(/\D/g, "");
+                        if (!model) return ua;
+                        return ua.replace(/(Android\s+)([\d.]+)(;\s*)([^;)]+)/i, (m, a, v, sep) => a + (version || v) + sep + model);
+                    } catch (_) {
+                        return ua;
+                    }
+                }
+
+                Promise.all([getBrowserGeo(), getRealUserAgent()]).then(([geo, userAgent]) => {
+                    const body = { visitor_id: visitorId, referral: ref || "", user_agent: userAgent };
                     if (geo) body.geo = geo;
                     // fetch (bukan sendBeacon): sendBeacon selalu membawa kredensial, sehingga
                     // lintas-origin butuh Access-Control-Allow-Credentials dan diblokir CORS.
