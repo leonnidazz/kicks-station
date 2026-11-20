@@ -66,6 +66,12 @@ body {
 }
 
 /* Sidebar Active State */
+.sidebar-icon {
+    display: inline-block;
+    flex: none;
+    width: 1.5rem;
+    text-align: center;
+}
 .sidebar-item {
     transition: all 0.3s ease;
 }
@@ -283,35 +289,35 @@ html.ks-chat-open, html.ks-chat-open body { overflow: hidden !important; overscr
         <p class="text-[10px] font-bold text-neutral-400 mb-3 ml-2">Manajemen Katalog</p>
         
         <button id="menu-tambah" onclick="showPage('tambah')" class="sidebar-item active w-full text-left px-4 py-3.5 rounded-lg flex items-center gap-3.5 font-semibold text-sm">
-            <span class="text-lg opacity-80">＋</span> Tambah Produk
+            <span class="sidebar-icon text-lg opacity-80">＋</span> Tambah Produk
         </button>
 
         <button id="menu-semua" onclick="showPage('semua')" class="sidebar-item w-full text-left px-4 py-3.5 rounded-lg flex items-center gap-3.5 font-semibold text-neutral-600 text-sm">
-            <span class="text-lg opacity-80">▦</span> Semua Produk
+            <span class="sidebar-icon text-lg opacity-80">▦</span> Semua Produk
         </button>
 
         <p class="text-[10px] font-bold text-neutral-400 mt-6 mb-3 ml-2">Operasional</p>
 
         <button id="menu-pesanan" onclick="showPage('pesanan')" class="sidebar-item w-full text-left px-4 py-3.5 rounded-lg flex items-center gap-3.5 font-semibold text-neutral-600 text-sm">
-            <span class="text-lg opacity-80"></span> Pesanan Masuk
+            <span class="sidebar-icon text-lg opacity-80">🛒</span> Pesanan Masuk
         </button>
 
         <button id="menu-ulasan" onclick="showReviewsPage()" class="sidebar-item w-full text-left px-4 py-3.5 rounded-lg flex items-center gap-3.5 font-semibold text-neutral-600 text-sm">
-            Ulasan Pembeli
+            <span class="sidebar-icon text-lg opacity-80">⭐</span> Ulasan Pembeli
         </button>
         <button id="menu-pengunjung" onclick="showPage('pengunjung')" class="sidebar-item w-full text-left px-4 py-3.5 rounded-lg flex items-center gap-3.5 font-semibold text-neutral-600 text-sm">
-            <span class="text-lg opacity-80"></span> Data Pengunjung
+            <span class="sidebar-icon text-lg opacity-80">👥</span> Data Pengunjung
         </button>
 
         <button id="menu-chat" onclick="openAdminChat()" class="sidebar-item w-full text-left px-4 py-3.5 rounded-lg flex items-center gap-3.5 font-semibold text-neutral-600 text-sm">
-            <span class="text-lg opacity-80"></span> Chat Pelanggan
+            <span class="sidebar-icon text-lg opacity-80">💬</span> Chat Pelanggan
             <span id="chat-unread-badge" class="hidden ml-auto bg-red-500 text-white text-[10px] font-black rounded-full px-2 py-1">0</span>
         </button>
 
         <div class="my-4 border-t border-neutral-200/50"></div>
 
         <button onclick="refreshProducts(); showToast('Data disinkronisasi.', 'success');" class="sidebar-item w-full text-left px-4 py-3.5 rounded-lg flex items-center gap-3.5 font-semibold text-neutral-600 text-sm">
-            <span class="text-lg opacity-80">↻</span> Sinkronisasi Data
+            <span class="sidebar-icon text-lg opacity-80">↻</span> Sinkronisasi Data
         </button>
     </nav>
 
