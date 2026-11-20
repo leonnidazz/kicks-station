@@ -177,6 +177,8 @@ function formatLocation(data) {
         .join(", ");
 }
 
+const geoProviderCooldown = new Map();
+
 const EMPTY_LOCATION = Object.freeze({
     location: "",
     city: "",
@@ -266,13 +268,25 @@ async function getVisitorLocation(ip) {
     const cached = geoCache.get(safeIP);
     if (cached && cached.expiresAt > Date.now()) return cached.data;
 
+    // Urutan: ipwho.is (paling akurat di jaringan seluler Indonesia), ipapi.co,
+    // lalu database offline sebagai cadangan. Provider online yang gagal (mis.
+    // HTTP 429) dilewati selama 5 menit agar tidak memperparah pembatasan.
     let result = null;
-    for (const lookup of [lookupOffline, lookupIpwho, lookupIpapi]) {
+    for (const lookup of [lookupIpwho, lookupIpapi, lookupOffline]) {
+        const cooldownUntil = geoProviderCooldown.get(lookup.name) || 0;
+        if (cooldownUntil > Date.now()) continue;
         try {
             const found = await lookup(safeIP);
-            if (found.location) { result = found; break; }
+            if (found.location) {
+                result = found;
+                if (process.env.DEBUG_VISIT_IP === "1") console.log("GEO provider dipakai:", lookup.name);
+                break;
+            }
         } catch (error) {
             console.warn("Geolocation tidak tersedia:", error.message);
+            if (lookup !== lookupOffline) {
+                geoProviderCooldown.set(lookup.name, Date.now() + 5 * 60 * 1000);
+            }
         }
     }
 
@@ -1619,6 +1633,17 @@ const server = http.createServer(async (req, res) => {
             "| TRUSTED_PROXY_HOPS:",
             TRUSTED_PROXY_HOPS
         );
+
+        // Diagnosa sementara: set DEBUG_VISIT_IP=1 di Render untuk melihat IP yang
+        // dipakai. Matikan (hapus variabelnya) setelah selesai menguji.
+        if (process.env.DEBUG_VISIT_IP === "1") {
+            console.log(
+                "DEBUG IP dipakai:",
+                clientIP,
+                "| X-Forwarded-For:",
+                String(req.headers["x-forwarded-for"] || "")
+            );
+        }
 
         await recordVisit(
             data?.visitor_id,
