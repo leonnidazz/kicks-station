@@ -15,22 +15,58 @@
 
 /* ===== Toko: baris filter warna ===== */
 .ks-color-bar {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 8px 10px;
     padding-top: 12px;
     margin-top: 4px;
     border-top: 1px solid rgba(120, 120, 120, 0.25);
 }
 .ks-color-bar[hidden] { display: none; }
-.ks-color-bar-title {
-    font-size: 12px;
+
+/* Tombol buka/tutup panel warna */
+.ks-color-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 12px 7px 14px;
+    border-radius: 9999px;
+    border: 1px solid rgba(120, 120, 120, 0.4);
+    background: transparent;
+    color: inherit;
+    font-size: 13px;
     font-weight: 700;
-    letter-spacing: 0.04em;
-    opacity: 0.7;
-    margin-right: 2px;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
 }
+.ks-color-toggle:hover { border-color: rgba(120, 120, 120, 0.9); }
+.ks-color-toggle:focus-visible { outline: 2px solid #2563eb; outline-offset: 2px; }
+.ks-color-toggle.is-active { border-color: #171717; }
+.dark .ks-color-toggle.is-active { border-color: #f5f5f5; }
+.ks-color-badge {
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9999px;
+    background: #171717;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: center;
+}
+.ks-color-badge[hidden] { display: none; }
+.dark .ks-color-badge { background: #f5f5f5; color: #171717; }
+.ks-color-chevron { font-size: 14px; transition: transform 0.2s ease; }
+.ks-color-toggle[aria-expanded="true"] .ks-color-chevron { transform: rotate(180deg); }
+
+/* Panel pilihan warna (tersembunyi sampai tombol dipencet) */
+.ks-color-panel {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px 10px;
+    margin-top: 12px;
+}
+.ks-color-panel[hidden] { display: none; }
 .ks-color-chip {
     display: inline-flex;
     align-items: center;

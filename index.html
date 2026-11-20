@@ -523,8 +523,18 @@ html.ks-chat-open, html.ks-chat-open body { overflow: hidden !important; overscr
 
                 <!-- FILTER WARNA (diisi otomatis dari data produk) -->
                 <div id="color-filter-bar" class="ks-color-bar" hidden>
-                    <span class="ks-color-bar-title">Warna</span>
-                    <div id="color-filter-list" class="contents" style="display:contents"></div>
+                    <button
+                        type="button"
+                        id="color-toggle"
+                        class="ks-color-toggle"
+                        aria-expanded="false"
+                        aria-controls="color-filter-list"
+                        onclick="toggleColorPanel()">
+                        <span>Warna</span>
+                        <span id="color-active-count" class="ks-color-badge" hidden>0</span>
+                        <ion-icon name="chevron-down-outline" class="ks-color-chevron"></ion-icon>
+                    </button>
+                    <div id="color-filter-list" class="ks-color-panel" hidden></div>
                 </div>
 
             </div>
@@ -1605,6 +1615,21 @@ html.ks-chat-open, html.ks-chat-open body { overflow: hidden !important; overscr
         }
 
 
+        function toggleColorPanel() {
+
+            const toggle = document.getElementById('color-toggle');
+            const panel = document.getElementById('color-filter-list');
+
+            if (!toggle || !panel) return;
+
+            const willOpen = panel.hidden;
+
+            panel.hidden = !willOpen;
+            toggle.setAttribute('aria-expanded', String(willOpen));
+
+        }
+
+
         function updateColorUI() {
 
             document.querySelectorAll('.ks-color-chip').forEach(chip => {
@@ -1617,6 +1642,19 @@ html.ks-chat-open, html.ks-chat-open body { overflow: hidden !important; overscr
                 );
 
             });
+
+            /* Badge jumlah warna terpilih di tombol "Warna" */
+            const badge = document.getElementById('color-active-count');
+            const toggle = document.getElementById('color-toggle');
+
+            if (badge) {
+                badge.textContent = activeColors.size;
+                badge.hidden = activeColors.size === 0;
+            }
+
+            if (toggle) {
+                toggle.classList.toggle('is-active', activeColors.size > 0);
+            }
 
         }
 
