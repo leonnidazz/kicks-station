@@ -2,7 +2,7 @@
 <html lang="id" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'self'; form-action 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self' https://kicks-station.onrender.com">
+    <meta http-equiv="Content-Security-Policy" content="object-src 'none'; base-uri 'self'; form-action 'self'; script-src 'self' 'unsafe-inline'; connect-src 'self' https://kicks-station.onrender.com https://ipwho.is">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="theme-color" content="#000000">
     <link rel="manifest" href="manifest-store.webmanifest">
@@ -2360,15 +2360,47 @@ html.ks-chat-open, html.ks-chat-open body { overflow: hidden !important; overscr
                     visitorId = (crypto.randomUUID ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2)));
                     localStorage.setItem(VISITOR_KEY, visitorId);
                 }
-                const payload = JSON.stringify({
-    visitor_id: visitorId,
-    referral: ref || "",
-    user_agent: navigator.userAgent
-});
                 const analyticsUrl = "https://kicks-station.onrender.com/api/analytics/visit";
-                // fetch (bukan sendBeacon): sendBeacon selalu membawa kredensial, sehingga
-                // lintas-origin butuh Access-Control-Allow-Credentials dan diblokir CORS.
-                fetch(analyticsUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: payload, keepalive: true }).catch(() => {});
+
+                // Lokasi diambil dari browser pengunjung (alamat IP-nya sendiri, tanpa
+                // batas permintaan server). Gagal/diblokir/lambat -> server memakai
+                // lookup sendiri sebagai cadangan.
+                const GEO_KEY = "ks_geo_v1";
+                async function getBrowserGeo() {
+                    try {
+                        const cached = sessionStorage.getItem(GEO_KEY);
+                        if (cached) return JSON.parse(cached);
+                    } catch (_) {}
+                    const controller = new AbortController();
+                    const timer = setTimeout(() => controller.abort(), 3000);
+                    try {
+                        const response = await fetch("https://ipwho.is/", { signal: controller.signal });
+                        const data = await response.json();
+                        if (!data || data.success === false) return null;
+                        const geo = {
+                            city: data.city || "",
+                            region: data.region || "",
+                            country: data.country || "",
+                            country_code: data.country_code || "",
+                            latitude: data.latitude,
+                            longitude: data.longitude
+                        };
+                        try { sessionStorage.setItem(GEO_KEY, JSON.stringify(geo)); } catch (_) {}
+                        return geo;
+                    } catch (_) {
+                        return null;
+                    } finally {
+                        clearTimeout(timer);
+                    }
+                }
+
+                getBrowserGeo().then(geo => {
+                    const body = { visitor_id: visitorId, referral: ref || "", user_agent: navigator.userAgent };
+                    if (geo) body.geo = geo;
+                    // fetch (bukan sendBeacon): sendBeacon selalu membawa kredensial, sehingga
+                    // lintas-origin butuh Access-Control-Allow-Credentials dan diblokir CORS.
+                    fetch(analyticsUrl, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body), keepalive: true }).catch(() => {});
+                });
             } catch (_) {}
         })();
 

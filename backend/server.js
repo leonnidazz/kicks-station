@@ -261,6 +261,30 @@ async function lookupIpapi(ip) {
     return buildLocation(data.city, data.region, data.country_name, data.country_code, data.latitude, data.longitude);
 }
 
+// Lokasi kiriman browser: divalidasi ketat (panjang, format, rentang koordinat).
+// Data ini hanya perkiraan untuk analitik dan bisa dipalsukan pengirim, jadi tidak
+// pernah dipakai untuk keputusan keamanan.
+function parseClientGeo(raw) {
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+    const text = (value, max) =>
+        typeof value === "string"
+            ? value.replace(/[\u0000-\u001f\u007f<>]/g, "").trim().slice(0, max)
+            : "";
+    const city = text(raw.city, 100);
+    const region = text(raw.region, 100);
+    const country = text(raw.country, 100);
+    const countryCode = text(raw.country_code, 10).toUpperCase();
+    if (!country || !/^[A-Z]{2}$/.test(countryCode)) return null;
+
+    const lat = Number(raw.latitude);
+    const lon = Number(raw.longitude);
+    const validCoords =
+        Number.isFinite(lat) && Number.isFinite(lon) &&
+        Math.abs(lat) <= 90 && Math.abs(lon) <= 180;
+
+    return buildLocation(city, region, country, countryCode, validCoords ? lat : null, validCoords ? lon : null);
+}
+
 async function getVisitorLocation(ip) {
     const safeIP = normalizeClientIP(ip);
     if (!safeIP) return { ...EMPTY_LOCATION };
@@ -1623,11 +1647,15 @@ const server = http.createServer(async (req, res) => {
 
         const data = await readBody(req, 10 * 1024);
 
-        const locationData = await getVisitorLocation(clientIP);
+        // Utamakan lokasi dari browser pengunjung; jika tidak ada/invalid, pakai lookup server.
+        const browserGeo = parseClientGeo(data?.geo);
+        const locationData = browserGeo || (await getVisitorLocation(clientIP));
 
         console.log(
             "KICKSTATION LOCATION DATA:",
             JSON.stringify(locationData),
+            "| sumber:",
+            browserGeo ? "browser" : "server",
             "| XFF entries:",
             String(req.headers["x-forwarded-for"] || "").split(",").filter(Boolean).length,
             "| TRUSTED_PROXY_HOPS:",
