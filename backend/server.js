@@ -14,7 +14,11 @@ let geoipLite = null;
 try {
     geoipLite = require("geoip-lite");
 } catch (error) {
-    console.warn("geoip-lite tidak terpasang; memakai lookup online saja.");
+    console.warn(
+        "geoip-lite gagal dimuat; memakai lookup online saja. Penyebab:",
+        error && (error.code || error.name),
+        error && error.message
+    );
 }
 const KSColors = require("../ks-colors.js");
 
