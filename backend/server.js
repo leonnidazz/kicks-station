@@ -91,7 +91,7 @@ if (!DATABASE_URL) {
 // paling kiri bisa dipalsukan pengunjung, jadi kita ambil entri yang ditambahkan
 // proxy kita sendiri, dihitung dari kanan. Jika lokasi pengunjung tampil sebagai
 // lokasi data center, set TRUSTED_PROXY_HOPS=2 di environment Render.
-const TRUSTED_PROXY_HOPS = Math.max(1, Number(process.env.TRUSTED_PROXY_HOPS) || 1);
+const TRUSTED_PROXY_HOPS = Math.max(1, Number(process.env.TRUSTED_PROXY_HOPS) || 2);
 
 function getClientIP(req) {
     const forwarded = String(req.headers["x-forwarded-for"] || "")
