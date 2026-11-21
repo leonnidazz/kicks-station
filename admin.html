@@ -1131,6 +1131,7 @@ async function adminLogin() {
         showToast("Login admin berhasil.", "success");
         await loadProducts();
         if (typeof ksRefreshOrderPending === "function") ksRefreshOrderPending();
+        if (typeof ksSyncAdminPush === "function") ksSyncAdminPush();
         if (new URLSearchParams(window.location.search).get("openOrders") === "1") setTimeout(() => showPage("pesanan"), 400);
         if (new URLSearchParams(window.location.search).get("openChat") === "1") {
             setTimeout(() => { if (typeof openAdminChat === "function") openAdminChat(); }, 500);
@@ -1975,6 +1976,7 @@ renderSizes(); renderImagePreviews(); updatePreview();
 checkAdminAuth().then(authenticated => {
     if (authenticated) {
         loadProducts();
+        if (typeof ksSyncAdminPush === "function") ksSyncAdminPush();
         if (new URLSearchParams(window.location.search).get("openOrders") === "1") setTimeout(() => showPage("pesanan"), 400);
         if (new URLSearchParams(window.location.search).get("openChat") === "1") {
             setTimeout(() => { if (typeof openAdminChat === "function") openAdminChat(); }, 500);
@@ -1997,7 +1999,7 @@ let ksChatConversationSignature = '';
 let ksChatMessagesSignature = '';
 let ksChatPolling = false;
 let ksChatHasInitialUnreadSnapshot = false;
-const KS_SOUND_FILES = { order: './sounds/pesanan_masuk.mp3', chat: './sounds/pesan_biasa.mp3' };
+const KS_SOUND_FILES = { order: './sounds/pesanan%20masuk.mp3', chat: './sounds/pesan%20biasa.mp3' };
 const ksAudio = {};
 function ksSoundPref() { try { return localStorage.getItem('ks-admin-sound') !== 'off'; } catch (_) { return true; } }
 let ksChatNotificationsEnabled = ksSoundPref();
@@ -2260,11 +2262,48 @@ function ksUrlBase64ToUint8Array(base64String) {
   const raw = atob(base64);
   return Uint8Array.from(raw, character => character.charCodeAt(0));
 }
+function ksSameVapidKey(subscription, publicKey) {
+  try {
+    const a = new Uint8Array(subscription.options.applicationServerKey);
+    const b = ksUrlBase64ToUint8Array(publicKey);
+    return a.length === b.length && a.every((value, index) => value === b[index]);
+  } catch (_) { return true; }
+}
+// Mendaftarkan/menyegarkan langganan push perangkat ini. Dipanggil otomatis saat login (jika izin sudah diberikan)
+// dan lewat tombol "Push latar" (yang meminta izin).
+async function ksSubscribeAdminPush() {
+  const keyResponse = await fetch(`${KS_CHAT_API}/api/push/vapid-public-key`);
+  const keyData = await keyResponse.json().catch(() => ({}));
+  if (!keyResponse.ok || !keyData.success || !keyData.publicKey) throw new Error(keyData.message || 'Kunci Web Push belum dikonfigurasi di server Render.');
+  const registration = await navigator.serviceWorker.register('./service-worker.js', { scope: './' });
+  await navigator.serviceWorker.ready;
+  let subscription = await registration.pushManager.getSubscription();
+  // Kunci VAPID diganti di server -> langganan lama tidak berlaku lagi, buat ulang.
+  if (subscription && !ksSameVapidKey(subscription, keyData.publicKey)) { await subscription.unsubscribe().catch(() => {}); subscription = null; }
+  if (!subscription) subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: ksUrlBase64ToUint8Array(keyData.publicKey) });
+  const saveResponse = await authFetch(`${KS_CHAT_API}/api/admin/push/subscribe`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(subscription)
+  });
+  const saveData = await saveResponse.json().catch(() => ({}));
+  if (!saveResponse.ok || !saveData.success) throw new Error(saveData.message || 'Langganan notifikasi gagal disimpan.');
+  const button = document.getElementById('ks-push-enable');
+  if (button) button.textContent = 'Push aktif';
+  const status = document.getElementById('ks-chat-notify-status');
+  if (status) status.textContent = 'Notifikasi latar aktif di perangkat ini (muncul walau aplikasi ditutup).';
+  return registration;
+}
+async function ksSyncAdminPush() {
+  try {
+    if (!adminToken || !('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) return;
+    if (Notification.permission !== 'granted') return;
+    await ksSubscribeAdminPush();
+  } catch (error) { console.warn('Sinkron Web Push gagal:', error); }
+}
 async function enableAdminPush() {
   const button = document.getElementById('ks-push-enable');
   if (!adminToken) { showAdminLogin('Silakan login sebagai admin terlebih dahulu.'); return; }
   if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
-    showToast('Browser ini belum mendukung Web Push. Coba Chrome/Edge terbaru.', 'error');
+    showToast('Browser ini belum mendukung Web Push. Di iPhone: Bagikan → Tambahkan ke Layar Utama, lalu buka dari ikon aplikasi.', 'error');
     return;
   }
   const originalText = button ? button.textContent : '';
@@ -2272,19 +2311,7 @@ async function enableAdminPush() {
   try {
     const permission = Notification.permission === 'granted' ? 'granted' : await Notification.requestPermission();
     if (permission !== 'granted') throw new Error('Izin notifikasi belum diberikan di browser.');
-    const keyResponse = await fetch(`${KS_CHAT_API}/api/push/vapid-public-key`);
-    const keyData = await keyResponse.json();
-    if (!keyResponse.ok || !keyData.success || !keyData.publicKey) throw new Error(keyData.message || 'Kunci Web Push belum dikonfigurasi di server Render.');
-    const registration = await navigator.serviceWorker.register('./service-worker.js', { scope: './' });
-    await navigator.serviceWorker.ready;
-    let subscription = await registration.pushManager.getSubscription();
-    if (!subscription) subscription = await registration.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: ksUrlBase64ToUint8Array(keyData.publicKey) });
-    const saveResponse = await authFetch(`${KS_CHAT_API}/api/admin/push/subscribe`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(subscription)
-    });
-    const saveData = await saveResponse.json();
-    if (!saveResponse.ok || !saveData.success) throw new Error(saveData.message || 'Langganan notifikasi gagal disimpan.');
-    if (button) button.textContent = 'Push aktif';
+    const registration = await ksSubscribeAdminPush();
     showToast('Notifikasi latar aktif di perangkat ini.', 'success');
     try { await registration.showNotification('Kicks Station', { body: 'Notifikasi chat berhasil diaktifkan di perangkat ini.', icon: './icons/icon-192.png', badge: './icons/icon-192.png', tag: 'kicks-push-ready' }); } catch (_) {}
   } catch (error) {
@@ -2292,6 +2319,14 @@ async function enableAdminPush() {
     if (button) button.textContent = originalText || 'Push latar';
     showToast(error.message || 'Notifikasi gagal diaktifkan.', 'error');
   } finally { if (button) button.disabled = false; }
+}
+// Saat push tiba dan halaman admin terbuka, segarkan chat/pesanan langsung (dering diputar oleh pemantau yang sudah ada).
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', event => {
+    if (!event.data || event.data.type !== 'ks-push' || !adminToken) return;
+    if (typeof refreshAdminConversations === 'function') refreshAdminConversations();
+    if (event.data.kind === 'order' && typeof ksRefreshOrderPending === 'function') ksRefreshOrderPending();
+  });
 }
 </script>
 

@@ -1597,10 +1597,23 @@ async function ensureChatTableOnce() {
             updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
     `);
+    // Langganan push milik pelanggan (satu percakapan boleh punya beberapa perangkat).
+    await pool.query(`
+        CREATE TABLE IF NOT EXISTS public.chat_customer_push (
+            id BIGSERIAL PRIMARY KEY,
+            conversation_id BIGINT NOT NULL REFERENCES public.chat_conversations(id) ON DELETE CASCADE,
+            endpoint TEXT NOT NULL UNIQUE,
+            subscription JSONB NOT NULL,
+            created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+            updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+    `);
+    await pool.query(`CREATE INDEX IF NOT EXISTS chat_customer_push_conv_idx ON public.chat_customer_push(conversation_id)`);
     await lockDownTables([
         "public.chat_conversations",
         "public.chat_messages",
         "public.chat_push_subscriptions",
+        "public.chat_customer_push",
     ]);
 }
 const ensureChatTable = runOnce(ensureChatTableOnce);
@@ -1618,17 +1631,50 @@ async function notifyAdminOfCustomerMessage(publicConversationId, message) {
         title: "Pesan baru — Kicks Station",
         body: `${name}: ${String(message || "").slice(0, 140)}`,
         url: "./admin.html?openChat=1",
-        tag: `kicks-chat-${publicConversationId}`
+        tag: `kicks-chat-${publicConversationId}`,
+        kind: "chat",
+        requireInteraction: true
     });
     await Promise.all(subscriptionsResult.rows.map(async row => {
         try {
-            await webpush.sendNotification(row.subscription, payload, { TTL: 60, urgency: "high" });
+            await webpush.sendNotification(row.subscription, payload, { TTL: 3600, urgency: "high" });
         } catch (error) {
             const statusCode = Number(error.statusCode || error.status || 0);
             if (statusCode === 404 || statusCode === 410) {
                 await pool.query(`DELETE FROM public.chat_push_subscriptions WHERE id = $1`, [row.id]).catch(() => {});
             } else {
                 console.warn("Pengiriman Web Push gagal:", statusCode || error.message);
+            }
+        }
+    }));
+}
+
+// Push ke perangkat pelanggan saat admin membalas (memakai ID internal percakapan).
+async function notifyCustomerOfAdminMessage(internalConversationId, message) {
+    if (!webPushConfigured || !pool) return;
+    await ensureChatTable();
+    const subscriptionsResult = await pool.query(
+        `SELECT id, endpoint, subscription FROM public.chat_customer_push WHERE conversation_id = $1`,
+        [internalConversationId]
+    );
+    if (!subscriptionsResult.rowCount) return;
+    const payload = JSON.stringify({
+        title: "Kicks Station",
+        body: String(message || "").slice(0, 140),
+        url: "./index.html?openChat=1",
+        tag: `kicks-reply-${internalConversationId}`,
+        kind: "customer",
+        requireInteraction: false
+    });
+    await Promise.all(subscriptionsResult.rows.map(async row => {
+        try {
+            await webpush.sendNotification(row.subscription, payload, { TTL: 86400, urgency: "high" });
+        } catch (error) {
+            const statusCode = Number(error.statusCode || error.status || 0);
+            if (statusCode === 404 || statusCode === 410) {
+                await pool.query(`DELETE FROM public.chat_customer_push WHERE id = $1`, [row.id]).catch(() => {});
+            } else {
+                console.warn("Pengiriman Web Push ke pelanggan gagal:", statusCode || error.message);
             }
         }
     }));
@@ -1651,11 +1697,13 @@ async function notifyAdminOfOrder(orderId) {
         title: "Pesanan masuk — Kicks Station",
         body: `#${order.id}${who ? " · " + who : ""} · ${qty} item · ${total}`,
         url: "./admin.html?openOrders=1",
-        tag: `kicks-order-${order.id}`
+        tag: `kicks-order-${order.id}`,
+        kind: "order",
+        requireInteraction: true
     });
     await Promise.all(subscriptionsResult.rows.map(async row => {
         try {
-            await webpush.sendNotification(row.subscription, payload, { TTL: 300, urgency: "high" });
+            await webpush.sendNotification(row.subscription, payload, { TTL: 3600, urgency: "high" });
         } catch (error) {
             const statusCode = Number(error.statusCode || error.status || 0);
             if (statusCode === 404 || statusCode === 410) {
@@ -2528,6 +2576,7 @@ const server = http.createServer(async (req, res) => {
                             status = 'open', unread_customer = unread_customer + 1 WHERE id = $1`, [id]
                     );
                     await client.query("COMMIT");
+                    notifyCustomerOfAdminMessage(id, message).catch(error => console.warn("Notifikasi ke pelanggan tidak terkirim:", error.message));
                     sendJSON(res, 201, { success: true, message: inserted.rows[0] });
                 } catch (error) {
                     try { await client.query("ROLLBACK"); } catch {}
@@ -2746,6 +2795,8 @@ const server = http.createServer(async (req, res) => {
                     await client.query("COMMIT");
                     if (sender === "customer") {
                         notifyAdminOfCustomerMessage(publicId, message).catch(error => console.warn("Notifikasi chat tidak terkirim:", error.message));
+                    } else {
+                        notifyCustomerOfAdminMessage(internalId, message).catch(error => console.warn("Notifikasi ke pelanggan tidak terkirim:", error.message));
                     }
                     sendJSON(res, 201, { success: true, message: result.rows[0] });
                 } catch (error) {
@@ -2765,6 +2816,57 @@ const server = http.createServer(async (req, res) => {
                 if (!owner.rowCount || !tokenMatches(owner.rows[0].visitor_token_hash, hashVisitorToken(visitorToken))) return null;
                 return owner.rows[0].id;
             };
+
+            if (req.method === "POST" && pathname === "/api/chat/push/subscribe") {
+                if (!webPushConfigured) {
+                    sendJSON(res, 503, { success: false, message: "Notifikasi belum tersedia di server." });
+                    return;
+                }
+                if (isRateLimited(`chat-push:${getClientIP(req)}`, 30, TEN_MINUTES)) {
+                    sendJSON(res, 429, { success: false, message: "Terlalu sering. Coba lagi sebentar." });
+                    return;
+                }
+                const data = await readBody(req, 20000);
+                const internalId = await ownConversation(String(data?.conversation_id || "").trim(), String(data?.visitor_token || "").trim());
+                if (!internalId) {
+                    sendJSON(res, 403, { success: false, message: "Akses percakapan ditolak." });
+                    return;
+                }
+                const subscription = data?.subscription;
+                const endpoint = String(subscription?.endpoint || "").trim();
+                const p256dh = String(subscription?.keys?.p256dh || "").trim();
+                const auth = String(subscription?.keys?.auth || "").trim();
+                if (!/^https:\/\//i.test(endpoint) || endpoint.length > 2000 || !p256dh || !auth) {
+                    sendJSON(res, 400, { success: false, message: "Data langganan push tidak valid." });
+                    return;
+                }
+                await pool.query(
+                    `INSERT INTO public.chat_customer_push (conversation_id, endpoint, subscription, updated_at)
+                     VALUES ($1, $2, $3::jsonb, NOW())
+                     ON CONFLICT (endpoint) DO UPDATE SET conversation_id = EXCLUDED.conversation_id,
+                        subscription = EXCLUDED.subscription, updated_at = NOW()`,
+                    [internalId, endpoint, JSON.stringify(subscription)]
+                );
+                await pool.query(
+                    `DELETE FROM public.chat_customer_push WHERE conversation_id = $1 AND id NOT IN (
+                        SELECT id FROM public.chat_customer_push WHERE conversation_id = $1 ORDER BY updated_at DESC LIMIT 5)`,
+                    [internalId]
+                );
+                sendJSON(res, 200, { success: true, message: "Notifikasi balasan aktif di perangkat ini." });
+                return;
+            }
+
+            if (req.method === "POST" && pathname === "/api/chat/push/unsubscribe") {
+                const data = await readBody(req, 4000);
+                const internalId = await ownConversation(String(data?.conversation_id || "").trim(), String(data?.visitor_token || "").trim());
+                if (!internalId) {
+                    sendJSON(res, 403, { success: false, message: "Akses percakapan ditolak." });
+                    return;
+                }
+                await pool.query(`DELETE FROM public.chat_customer_push WHERE conversation_id = $1 AND endpoint = $2`, [internalId, String(data?.endpoint || "").trim()]);
+                sendJSON(res, 200, { success: true });
+                return;
+            }
 
             if (req.method === "PATCH" && pathname === "/api/chat/messages") {
                 if (isRateLimited(`chat-edit:${getClientIP(req)}`, 60, TEN_MINUTES)) {

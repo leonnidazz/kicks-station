@@ -3036,6 +3036,7 @@ html.ks-chat-open, html.ks-chat-open body { overflow: hidden !important; overscr
 </style>
 <div id="kick-chat-panel" class="hidden fixed bottom-24 right-4 sm:right-6 z-[100] w-[min(92vw,380px)] h-[min(70vh,560px)] bg-white dark:bg-neutral-900 rounded-lg shadow-2xl border border-neutral-200 dark:border-neutral-700 overflow-hidden flex-col">
   <div class="bg-neutral-900 text-white p-4 flex items-center justify-between"><div><div class="font-extrabold">Kicks Station</div><div class="text-xs opacity-90">Chat langsung dengan admin</div></div><div style="display:flex;align-items:center;gap:8px"><button type="button" onclick="clearKickChat()" style="font-size:12px;text-decoration:underline;opacity:.9">Hapus obrolan</button><button onclick="closeKickChat()" class="text-2xl px-2" aria-label="Tutup chat">×</button></div></div>
+  <div id="kick-chat-push-bar" style="display:none;align-items:center;gap:8px;padding:8px 12px;font-size:12px;background:#fef3c7;color:#78350f;border-bottom:1px solid #fde68a"><span id="kick-chat-push-text" style="flex:1">Aktifkan notifikasi agar balasan admin muncul sebagai pop-up, seperti chat WhatsApp.</span><button id="kick-chat-push-btn" type="button" onclick="enableKickChatPush()" style="font-weight:700;background:#171717;color:#fff;border-radius:6px;padding:6px 10px;white-space:nowrap">Aktifkan</button></div>
   <div id="kick-chat-messages" class="flex-1 overflow-y-auto p-3 space-y-3 bg-neutral-50 dark:bg-neutral-950" style="min-height:0"><p class="text-sm text-neutral-500 text-center py-4">Memuat percakapan…</p></div>
   <form class="p-3 flex gap-2 border-t border-neutral-200 dark:border-neutral-700" onsubmit="event.preventDefault(); submitKickChatMessage();"><input id="kick-chat-input" maxlength="2000" autocomplete="off" placeholder="Tulis pesan…" class="min-w-0 flex-1 rounded-md border border-neutral-300 dark:border-neutral-700 dark:bg-neutral-800 px-3 py-3 text-sm"><button class="bg-neutral-900 text-white font-bold px-4 rounded-md" type="submit">Kirim</button></form>
 </div>
@@ -3076,7 +3077,7 @@ html.ks-chat-open, html.ks-chat-open body { overflow: hidden !important; overscr
  }
  function render(messages,scroll=true){const box=document.getElementById('kick-chat-messages');if(!box)return;cache=messages;if(!messages.length){box.innerHTML='<p class="text-sm text-neutral-500 text-center py-4">Halo kak! Ada yang bisa kami bantu?</p>';return;}box.innerHTML=messages.map(bubble).join('');if(scroll)box.scrollTop=box.scrollHeight;}
  async function load(){if(!conversationId)return;try{const r=await fetch(API+'/api/chat/messages?conversation_id='+encodeURIComponent(conversationId),{headers:{'X-Chat-Token':visitorToken}});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.message||`Gagal memuat chat (HTTP ${r.status}).`);if(d.success){const list=Array.isArray(d.messages)?d.messages:[];const sig=JSON.stringify(list);if(editingId!==null||sig===lastSig)return;lastSig=sig;render(list);}}catch(e){console.warn('Chat refresh gagal',e);}}
- window.openKickChat=async function(){const panel=document.getElementById('kick-chat-panel');panel.classList.remove('hidden');panel.classList.add('flex');document.documentElement.classList.add('ks-chat-open');try{await ensure();await load();document.getElementById('kick-chat-input').focus();if(timer)clearInterval(timer);timer=setInterval(()=>{if(!document.hidden)load();},3000);}catch(e){document.getElementById('kick-chat-messages').innerHTML='<p class="text-red-500 text-sm">'+escapeText(e.message)+'</p>';}};
+ window.openKickChat=async function(){const panel=document.getElementById('kick-chat-panel');panel.classList.remove('hidden');panel.classList.add('flex');document.documentElement.classList.add('ks-chat-open');try{await ensure();await load();updatePushBar();if(PUSH_OK&&Notification.permission==='granted')subscribePush().catch(()=>{});document.getElementById('kick-chat-input').focus();if(timer)clearInterval(timer);timer=setInterval(()=>{if(!document.hidden)load();},3000);}catch(e){document.getElementById('kick-chat-messages').innerHTML='<p class="text-red-500 text-sm">'+escapeText(e.message)+'</p>';}};
  window.closeKickChat=function(){const panel=document.getElementById('kick-chat-panel');panel.classList.add('hidden');panel.classList.remove('flex');document.documentElement.classList.remove('ks-chat-open');if(timer)clearInterval(timer);timer=null;};
  window.sendKickChatMessage=async function(message){
    const input=document.getElementById('kick-chat-input');const button=document.querySelector('#kick-chat-panel form button');const text=String(message||'').trim();
@@ -3117,8 +3118,56 @@ html.ks-chat-open, html.ks-chat-open body { overflow: hidden !important; overscr
      editingId=null;lastSig='';render([]);
    }catch(err){showError(err.message||'Obrolan gagal dihapus.');}
  };
- // Toko tidak memakai service worker. Hapus SW/cache lama (yang dulu ikut menyimpan halaman admin) dari perangkat pelanggan.
- if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});}).catch(function(){});}
+ // ===== Notifikasi balasan admin (Web Push) =====
+ // Satu service worker (service-worker.js) dipakai admin dan toko; fetch handler-nya hanya menyentuh halaman admin.
+ const PUSH_OK='serviceWorker' in navigator&&'PushManager' in window&&'Notification' in window;
+ const IS_IOS=/iPad|iPhone|iPod/.test(navigator.userAgent)&&!window.MSStream;
+ const IS_STANDALONE=window.navigator.standalone===true||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches);
+ function b64ToBytes(v){const pad='='.repeat((4-v.length%4)%4);const raw=atob((v+pad).replace(/-/g,'+').replace(/_/g,'/'));return Uint8Array.from(raw,c=>c.charCodeAt(0));}
+ function sameKey(sub,key){try{const a=new Uint8Array(sub.options.applicationServerKey),b=b64ToBytes(key);return a.length===b.length&&a.every((x,i)=>x===b[i]);}catch(_){return true;}}
+ function updatePushBar(){
+   const bar=document.getElementById('kick-chat-push-bar'),text=document.getElementById('kick-chat-push-text'),btn=document.getElementById('kick-chat-push-btn');
+   if(!bar)return;
+   let show=false;
+   if(PUSH_OK){show=Notification.permission==='default';}
+   else if(IS_IOS&&!IS_STANDALONE){show=true;text.textContent='Untuk notifikasi balasan di iPhone: ketuk Bagikan → Tambahkan ke Layar Utama, lalu buka toko dari ikon tersebut.';btn.style.display='none';}
+   bar.style.display=show?'flex':'none';
+ }
+ async function subscribePush(){
+   await ensure();
+   const kr=await fetch(API+'/api/push/vapid-public-key');const kd=await kr.json().catch(()=>({}));
+   if(!kr.ok||!kd.publicKey)throw new Error(kd.message||'Notifikasi belum tersedia.');
+   const reg=await navigator.serviceWorker.register('./service-worker.js',{scope:'./'});
+   await navigator.serviceWorker.ready;
+   let sub=await reg.pushManager.getSubscription();
+   if(sub&&!sameKey(sub,kd.publicKey)){await sub.unsubscribe().catch(()=>{});sub=null;}
+   if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:b64ToBytes(kd.publicKey)});
+   const r=await fetch(API+'/api/chat/push/subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({conversation_id:conversationId,visitor_token:visitorToken,subscription:sub.toJSON()})});
+   const d=await r.json().catch(()=>({}));
+   if(!r.ok||!d.success)throw new Error(d.message||`Langganan gagal (HTTP ${r.status}).`);
+ }
+ window.enableKickChatPush=async function(){
+   const btn=document.getElementById('kick-chat-push-btn');
+   if(!PUSH_OK){updatePushBar();return;}
+   if(btn){btn.disabled=true;btn.textContent='Mengaktifkan…';}
+   try{
+     const perm=Notification.permission==='granted'?'granted':await Notification.requestPermission();
+     if(perm!=='granted')throw new Error('Izin notifikasi tidak diberikan. Aktifkan lewat pengaturan situs di browser.');
+     await subscribePush();
+   }catch(e){showError(e.message||'Notifikasi gagal diaktifkan.');console.warn('Push pelanggan gagal',e);}
+   finally{if(btn){btn.disabled=false;btn.textContent='Aktifkan';}updatePushBar();}
+ };
+ if(PUSH_OK){
+   if(location.protocol==='https:')navigator.serviceWorker.register('./service-worker.js',{scope:'./'}).catch(e=>console.warn('Service worker gagal didaftarkan:',e));
+   // Saat notifikasi tiba dan chat sedang terbuka, langsung muat balasan tanpa menunggu polling.
+   navigator.serviceWorker.addEventListener('message',e=>{
+     if(!e.data||e.data.type!=='ks-push')return;
+     const panel=document.getElementById('kick-chat-panel');
+     if(panel&&!panel.classList.contains('hidden')){lastSig='';load();}
+   });
+ }
+ // Dibuka dari notifikasi: tampilkan chat.
+ if(new URLSearchParams(location.search).get('openChat')==='1')setTimeout(()=>{if(window.openKickChat)window.openKickChat();},600);
 })();;
 </script>
 <script>
