@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kicks-station-shell-v10';
+const CACHE_NAME = 'kicks-station-shell-v11';
 const APP_SHELL = [
   './admin.html',
   './manifest.webmanifest',
@@ -56,30 +56,45 @@ self.addEventListener('push', event => {
   let data = {};
   try { data = event.data ? event.data.json() : {}; }
   catch (_) { data = { body: event.data ? event.data.text() : '' }; }
-  const title = data.title || 'Pesan baru — Kicks Station';
+  const title = data.title || 'Kicks Station';
+  const kind = data.kind || 'chat';
   const options = {
-    body: data.body || 'Ada pesan baru dari pelanggan.',
+    body: data.body || 'Ada pesan baru.',
     icon: './icons/icon-192.png',
     badge: './icons/icon-192.png',
     tag: data.tag || 'kicks-station-chat',
     renotify: true,
-    requireInteraction: true,
+    silent: false,
+    // Admin: popup bertahan sampai dibuka. Pelanggan: popup biasa seperti chat.
+    requireInteraction: data.requireInteraction !== false,
     vibrate: [250, 120, 250, 120, 400],
-    data: { url: data.url || './admin.html?openChat=1' }
+    timestamp: Date.now(),
+    data: { url: data.url || './admin.html?openChat=1', kind }
   };
-  event.waitUntil(self.registration.showNotification(title, options));
+  event.waitUntil((async () => {
+    await self.registration.showNotification(title, options);
+    // Jika halaman sedang terbuka, minta halaman langsung menyegarkan data (tanpa menunggu polling).
+    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    windows.forEach(client => { try { client.postMessage({ type: 'ks-push', kind }); } catch (_) {} });
+  })());
 });
 
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  const target = new URL(event.notification.data && event.notification.data.url || './admin.html?openChat=1', self.registration.scope).href;
-  event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(async clients => {
-    for (const client of clients) {
-      if (new URL(client.url).origin === self.location.origin) {
-        if ('navigate' in client && client.url !== target) await client.navigate(target).catch(() => {});
-        return client.focus();
-      }
+  const raw = (event.notification.data && event.notification.data.url) || './admin.html?openChat=1';
+  const target = new URL(raw, self.registration.scope).href;
+  const normalize = path => path.replace(/\/index\.html$/, '/');
+  const targetPath = normalize(new URL(target).pathname);
+  event.waitUntil((async () => {
+    const windows = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    for (const client of windows) {
+      const url = new URL(client.url);
+      if (url.origin !== self.location.origin) continue;
+      // Hanya pakai jendela yang halamannya sama (admin tidak boleh dibelokkan ke toko, dan sebaliknya).
+      if (normalize(url.pathname) !== targetPath) continue;
+      if ('navigate' in client && client.url !== target) await client.navigate(target).catch(() => {});
+      return client.focus();
     }
     return self.clients.openWindow(target);
-  }));
+  })());
 });
