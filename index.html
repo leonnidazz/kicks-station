@@ -3029,8 +3029,13 @@ html.ks-chat-open, html.ks-chat-open body { overflow: hidden !important; overscr
 
 
 <!-- LIVE CHAT PELANGGAN -->
+<style id="ks-chat-actions">
+.ks-cm-actions{display:flex;gap:12px;margin-top:4px;font-size:10px;font-weight:700;opacity:.7}
+.ks-cm-actions button{background:none;border:0;padding:0;color:inherit;text-decoration:underline;cursor:pointer}
+.ks-cm-edit{width:100%;min-height:64px;padding:6px 8px;border:1px solid rgba(120,120,120,.5);border-radius:6px;font-size:14px;color:#111 !important;background:#fff !important;resize:vertical}
+</style>
 <div id="kick-chat-panel" class="hidden fixed bottom-24 right-4 sm:right-6 z-[100] w-[min(92vw,380px)] h-[min(70vh,560px)] bg-white dark:bg-neutral-900 rounded-lg shadow-2xl border border-neutral-200 dark:border-neutral-700 overflow-hidden flex-col">
-  <div class="bg-neutral-900 text-white p-4 flex items-center justify-between"><div><div class="font-extrabold">Kicks Station</div><div class="text-xs opacity-90">Chat langsung dengan admin</div></div><button onclick="closeKickChat()" class="text-2xl px-2" aria-label="Tutup chat">×</button></div>
+  <div class="bg-neutral-900 text-white p-4 flex items-center justify-between"><div><div class="font-extrabold">Kicks Station</div><div class="text-xs opacity-90">Chat langsung dengan admin</div></div><div style="display:flex;align-items:center;gap:8px"><button type="button" onclick="clearKickChat()" style="font-size:12px;text-decoration:underline;opacity:.9">Hapus obrolan</button><button onclick="closeKickChat()" class="text-2xl px-2" aria-label="Tutup chat">×</button></div></div>
   <div id="kick-chat-messages" class="flex-1 overflow-y-auto p-3 space-y-3 bg-neutral-50 dark:bg-neutral-950" style="min-height:0"><p class="text-sm text-neutral-500 text-center py-4">Memuat percakapan…</p></div>
   <form class="p-3 flex gap-2 border-t border-neutral-200 dark:border-neutral-700" onsubmit="event.preventDefault(); submitKickChatMessage();"><input id="kick-chat-input" maxlength="2000" autocomplete="off" placeholder="Tulis pesan…" class="min-w-0 flex-1 rounded-md border border-neutral-300 dark:border-neutral-700 dark:bg-neutral-800 px-3 py-3 text-sm"><button class="bg-neutral-900 text-white font-bold px-4 rounded-md" type="submit">Kirim</button></form>
 </div>
@@ -3060,8 +3065,17 @@ html.ks-chat-open, html.ks-chat-open body { overflow: hidden !important; overscr
  }
  function escapeText(v){const e=document.createElement('div');e.textContent=v;return e.innerHTML;}
  function showError(message){const box=document.getElementById('kick-chat-messages');if(box){const p=document.createElement('p');p.className='text-red-500 text-sm';p.textContent=message;box.appendChild(p);}}
- function render(messages){const box=document.getElementById('kick-chat-messages');if(!box)return;if(!messages.length){box.innerHTML='<p class="text-sm text-neutral-500 text-center py-4">Halo kak! Ada yang bisa kami bantu?</p>';return;}box.innerHTML=messages.map(m=>{const mine=m.sender==='customer';return `<div class="flex ${mine?'justify-end':'justify-start'}"><div class="max-w-[85%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap break-words ${mine?'bg-neutral-900 text-white':'bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700'}">${escapeText(m.message)}<div class="text-[10px] opacity-60 mt-1">${new Date(m.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</div></div></div>`}).join('');box.scrollTop=box.scrollHeight;}
- async function load(){if(!conversationId)return;try{const r=await fetch(API+'/api/chat/messages?conversation_id='+encodeURIComponent(conversationId),{headers:{'X-Chat-Token':visitorToken}});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.message||`Gagal memuat chat (HTTP ${r.status}).`);if(d.success)render(Array.isArray(d.messages)?d.messages:[]);}catch(e){console.warn('Chat refresh gagal',e);}}
+ let editingId=null,lastSig='',cache=[];
+ function timeOf(v){return new Date(v).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});}
+ function bubble(m){
+   const mine=m.sender==='customer',id=Number(m.id),side=mine?'justify-end':'justify-start';
+   const cls='max-w-[85%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap break-words '+(mine?'bg-neutral-900 text-white':'bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700');
+   if(m.deleted_at)return `<div class="flex ${side}"><div class="${cls}"><i style="opacity:.7">Pesan ini telah dihapus</i><div class="text-[10px] opacity-60 mt-1">${timeOf(m.created_at)}</div></div></div>`;
+   if(mine&&id===editingId)return `<div class="flex ${side}"><div class="${cls}" style="width:min(85%,300px)"><textarea id="kick-chat-edit" class="ks-cm-edit" maxlength="2000">${escapeText(m.message)}</textarea><div class="ks-cm-actions"><button type="button" data-cm-save="${id}">Simpan</button><button type="button" data-cm-cancel="${id}">Batal</button></div></div></div>`;
+   return `<div class="flex ${side}"><div class="${cls}">${escapeText(m.message)}<div class="text-[10px] opacity-60 mt-1">${timeOf(m.created_at)}${m.edited_at?' • diedit':''}</div>${mine?`<div class="ks-cm-actions"><button type="button" data-cm-edit="${id}">Edit</button><button type="button" data-cm-del="${id}">Hapus</button></div>`:''}</div></div>`;
+ }
+ function render(messages,scroll=true){const box=document.getElementById('kick-chat-messages');if(!box)return;cache=messages;if(!messages.length){box.innerHTML='<p class="text-sm text-neutral-500 text-center py-4">Halo kak! Ada yang bisa kami bantu?</p>';return;}box.innerHTML=messages.map(bubble).join('');if(scroll)box.scrollTop=box.scrollHeight;}
+ async function load(){if(!conversationId)return;try{const r=await fetch(API+'/api/chat/messages?conversation_id='+encodeURIComponent(conversationId),{headers:{'X-Chat-Token':visitorToken}});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.message||`Gagal memuat chat (HTTP ${r.status}).`);if(d.success){const list=Array.isArray(d.messages)?d.messages:[];const sig=JSON.stringify(list);if(editingId!==null||sig===lastSig)return;lastSig=sig;render(list);}}catch(e){console.warn('Chat refresh gagal',e);}}
  window.openKickChat=async function(){const panel=document.getElementById('kick-chat-panel');panel.classList.remove('hidden');panel.classList.add('flex');document.documentElement.classList.add('ks-chat-open');try{await ensure();await load();document.getElementById('kick-chat-input').focus();if(timer)clearInterval(timer);timer=setInterval(()=>{if(!document.hidden)load();},3000);}catch(e){document.getElementById('kick-chat-messages').innerHTML='<p class="text-red-500 text-sm">'+escapeText(e.message)+'</p>';}};
  window.closeKickChat=function(){const panel=document.getElementById('kick-chat-panel');panel.classList.add('hidden');panel.classList.remove('flex');document.documentElement.classList.remove('ks-chat-open');if(timer)clearInterval(timer);timer=null;};
  window.sendKickChatMessage=async function(message){
@@ -3074,6 +3088,35 @@ html.ks-chat-open, html.ks-chat-open body { overflow: hidden !important; overscr
    finally{sending=false;if(button)button.disabled=false;}
  };
  window.submitKickChatMessage=async function(){const input=document.getElementById('kick-chat-input');if(!input||sending)return;const value=input.value.trim();if(!value)return;await window.sendKickChatMessage(value);};
+ const msgBox=document.getElementById('kick-chat-messages');
+ if(msgBox)msgBox.addEventListener('click',async e=>{
+   const b=e.target.closest('button[data-cm-edit],button[data-cm-del],button[data-cm-save],button[data-cm-cancel]');if(!b)return;
+   const d=b.dataset;
+   if(d.cmEdit){editingId=Number(d.cmEdit);render(cache,false);const t=document.getElementById('kick-chat-edit');if(t){t.focus();t.setSelectionRange(t.value.length,t.value.length);}return;}
+   if(d.cmCancel){editingId=null;render(cache,false);return;}
+   try{
+     if(d.cmSave){
+       const text=(document.getElementById('kick-chat-edit')?.value||'').trim();if(!text)return;b.disabled=true;
+       const r=await fetch(API+'/api/chat/messages',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({conversation_id:conversationId,visitor_token:visitorToken,message_id:Number(d.cmSave),message:text})});
+       const j=await r.json().catch(()=>({}));if(!r.ok||!j.success)throw new Error(j.message||`Pesan gagal diubah (HTTP ${r.status}).`);editingId=null;
+     }else if(d.cmDel){
+       if(!confirm('Hapus pesan ini?'))return;
+       const r=await fetch(API+'/api/chat/messages?conversation_id='+encodeURIComponent(conversationId)+'&message_id='+encodeURIComponent(d.cmDel),{method:'DELETE',headers:{'X-Chat-Token':visitorToken}});
+       const j=await r.json().catch(()=>({}));if(!r.ok||!j.success)throw new Error(j.message||`Pesan gagal dihapus (HTTP ${r.status}).`);
+     }
+     lastSig='';await load();
+   }catch(err){showError(err.message||'Gagal memproses pesan.');b.disabled=false;}
+ });
+ // "Hapus obrolan": hanya menyembunyikan riwayat dari tampilan pelanggan; arsip admin tetap ada.
+ window.clearKickChat=async function(){
+   if(!conversationId||!visitorToken)return;
+   if(!confirm('Hapus obrolan ini dari tampilanmu? Admin tetap menyimpan arsip percakapan untuk keperluan pesanan.'))return;
+   try{
+     const r=await fetch(API+'/api/chat/clear',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({conversation_id:conversationId,visitor_token:visitorToken})});
+     const d=await r.json().catch(()=>({}));if(!r.ok||!d.success)throw new Error(d.message||`Obrolan gagal dihapus (HTTP ${r.status}).`);
+     editingId=null;lastSig='';render([]);
+   }catch(err){showError(err.message||'Obrolan gagal dihapus.');}
+ };
  // Toko tidak memakai service worker. Hapus SW/cache lama (yang dulu ikut menyimpan halaman admin) dari perangkat pelanggan.
  if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});}).catch(function(){});if(window.caches){caches.keys().then(function(ks){ks.filter(function(k){return k.indexOf('kicks-station-shell-')===0;}).forEach(function(k){caches.delete(k);});}).catch(function(){});}}
 })();;

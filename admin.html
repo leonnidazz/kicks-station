@@ -377,6 +377,28 @@ html.dark {
 .dark .ks-tool-btn:hover { background: rgba(255, 255, 255, 0.12); }
 .dark .ks-color-tag { background: rgba(255, 255, 255, 0.06); border-color: rgba(255, 255, 255, 0.12); color: #b6bdc9; }
 .dark .ks-color-tag.ks-empty { background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.35); color: #fbbf24; }
+
+/* ===== Pesanan masuk: badge, tombol konfirmasi, modal ===== */
+.ks-alert-dot { position: absolute; top: 5px; right: 5px; width: 10px; height: 10px; border-radius: 9999px; background: #ef4444; border: 2px solid #fff; }
+.ks-alert-dot.hidden { display: none; }
+.ks-pill-new { display: inline-block; padding: 4px 10px; border-radius: 9999px; background: #fef3c7; border: 1px solid #fcd34d; color: #92400e; font-size: 10px; font-weight: 900; }
+.ks-btn-confirm { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; border-radius: 6px; background: #059669; color: #fff; font-size: 14px; font-weight: 700; box-shadow: 0 1px 2px rgba(0,0,0,.12); cursor: pointer; }
+.ks-btn-confirm:hover { background: #047857; }
+.ks-btn-badge { min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9999px; background: #ef4444; color: #fff; font-size: 11px; line-height: 18px; text-align: center; }
+.ks-confirm-card { width: 100%; max-width: 640px; max-height: 90vh; }
+.ks-confirm-body { overflow-y: auto; flex: 1 1 auto; min-height: 0; }
+.ks-confirm-text { min-height: 300px; resize: vertical; line-height: 1.5; }
+.ks-confirm-foot { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+#order-confirm-modal { z-index: 850; }
+#order-confirm-modal.flex, #admin-chat-modal.flex { display: flex; }
+.ks-msg-actions { display: flex; gap: 12px; margin-top: 4px; font-size: 10px; font-weight: 700; opacity: .7; }
+.ks-msg-actions button { background: none; border: 0; padding: 0; color: inherit; text-decoration: underline; cursor: pointer; }
+.ks-msg-actions button:hover { opacity: .8; }
+.ks-edit-input { width: 100%; min-height: 64px; padding: 6px 8px; border: 1px solid rgba(120,120,120,.5); border-radius: 6px; font-size: 14px; color: #111 !important; background-color: #fff !important; resize: vertical; }
+.dark .ks-pill-new { background: rgba(245,158,11,.15); border-color: rgba(245,158,11,.4); color: #fbbf24; }
+.dark .ks-alert-dot { border-color: #0b0f14; }
+.dark .ks-btn-confirm { background: #10b981; color: #052e1f; }
+.dark .ks-btn-confirm:hover { background: #34d399; }
 </style>
 </head>
 
@@ -420,7 +442,8 @@ html.dark {
             <p class="text-[10px] text-neutral-500 font-semibold">Admin Panel</p>
         </div>
     </div>
-    <button onclick="toggleSidebar()" class="w-10 h-10 rounded-md bg-white/50 border border-neutral-200 flex items-center justify-center text-xl hover:bg-white transition">
+    <button onclick="toggleSidebar()" style="position:relative" class="w-10 h-10 rounded-md bg-white/50 border border-neutral-200 flex items-center justify-center text-xl hover:bg-white transition">
+        <span id="menu-alert-dot" class="ks-alert-dot hidden" aria-hidden="true"></span>
         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 6h16M4 12h16M4 18h16"></path></svg>
     </button>
 </header>
@@ -452,6 +475,7 @@ html.dark {
 
         <button id="menu-pesanan" onclick="showPage('pesanan')" class="sidebar-item w-full text-left px-4 py-3.5 rounded-lg flex items-center gap-3.5 font-semibold text-neutral-600 text-sm">
             <span class="sidebar-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/></svg></span> Pesanan Masuk
+            <span id="order-pending-badge" title="Pesanan yang belum diproses" class="hidden ml-auto bg-red-500 text-white text-[10px] font-black rounded-full px-2 py-1">0</span>
         </button>
 
         <button id="menu-ulasan" onclick="showReviewsPage()" class="sidebar-item w-full text-left px-4 py-3.5 rounded-lg flex items-center gap-3.5 font-semibold text-neutral-600 text-sm">
@@ -477,6 +501,10 @@ html.dark {
 
         <button id="theme-switch" type="button" role="switch" aria-checked="false" aria-label="Mode gelap" onclick="toggleAdminTheme()" class="ks-theme-switch">
             <span class="ks-theme-label"><svg class="ks-ico-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="5"/><path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/></svg><svg class="ks-ico-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg><span>Mode gelap</span></span>
+            <span class="ks-switch-track"><span class="ks-switch-thumb"></span></span>
+        </button>
+        <button id="sound-switch" type="button" role="switch" aria-checked="true" aria-label="Dering notifikasi" onclick="toggleAdminSound()" class="ks-theme-switch">
+            <span class="ks-theme-label"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg><span>Dering notifikasi</span></span>
             <span class="ks-switch-track"><span class="ks-switch-thumb"></span></span>
         </button>
         <div class="rounded-lg bg-white/50 border border-white p-4 backdrop-blur-sm shadow-sm">
@@ -1002,8 +1030,25 @@ html.dark {
   <header class="px-5 py-4 border-b flex items-center justify-between gap-3"><div><h2 class="font-extrabold text-lg">Chat Pelanggan</h2><p class="text-xs text-neutral-500">Pesan pelanggan masuk di sini; balasan dikirim langsung ke website.</p><p id="ks-chat-notify-status" class="text-xs text-neutral-500 mt-1">Notifikasi belum diaktifkan di browser ini.</p></div><div class="flex items-center gap-2 flex-wrap justify-end"><button type="button" onclick="enableAdminChatNotifications()" class="text-xs sm:text-sm font-bold rounded-md bg-neutral-100 text-neutral-700 px-3 py-2">Dering/getar</button><button id="ks-push-enable" type="button" onclick="enableAdminPush()" class="text-xs sm:text-sm font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-md px-3 py-2">Push latar</button><button type="button" onclick="closeAdminChat()" class="text-2xl px-2" aria-label="Tutup chat">×</button></div></header>
   <div class="flex-1 min-h-0 grid grid-cols-1 md:grid-cols-[280px_1fr]">
    <aside class="border-r overflow-y-auto" id="admin-chat-conversations"><p class="p-4 text-sm text-neutral-500">Memuat percakapan…</p></aside>
-   <div class="min-h-0 flex flex-col"><div id="admin-chat-active-title" class="p-4 border-b text-sm font-bold text-neutral-500">Pilih percakapan</div><div id="admin-chat-messages" class="flex-1 min-h-0 overflow-y-auto p-4 space-y-3 bg-neutral-50"><p class="text-sm text-neutral-500">Belum ada percakapan dipilih.</p></div><form id="admin-chat-form" class="p-3 border-t flex gap-2"><input id="admin-chat-input" maxlength="2000" placeholder="Balas pelanggan…" class="min-w-0 flex-1 border rounded-md px-3 py-3 text-sm" disabled><button id="admin-chat-send" type="submit" class="bg-neutral-900 text-white font-bold px-4 rounded-md disabled:opacity-50" disabled>Kirim</button></form></div>
+   <div class="min-h-0 flex flex-col"><div class="p-4 border-b flex items-center justify-between gap-3"><div id="admin-chat-active-title" class="min-w-0 truncate text-sm font-bold text-neutral-500">Pilih percakapan</div><button id="admin-chat-delete-conv" type="button" class="hidden text-xs font-bold rounded-md bg-red-50 text-red-600 px-3 py-2" style="flex:none">Hapus obrolan</button></div><div id="admin-chat-messages" class="flex-1 min-h-0 overflow-y-auto p-4 space-y-3 bg-neutral-50"><p class="text-sm text-neutral-500">Belum ada percakapan dipilih.</p></div><form id="admin-chat-form" class="p-3 border-t flex gap-2"><input id="admin-chat-input" maxlength="2000" placeholder="Balas pelanggan…" class="min-w-0 flex-1 border rounded-md px-3 py-3 text-sm" disabled><button id="admin-chat-send" type="submit" class="bg-neutral-900 text-white font-bold px-4 rounded-md disabled:opacity-50" disabled>Kirim</button></form></div>
   </div>
+ </section>
+</div>
+
+<!-- KONFIRMASI PESANAN VIA CHAT -->
+<div id="order-confirm-modal" class="hidden fixed inset-0 bg-neutral-950/40 backdrop-blur-sm p-3 sm:p-6 items-center justify-center">
+ <section class="ks-confirm-card bg-white rounded-lg shadow-2xl overflow-hidden flex flex-col">
+  <header class="px-5 py-4 border-b flex items-center justify-between gap-3"><div class="min-w-0"><h2 id="order-confirm-title" class="font-extrabold text-lg">Konfirmasi pesanan</h2><p id="order-confirm-sub" class="text-xs text-neutral-500 mt-1"></p></div><button type="button" onclick="closeOrderConfirm()" class="text-2xl px-2" aria-label="Tutup">×</button></header>
+  <div class="ks-confirm-body p-5">
+   <p id="order-confirm-chatinfo" class="text-xs font-semibold text-neutral-500"></p>
+   <label for="order-confirm-text" class="block text-xs font-bold text-neutral-500 mt-3 mb-2">Pesan konfirmasi (bisa diedit sebelum dikirim)</label>
+   <textarea id="order-confirm-text" maxlength="2000" class="ks-confirm-text w-full border rounded-md px-3 py-3 text-sm"></textarea>
+  </div>
+  <footer class="ks-confirm-foot px-5 py-4 border-t">
+   <button id="order-confirm-wa" type="button" onclick="sendOrderConfirmWhatsApp()" class="text-sm font-bold rounded-md bg-neutral-100 text-neutral-700 px-4 py-3">Kirim via WhatsApp</button>
+   <button id="order-confirm-open" type="button" onclick="openOrderConfirmChat()" class="text-sm font-bold rounded-md bg-neutral-100 text-neutral-700 px-4 py-3">Buka percakapan</button>
+   <button id="order-confirm-send" type="button" onclick="sendOrderConfirmToChat()" class="text-sm bg-neutral-900 text-white font-bold px-4 py-3 rounded-md disabled:opacity-50">Kirim ke chat</button>
+  </footer>
  </section>
 </div>
 
@@ -1085,6 +1130,8 @@ async function adminLogin() {
         hideAdminLogin();
         showToast("Login admin berhasil.", "success");
         await loadProducts();
+        if (typeof ksRefreshOrderPending === "function") ksRefreshOrderPending();
+        if (new URLSearchParams(window.location.search).get("openOrders") === "1") setTimeout(() => showPage("pesanan"), 400);
         if (new URLSearchParams(window.location.search).get("openChat") === "1") {
             setTimeout(() => { if (typeof openAdminChat === "function") openAdminChat(); }, 500);
         }
@@ -1831,6 +1878,8 @@ async function loadOrders() {
         const orders = Array.isArray(data.orders) ? data.orders : [];
         if (!orders.length) { box.innerHTML = '<div class="border-2 border-dashed border-neutral-200 bg-white/50 rounded-[1.5rem] py-16 text-center text-neutral-400 font-bold">Tidak ada pesanan masuk.</div>'; return; }
         window.ksOrderNotes = new Map(orders.map(o => [Number(o.id), o.keterangan || ""]));
+        window.ksOrdersById = new Map(orders.map(o => [Number(o.id), o]));
+        if (!box.dataset.confirmBound) { box.dataset.confirmBound = "1"; box.addEventListener("click", e => { const b = e.target.closest("[data-confirm-id]"); if (b) openOrderConfirm(Number(b.dataset.confirmId)); }); }
         if (!box.dataset.noteBound) { box.dataset.noteBound = "1"; box.addEventListener("click", e => { const b = e.target.closest("[data-note-id]"); if (!b) return; const id = Number(b.dataset.noteId); setOrderNote(id, window.ksOrderNotes.get(id) || ""); }); }
         box.innerHTML = orders.map(order => {
             const items = Array.isArray(order.items) ? order.items : []; const date = order.created_at ? new Date(order.created_at).toLocaleString("id-ID") : "-";
@@ -1838,13 +1887,15 @@ async function loadOrders() {
                 <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-5">
                     <div class="min-w-0">
                         <div class="flex items-center gap-3 flex-wrap mb-1">
-                            <p class="font-black text-xl text-neutral-900">#${escapeOrderText(order.id)}</p>
+                            <p class="font-black text-xl text-neutral-900">#${escapeOrderText(order.id)}${order.customer_name ? ` <span class="font-bold text-neutral-500" style="font-size:16px">· ${escapeOrderText(order.customer_name)}</span>` : ""}</p>
                             <span class="px-3 py-1 rounded-full border border-neutral-200 bg-neutral-50 text-[10px] font-black text-neutral-600">${escapeOrderText(statusLabel(order.status))}</span>
+                            ${KS_PENDING_STATUSES.includes(order.status) ? '<span class="ks-pill-new">Perlu ditindak</span>' : ""}
                         </div>
                         <p class="text-[11px] font-semibold text-neutral-400">${escapeOrderText(date)}</p>
                         <p class="text-xs font-semibold text-neutral-500 mt-2">Ref: <span class="font-black text-neutral-800 bg-neutral-100 px-2 py-0.5 rounded-md">${escapeOrderText(formatReferral(order.referral))}</span></p>
                     </div>
                     <div class="flex flex-wrap gap-2">
+                        <button type="button" data-confirm-id="${Number(order.id)}" class="ks-btn-confirm">Konfirmasi via Chat${Number(order.chat_unread) > 0 ? `<span class="ks-btn-badge">${Number(order.chat_unread)}</span>` : ""}</button>
                         <select onchange="updateOrderStatus(${Number(order.id)}, this.value)" class="border border-neutral-200 bg-white rounded-md px-4 py-2.5 text-sm font-bold text-neutral-700 shadow-sm">
                             ${(ORDER_STATUS_CHOICES.includes(order.status) ? ORDER_STATUS_CHOICES : [order.status, ...ORDER_STATUS_CHOICES]).map(st => `<option value="${escapeOrderText(st)}" ${order.status === st ? "selected" : ""}>${escapeOrderText(statusLabel(st))}</option>`).join("")}
                         </select>
@@ -1859,6 +1910,7 @@ async function loadOrders() {
                 </div>
             </article>`;
         }).join("");
+        if (typeof ksRefreshOrderPending === "function") ksRefreshOrderPending();
     } catch (error) { box.innerHTML = `<div class="text-center py-10 font-bold text-red-500">${escapeOrderText(error.message || "Gagal mengambil pesanan.")}</div>`; }
 }
 
@@ -1923,6 +1975,7 @@ renderSizes(); renderImagePreviews(); updatePreview();
 checkAdminAuth().then(authenticated => {
     if (authenticated) {
         loadProducts();
+        if (new URLSearchParams(window.location.search).get("openOrders") === "1") setTimeout(() => showPage("pesanan"), 400);
         if (new URLSearchParams(window.location.search).get("openChat") === "1") {
             setTimeout(() => { if (typeof openAdminChat === "function") openAdminChat(); }, 500);
         }
@@ -1944,45 +1997,66 @@ let ksChatConversationSignature = '';
 let ksChatMessagesSignature = '';
 let ksChatPolling = false;
 let ksChatHasInitialUnreadSnapshot = false;
-let ksChatAudioContext = null;
-let ksChatNotificationsEnabled = false;
+const KS_SOUND_FILES = { order: './sounds/pesanan_masuk.mp3', chat: './sounds/pesan_biasa.mp3' };
+const ksAudio = {};
+function ksSoundPref() { try { return localStorage.getItem('ks-admin-sound') !== 'off'; } catch (_) { return true; } }
+let ksChatNotificationsEnabled = ksSoundPref();
 
-function ksChatPlaySound() {
+function ksGetAudio(kind) {
+  if (!ksAudio[kind]) { const audio = new Audio(KS_SOUND_FILES[kind]); audio.preload = 'auto'; ksAudio[kind] = audio; }
+  return ksAudio[kind];
+}
+function ksPlaySound(kind) {
   if (!ksChatNotificationsEnabled) return;
   try {
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    if (!AudioCtx) return;
-    if (!ksChatAudioContext) ksChatAudioContext = new AudioCtx();
-    if (ksChatAudioContext.state === "suspended") ksChatAudioContext.resume();
-    const now = ksChatAudioContext.currentTime;
-    [0, 0.22].forEach((delay) => {
-      const oscillator = ksChatAudioContext.createOscillator();
-      const gain = ksChatAudioContext.createGain();
-      oscillator.type = "sine"; oscillator.frequency.value = 880;
-      gain.gain.setValueAtTime(0.0001, now + delay);
-      gain.gain.exponentialRampToValueAtTime(0.18, now + delay + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.0001, now + delay + 0.16);
-      oscillator.connect(gain); gain.connect(ksChatAudioContext.destination);
-      oscillator.start(now + delay); oscillator.stop(now + delay + 0.17);
-    });
-  } catch (error) { console.warn("Bunyi notifikasi tidak dapat diputar:", error); }
+    const audio = ksGetAudio(kind);
+    audio.pause(); audio.currentTime = 0;
+    const result = audio.play();
+    if (result && result.catch) result.catch(error => console.warn('Dering diblokir browser (klik halaman sekali agar aktif):', error && error.name));
+  } catch (error) { console.warn('Bunyi notifikasi tidak dapat diputar:', error); }
 }
+function ksChatPlaySound() { ksPlaySound('chat'); }
+// Browser baru mengizinkan suara setelah ada interaksi; buka kunci pada sentuhan/klik pertama.
+function ksUnlockAudio() {
+  Object.keys(KS_SOUND_FILES).forEach(kind => {
+    const audio = ksGetAudio(kind); audio.muted = true;
+    const done = () => { try { audio.pause(); audio.currentTime = 0; } catch (_) {} audio.muted = false; };
+    try { const result = audio.play(); if (result && result.then) result.then(done, () => { audio.muted = false; }); else done(); } catch (_) { audio.muted = false; }
+  });
+}
+['pointerdown', 'keydown', 'touchstart'].forEach(name => document.addEventListener(name, ksUnlockAudio, { once: true, passive: true }));
 
+function ksSoundStatusText() {
+  return ksChatNotificationsEnabled ? 'Dering aktif' + ('vibrate' in navigator ? ' • getar dicoba pada perangkat yang mendukung' : ' • getar tidak didukung browser ini') : 'Dering dimatikan.';
+}
+function ksApplySoundSwitch() {
+  const sw = document.getElementById('sound-switch');
+  if (sw) sw.setAttribute('aria-checked', String(ksChatNotificationsEnabled));
+  const status = document.getElementById('ks-chat-notify-status');
+  if (status && (ksChatNotificationsEnabled || status.dataset.touched)) status.textContent = ksSoundStatusText();
+}
+async function toggleAdminSound() {
+  ksChatNotificationsEnabled = !ksChatNotificationsEnabled;
+  try { localStorage.setItem('ks-admin-sound', ksChatNotificationsEnabled ? 'on' : 'off'); } catch (_) {}
+  const status = document.getElementById('ks-chat-notify-status'); if (status) status.dataset.touched = '1';
+  ksApplySoundSwitch();
+  if (ksChatNotificationsEnabled) {
+    ksPlaySound('order');
+    try { if ('Notification' in window && Notification.permission === 'default') await Notification.requestPermission(); } catch (_) {}
+    showToast('Dering notifikasi aktif.', 'success');
+  } else showToast('Dering notifikasi dimatikan.', 'success');
+}
 async function enableAdminChatNotifications() {
   try {
-    const AudioCtx = window.AudioContext || window.webkitAudioContext;
-    if (AudioCtx) {
-      if (!ksChatAudioContext) ksChatAudioContext = new AudioCtx();
-      if (ksChatAudioContext.state === "suspended") await ksChatAudioContext.resume();
-    }
-    if ("Notification" in window && Notification.permission === "default") await Notification.requestPermission();
     ksChatNotificationsEnabled = true;
-    const status = document.getElementById("ks-chat-notify-status");
-    if (status) status.textContent = "Dering aktif" + ("vibrate" in navigator ? " • getar dicoba pada perangkat yang mendukung" : " • getar tidak didukung browser ini");
-    ksChatPlaySound();
+    try { localStorage.setItem('ks-admin-sound', 'on'); } catch (_) {}
+    const status = document.getElementById('ks-chat-notify-status'); if (status) status.dataset.touched = '1';
+    ksApplySoundSwitch();
+    if ("Notification" in window && Notification.permission === "default") await Notification.requestPermission();
+    ksPlaySound('chat');
     if ("vibrate" in navigator) navigator.vibrate([100, 60, 100]);
     if ("Notification" in window && Notification.permission === "granted") {
-      try { new Notification("Notifikasi Kicks Station aktif", { body: "Dering chat sudah diaktifkan pada browser ini." }); } catch (_) {}
+      try { new Notification("Notifikasi Kicks Station aktif", { body: "Dering sudah diaktifkan pada browser ini." }); } catch (_) {}
     }
   } catch (error) {
     console.warn("Gagal mengaktifkan notifikasi chat:", error);
@@ -1990,6 +2064,7 @@ async function enableAdminChatNotifications() {
     if (status) status.textContent = "Tidak bisa mengaktifkan audio. Coba klik tombol ini lagi.";
   }
 }
+ksApplySoundSwitch();
 function ksChatEsc(value) {
   const node = document.createElement('span');
   node.textContent = String(value ?? '');
@@ -2008,6 +2083,7 @@ async function refreshAdminConversations() {
     const badge = document.getElementById('chat-unread-badge');
     badge.textContent = String(unread);
     badge.classList.toggle('hidden', unread < 1);
+    if (typeof ksUpdateAlertDot === 'function') ksUpdateAlertDot();
     if (ksChatHasInitialUnreadSnapshot && unread > ksChatKnownUnread) {
       ksChatPlaySound();
       try { if ('vibrate' in navigator && ksChatNotificationsEnabled) navigator.vibrate([180, 80, 180]); } catch (_) {}
@@ -2036,6 +2112,73 @@ document.getElementById('admin-chat-conversations').addEventListener('click', ev
   const button = event.target.closest('button[data-chat-id]');
   if (button) selectAdminConversation(button.dataset.chatId, button.dataset.chatName);
 });
+let ksChatMessageCache = [];
+let ksChatEditingId = null;
+function ksChatTime(value) { return ksChatEsc(new Date(value).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })); }
+function ksChatBubbleHTML(message) {
+  const id = Number(message.id);
+  const mine = message.sender === 'admin';
+  const side = mine ? 'justify-end' : 'justify-start';
+  const cls = 'max-w-[85%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap break-words ' + (mine ? 'bg-neutral-900 text-white' : 'bg-white border');
+  if (message.deleted_at) return `<div class="flex ${side}"><div class="${cls}"><i class="opacity-70">Pesan ini telah dihapus</i><div class="text-[10px] opacity-60 mt-1">${ksChatTime(message.created_at)}</div></div></div>`;
+  if (id === ksChatEditingId) return `<div class="flex ${side}"><div class="${cls}" style="width:min(85%,420px)"><textarea id="ks-edit-input" class="ks-edit-input" maxlength="2000">${ksChatEsc(message.message)}</textarea><div class="ks-msg-actions"><button type="button" data-msg-save="${id}">Simpan</button><button type="button" data-msg-cancel="${id}">Batal</button></div></div></div>`;
+  const edited = message.edited_at ? ' • diedit' : '';
+  return `<div class="flex ${side}"><div class="${cls}">${ksChatEsc(message.message)}<div class="text-[10px] opacity-60 mt-1">${ksChatTime(message.created_at)}${edited}</div><div class="ks-msg-actions">${mine ? `<button type="button" data-msg-edit="${id}">Edit</button>` : ''}<button type="button" data-msg-del="${id}">Hapus</button></div></div></div>`;
+}
+function ksChatRenderMessages(scrollToEnd = true) {
+  const box = document.getElementById('admin-chat-messages');
+  box.innerHTML = ksChatMessageCache.map(ksChatBubbleHTML).join('') || '<p class="text-sm text-neutral-500">Belum ada pesan.</p>';
+  if (scrollToEnd) box.scrollTop = box.scrollHeight;
+}
+document.getElementById('admin-chat-messages').addEventListener('click', async event => {
+  const button = event.target.closest('button[data-msg-edit],button[data-msg-del],button[data-msg-save],button[data-msg-cancel]');
+  if (!button) return;
+  const d = button.dataset;
+  if (d.msgEdit) {
+    ksChatEditingId = Number(d.msgEdit); ksChatRenderMessages(false);
+    const input = document.getElementById('ks-edit-input'); if (input) { input.focus(); input.setSelectionRange(input.value.length, input.value.length); }
+    return;
+  }
+  if (d.msgCancel) { ksChatEditingId = null; ksChatRenderMessages(false); return; }
+  try {
+    if (d.msgSave) {
+      const text = (document.getElementById('ks-edit-input')?.value || '').trim();
+      if (!text) { showToast('Pesan tidak boleh kosong.', 'error'); return; }
+      button.disabled = true;
+      const response = await authFetch(`${KS_CHAT_API}/api/admin/chat/messages`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ message_id: Number(d.msgSave), message: text }) });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.message || 'Gagal menyimpan perubahan.');
+      ksChatEditingId = null;
+    } else if (d.msgDel) {
+      if (!confirm('Hapus pesan ini untuk semua orang? Isi pesan akan dihapus permanen.')) return;
+      const response = await authFetch(`${KS_CHAT_API}/api/admin/chat/messages?message_id=${encodeURIComponent(d.msgDel)}`, { method: 'DELETE' });
+      const data = await response.json();
+      if (!response.ok || !data.success) throw new Error(data.message || 'Gagal menghapus pesan.');
+    }
+    ksChatMessagesSignature = '';
+    await loadAdminChatMessages();
+    await refreshAdminConversations();
+  } catch (error) { showToast(error.message || 'Gagal memproses pesan.', 'error'); button.disabled = false; }
+});
+document.getElementById('admin-chat-delete-conv').addEventListener('click', async () => {
+  if (!ksChatActiveId) return;
+  const name = document.getElementById('admin-chat-active-title').textContent || 'pelanggan ini';
+  if (!confirm(`Hapus seluruh obrolan dengan ${name}? Semua pesan dihapus permanen dan tidak bisa dikembalikan.`)) return;
+  try {
+    const response = await authFetch(`${KS_CHAT_API}/api/admin/chat/conversations?conversation_id=${encodeURIComponent(ksChatActiveId)}`, { method: 'DELETE' });
+    const data = await response.json();
+    if (!response.ok || !data.success) throw new Error(data.message || 'Gagal menghapus obrolan.');
+    ksChatActiveId = ''; ksChatEditingId = null; ksChatMessageCache = [];
+    ksChatMessagesSignature = ''; ksChatConversationSignature = '';
+    document.getElementById('admin-chat-active-title').textContent = 'Pilih percakapan';
+    document.getElementById('admin-chat-messages').innerHTML = '<p class="text-sm text-neutral-500">Belum ada percakapan dipilih.</p>';
+    const input = document.getElementById('admin-chat-input'); input.value = ''; input.disabled = true;
+    document.getElementById('admin-chat-send').disabled = true;
+    document.getElementById('admin-chat-delete-conv').classList.add('hidden');
+    await refreshAdminConversations();
+    showToast('Obrolan dihapus.', 'success');
+  } catch (error) { showToast(error.message || 'Gagal menghapus obrolan.', 'error'); }
+});
 async function selectAdminConversation(id, name) {
   ksChatActiveId = String(id);
   ksChatMessagesSignature = '';
@@ -2043,11 +2186,13 @@ async function selectAdminConversation(id, name) {
   document.getElementById('admin-chat-active-title') .textContent = name || 'Pelanggan';
   document.getElementById('admin-chat-input').disabled = false;
   document.getElementById('admin-chat-send').disabled = false;
+  document.getElementById('admin-chat-delete-conv').classList.remove('hidden');
+  ksChatEditingId = null;
   await loadAdminChatMessages();
   await refreshAdminConversations();
 }
 async function loadAdminChatMessages() {
-  if (!ksChatActiveId) return;
+  if (!ksChatActiveId || ksChatEditingId !== null) return;
   try {
     const response = await authFetch(`${KS_CHAT_API}/api/admin/chat/messages?conversation_id=${encodeURIComponent(ksChatActiveId)}`);
     const data = await response.json();
@@ -2057,7 +2202,8 @@ async function loadAdminChatMessages() {
     const signature = JSON.stringify(messages);
     if (signature === ksChatMessagesSignature) return;
     ksChatMessagesSignature = signature;
-    box.innerHTML = messages.map(message => `<div class="flex ${message.sender === 'admin' ? 'justify-end' : 'justify-start'}"><div class="max-w-[85%] rounded-lg px-3 py-2 text-sm whitespace-pre-wrap break-words ${message.sender === 'admin' ? 'bg-neutral-900 text-white' : 'bg-white border'}">${ksChatEsc(message.message)}<div class="text-[10px] opacity-60 mt-1">${ksChatEsc(new Date(message.created_at).toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }))}</div></div></div>`).join('') || '<p class="text-sm text-neutral-500">Belum ada pesan.</p>';
+    ksChatMessageCache = messages;
+    ksChatRenderMessages();
     box.scrollTop = box.scrollHeight;
   } catch (error) { console.error('Isi chat gagal dimuat:', error); }
 }
@@ -2159,5 +2305,161 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
 }
 </script>
 
+<script>
+// ===== Pesanan masuk: badge, dering, konfirmasi lewat chat =====
+const KS_PENDING_STATUSES = ["baru", "wa_baru", "dibayar"];
+let ksPendingIds = null;          // null = belum ada snapshot pertama (tidak berdering)
+let ksOrderPolling = false;
+let ksOrderTick = 0;
+
+function ksUpdateAlertDot() {
+    const dot = document.getElementById("menu-alert-dot"); if (!dot) return;
+    const orderBadge = document.getElementById("order-pending-badge");
+    const chatBadge = document.getElementById("chat-unread-badge");
+    const orders = orderBadge && !orderBadge.classList.contains("hidden");
+    const chats = chatBadge && !chatBadge.classList.contains("hidden");
+    dot.classList.toggle("hidden", !(orders || chats));
+}
+function ksSetOrderBadge(count) {
+    const badge = document.getElementById("order-pending-badge"); if (!badge) return;
+    badge.textContent = count > 99 ? "99+" : String(count);
+    badge.classList.toggle("hidden", count < 1);
+    ksUpdateAlertDot();
+}
+function ksAnnounceOrders(fresh) {
+    ksPlaySound("order");
+    try { if ("vibrate" in navigator && ksChatNotificationsEnabled) navigator.vibrate([250, 100, 250]); } catch (_) {}
+    const first = fresh[0];
+    const text = fresh.length > 1
+        ? `${fresh.length} pesanan baru masuk`
+        : `Pesanan baru #${first.id}${first.customer_name ? " · " + first.customer_name : ""} · ${formatRupiah(first.total)}`;
+    showToast(text, "success");
+    if (document.hidden && "Notification" in window && Notification.permission === "granted") {
+        try { new Notification("Pesanan masuk — Kicks Station", { body: text, icon: "./icons/icon-192.png", tag: "kicks-order-new" }); } catch (_) {}
+    }
+    const page = document.getElementById("page-pesanan");
+    if (page && !page.classList.contains("hidden") && typeof loadOrders === "function") loadOrders();
+}
+async function ksRefreshOrderPending() {
+    if (!adminToken || ksOrderPolling) return;
+    ksOrderPolling = true;
+    try {
+        const response = await authFetch(`${API_URL}/api/admin/orders/pending`);
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || "Gagal memuat ringkasan pesanan.");
+        const list = Array.isArray(data.pending) ? data.pending : [];
+        ksSetOrderBadge(Number(data.pending_count || 0));
+        const before = ksPendingIds;
+        ksPendingIds = new Set(list.map(o => Number(o.id)));
+        if (before) {
+            const fresh = list.filter(o => !before.has(Number(o.id)));
+            if (fresh.length) ksAnnounceOrders(fresh);
+        }
+    } catch (error) { console.warn("Ringkasan pesanan gagal:", error.message || error); }
+    finally { ksOrderPolling = false; }
+}
+setTimeout(ksRefreshOrderPending, 1500);
+setInterval(() => {
+    ksOrderTick += 1;
+    // Tab terlihat: tiap 20 dtk. Tab di latar: tiap ~60 dtk supaya hemat.
+    if (document.hidden && ksOrderTick % 3 !== 0) return;
+    ksRefreshOrderPending();
+}, 20000);
+document.addEventListener("visibilitychange", () => { if (!document.hidden) ksRefreshOrderPending(); });
+
+// ----- Template konfirmasi pesanan -----
+function ksOrderAddress(order) {
+    const match = /^Alamat:\s*(.+)$/mi.exec(String(order.keterangan || ""));
+    return match ? match[1].trim() : "";
+}
+function ksOrderTemplate(order) {
+    const items = Array.isArray(order.items) ? order.items : [];
+    const name = String(order.customer_name || "").trim();
+    const shipping = Number(order.shipping_fee || 0);
+    const subtotal = items.reduce((sum, it) => sum + Number(it.price || 0) * Number(it.qty || 0), 0);
+    const build = compact => {
+        const lines = [];
+        lines.push(`Halo kak${name ? " " + name : ""}, terima kasih sudah berbelanja di Kicks Station.`);
+        lines.push(`Kami ingin memastikan pesanan #${order.id} berikut sudah benar:`);
+        lines.push("");
+        items.forEach((it, i) => {
+            const qty = Number(it.qty || 0), price = Number(it.price || 0);
+            if (compact) { lines.push(`${i + 1}. ${it.name}${it.size ? " (" + it.size + ")" : ""} x${qty} = ${formatRupiah(price * qty)}`); return; }
+            lines.push(`${i + 1}. ${it.name}`);
+            if (it.size) lines.push(`   • Ukuran: ${it.size}`);
+            lines.push(`   • Jumlah: ${qty} pcs`);
+            lines.push(`   • Harga: ${formatRupiah(price * qty)}`);
+            lines.push("");
+        });
+        if (compact) lines.push("");
+        if (shipping > 0) { lines.push(`Subtotal: ${formatRupiah(subtotal)}`); lines.push(`Ongkir: ${formatRupiah(shipping)}`); }
+        lines.push(`Total: ${formatRupiah(order.total)}`);
+        const address = ksOrderAddress(order);
+        if (address) { lines.push(""); lines.push(`Alamat pengiriman: ${address}`); }
+        lines.push("");
+        lines.push('Apakah benar kakak ingin memesan barang di atas? Mohon balas "YA" untuk konfirmasi, atau beri tahu kami jika ada yang ingin diubah (ukuran, jumlah, atau alamat).');
+        return lines.join("\n");
+    };
+    const full = build(false);
+    return full.length <= 2000 ? full : build(true).slice(0, 2000);
+}
+function ksWhatsAppNumber(phone) {
+    let digits = String(phone || "").replace(/\D/g, "");
+    if (digits.startsWith("0")) digits = "62" + digits.slice(1);
+    return /^628\d{8,12}$/.test(digits) ? digits : "";
+}
+
+let ksConfirmOrder = null;
+function openOrderConfirm(id) {
+    const order = window.ksOrdersById && window.ksOrdersById.get(Number(id));
+    if (!order) return;
+    ksConfirmOrder = order;
+    const who = [order.customer_name, order.customer_phone].filter(Boolean).join(" · ");
+    document.getElementById("order-confirm-title").textContent = `Konfirmasi pesanan #${order.id}`;
+    document.getElementById("order-confirm-sub").textContent = who || "Data pelanggan belum tercatat";
+    document.getElementById("order-confirm-text").value = ksOrderTemplate(order);
+    const hasChat = order.chat_conversation_id != null;
+    const wa = ksWhatsAppNumber(order.customer_phone);
+    document.getElementById("order-confirm-chatinfo").textContent = hasChat
+        ? "Chat pelanggan tersambung. Pesan akan masuk ke chat di website pelanggan."
+        : "Pelanggan ini belum punya chat yang tersambung ke pesanan" + (wa ? ", gunakan WhatsApp." : ".");
+    document.getElementById("order-confirm-send").disabled = !hasChat;
+    document.getElementById("order-confirm-open").classList.toggle("hidden", !hasChat);
+    document.getElementById("order-confirm-wa").classList.toggle("hidden", !wa);
+    const modal = document.getElementById("order-confirm-modal");
+    modal.classList.remove("hidden"); modal.classList.add("flex");
+}
+function closeOrderConfirm() {
+    const modal = document.getElementById("order-confirm-modal");
+    modal.classList.add("hidden"); modal.classList.remove("flex");
+    ksConfirmOrder = null;
+}
+async function sendOrderConfirmToChat() {
+    const order = ksConfirmOrder; if (!order || order.chat_conversation_id == null) return;
+    const message = document.getElementById("order-confirm-text").value.trim();
+    if (!message) { showToast("Pesan tidak boleh kosong.", "error"); return; }
+    const button = document.getElementById("order-confirm-send"); button.disabled = true;
+    try {
+        const response = await authFetch(`${API_URL}/api/admin/chat/messages`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ conversation_id: Number(order.chat_conversation_id), message }) });
+        const data = await response.json();
+        if (!response.ok || !data.success) throw new Error(data.message || "Pesan gagal dikirim.");
+        showToast("Pesan konfirmasi terkirim ke chat pelanggan.", "success");
+        closeOrderConfirm();
+    } catch (error) { showToast(error.message || "Pesan gagal dikirim.", "error"); button.disabled = false; }
+}
+async function openOrderConfirmChat() {
+    const order = ksConfirmOrder; if (!order || order.chat_conversation_id == null) return;
+    const id = order.chat_conversation_id, name = order.customer_name || "Pelanggan";
+    closeOrderConfirm();
+    await openAdminChat();
+    await selectAdminConversation(String(id), name);
+}
+function sendOrderConfirmWhatsApp() {
+    const order = ksConfirmOrder; if (!order) return;
+    const number = ksWhatsAppNumber(order.customer_phone); if (!number) return;
+    const text = document.getElementById("order-confirm-text").value.trim();
+    window.open(`https://wa.me/${number}?text=${encodeURIComponent(text)}`, "_blank", "noopener");
+}
+</script>
 </body>
 </html>

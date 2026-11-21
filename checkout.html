@@ -64,6 +64,17 @@ textarea{min-height:96px;resize:vertical}input:focus,textarea:focus{outline:2px 
   try { cart = JSON.parse(localStorage.getItem("ks_cart") || "[]"); } catch (e) {}
   cart = cart.filter(function (i) { return i && i.name && Number(i.qty) > 0; });
 
+  // Sambungkan pesanan ke chat pelanggan (ID/token sama dengan widget chat di index.html).
+  function chatIds() {
+    try {
+      var id = localStorage.getItem("ks_chat_conversation_id") || "", tk = localStorage.getItem("ks_chat_visitor_token") || "";
+      if (!/^[a-f0-9]{64}$/i.test(tk)) { tk = ""; id = ""; }
+      if (!tk) { var b = new Uint8Array(32); crypto.getRandomValues(b); tk = Array.prototype.map.call(b, function (x) { return ("0" + x.toString(16)).slice(-2); }).join(""); localStorage.setItem("ks_chat_visitor_token", tk); }
+      if (!id) { id = "ks_" + (crypto.randomUUID ? crypto.randomUUID().replace(/-/g, "") : Date.now().toString(36) + Math.random().toString(36).slice(2)); localStorage.setItem("ks_chat_conversation_id", id); }
+      return { id: id, token: tk };
+    } catch (e) { return null; }
+  }
+
   function el(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
   function say(text, kind) { var m = $("msg"); m.textContent = text || ""; m.className = "msg " + (kind || ""); }
 
@@ -112,9 +123,10 @@ textarea{min-height:96px;resize:vertical}input:focus,textarea:focus{outline:2px 
     d.appendChild(el("p", "", "Nomor pesanan: " + orderId));
     try { localStorage.setItem("ks_last_order", String(orderId)); } catch (e) {}
     d.appendChild(el("p", "", kind === "paid"
-      ? "Terima kasih! Admin akan menghubungi lewat WhatsApp untuk konfirmasi pengiriman."
+      ? "Terima kasih! Admin akan mengonfirmasi pesananmu lewat chat di website, dan menghubungi lewat WhatsApp bila perlu."
       : "Selesaikan pembayaran sebelum batas waktu. Status pesanan diperbarui otomatis setelah pembayaran diterima."));
     d.appendChild(el("p", "", "Setelah barang diterima dan pesanan ditandai selesai, kamu bisa menulis ulasan di halaman Ulasan. Simpan nomor pesanan ini."));
+    var c = el("a", "", "Buka chat dengan admin"); c.href = "index.html?chat=1"; d.appendChild(c); d.appendChild(document.createTextNode(" "));
     var a = el("a", "", "Kembali ke toko"); a.href = "index.html"; d.appendChild(a);
   }
 
@@ -160,6 +172,7 @@ textarea{min-height:96px;resize:vertical}input:focus,textarea:focus{outline:2px 
       name: $("name").value.trim(), phone: $("phone").value.trim(), address: $("address").value.trim(),
       referral: /^[a-z0-9_-]{2,30}$/.test(ref) ? ref : "",
       cf_token: cfToken,
+      chat_conversation_id: (chatIds() || {}).id || "", chat_visitor_token: (chatIds() || {}).token || "",
       items: cart.map(function (i) { return { name: i.name, size: i.size || "", qty: Number(i.qty), price: Number(i.price) }; })
     };
     if (payload.name.length < 2) return say("Nama lengkap wajib diisi.", "err");

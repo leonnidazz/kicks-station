@@ -39,7 +39,7 @@ function ensureColumns(d) {
                 "customer_name TEXT DEFAULT ''", "customer_phone TEXT DEFAULT ''",
                 "shipping_fee NUMERIC DEFAULT 0", "midtrans_order_id TEXT",
                 "payment_status TEXT DEFAULT ''", "payment_type TEXT DEFAULT ''",
-                "snap_token TEXT", "paid_at TIMESTAMPTZ",
+                "snap_token TEXT", "paid_at TIMESTAMPTZ", "chat_conversation_token TEXT",
             ]) await d.pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS ${col}`);
         })().catch((e) => { columnsReady = null; throw e; });
     }
@@ -100,6 +100,13 @@ async function handlePaymentRoutes(req, res, pathname, d) {
                 [order.referral, JSON.stringify(order.items), gross, note, name, phone, shipping]
             );
             const rowId = ins.rows[0].id;
+            // Hubungkan pesanan ke chat pelanggan agar admin bisa konfirmasi lewat chat.
+            // Kegagalan di sini tidak boleh menggagalkan checkout.
+            if (body.chat_conversation_id && body.chat_visitor_token && d.linkOrderToChat) {
+                try {
+                    await d.linkOrderToChat(rowId, body.chat_conversation_id, body.chat_visitor_token, name, order.referral);
+                } catch (e) { console.warn("Tautan chat pesanan gagal:", e.message); }
+            }
             const midtransOrderId = `KS-${rowId}-${Date.now().toString(36)}`;
 
             const snapRes = await fetch(`${base()}/snap/v1/transactions`, {
@@ -142,7 +149,7 @@ async function handlePaymentRoutes(req, res, pathname, d) {
                 sendJSON(res, 403, { success: false });
                 return true;
             }
-            const row = (await pool.query(`SELECT id, total FROM orders WHERE midtrans_order_id=$1`, [String(b.order_id)])).rows[0];
+            const row = (await pool.query(`SELECT id, total, status FROM orders WHERE midtrans_order_id=$1`, [String(b.order_id)])).rows[0];
             if (!row || Math.round(Number(b.gross_amount)) !== Math.round(Number(row.total))) {
                 sendJSON(res, 404, { success: false });
                 return true;
@@ -161,6 +168,10 @@ async function handlePaymentRoutes(req, res, pathname, d) {
                      WHERE id=$1 AND NOT (status IN ('dibayar','diproses','selesai','batal') AND $2::text IN ('menunggu_pembayaran','kedaluwarsa','dibatalkan'))`,
                     [row.id, status, String(pay).slice(0, 40), String(b.payment_type || "").slice(0, 40)]
                 );
+                // Beri tahu admin hanya saat pesanan BARU menjadi lunas (notifikasi Midtrans bisa berulang).
+                if (status === "dibayar" && !["dibayar", "diproses", "selesai"].includes(row.status) && d.notifyAdminOfOrder) {
+                    d.notifyAdminOfOrder(row.id).catch((e) => console.warn("Notifikasi pesanan tidak terkirim:", e.message));
+                }
             }
             sendJSON(res, 200, { success: true });
         } catch (error) {

@@ -1198,6 +1198,14 @@ async function ensureOrdersTableOnce() {
 
     
     await pool.query(`ALTER TABLE orders ADD COLUMN IF NOT EXISTS keterangan TEXT DEFAULT ''`);
+    // Kolom ini juga ditambah payment.js/reviews.js; dipastikan ada di sini agar daftar pesanan admin aman.
+    await pool.query(`ALTER TABLE orders
+        ADD COLUMN IF NOT EXISTS customer_name TEXT DEFAULT '',
+        ADD COLUMN IF NOT EXISTS customer_phone TEXT DEFAULT '',
+        ADD COLUMN IF NOT EXISTS shipping_fee NUMERIC DEFAULT 0,
+        ADD COLUMN IF NOT EXISTS payment_status TEXT DEFAULT '',
+        ADD COLUMN IF NOT EXISTS paid_at TIMESTAMPTZ,
+        ADD COLUMN IF NOT EXISTS chat_conversation_token TEXT`);
     await pool.query(`ALTER TABLE orders ENABLE ROW LEVEL SECURITY`);
     await lockDownTables(["public.orders"]);
 }
@@ -1210,9 +1218,19 @@ function mapOrder(row) {
         items: Array.isArray(row.items) ? row.items : [],
         total: Number(row.total || 0),
         status: row.status || "baru",
-        keterangan: row.keterangan || ""
+        keterangan: row.keterangan || "",
+        customer_name: row.customer_name || "",
+        customer_phone: row.customer_phone || "",
+        shipping_fee: Number(row.shipping_fee || 0),
+        payment_status: row.payment_status || "",
+        paid_at: row.paid_at || null,
+        chat_conversation_id: row.chat_conversation_id == null ? null : Number(row.chat_conversation_id),
+        chat_unread: Number(row.chat_unread || 0)
     };
 }
+
+// Status pesanan yang masih menunggu tindakan admin: dasar angka badge "Pesanan Masuk".
+const PENDING_ORDER_STATUSES = ["baru", "wa_baru", "dibayar"];
 
 // Pesanan dari alur WhatsApp lama tidak melewati pembayaran, jadi diberi status
 // terpisah ('wa_baru') agar tidak tercampur dengan pesanan Midtrans yang lunas.
@@ -1229,11 +1247,74 @@ async function createOrder(order, status = "wa_baru") {
 
 async function getOrders() {
     await ensureOrdersTable();
+    await ensureChatTable();
     const result = await pool.query(
-        `SELECT id, created_at, referral, items, total, status, keterangan
-         FROM orders ORDER BY created_at DESC, id DESC`
+        `SELECT o.id, o.created_at, o.referral, o.items, o.total, o.status, o.keterangan,
+                o.customer_name, o.customer_phone, o.shipping_fee, o.payment_status, o.paid_at,
+                c.id AS chat_conversation_id,
+                (SELECT COUNT(*)::int FROM public.chat_messages m
+                 WHERE m.conversation_id = c.id AND m.sender = 'customer'
+                   AND m.read_at IS NULL AND m.deleted_at IS NULL) AS chat_unread
+         FROM orders o
+         LEFT JOIN public.chat_conversations c ON c.conversation_token = o.chat_conversation_token
+         ORDER BY o.created_at DESC, o.id DESC`
     );
     return result.rows.map(mapOrder);
+}
+
+async function getPendingOrders() {
+    await ensureOrdersTable();
+    const [count, rows] = await Promise.all([
+        pool.query(`SELECT COUNT(*)::int AS n FROM orders WHERE status = ANY($1::text[])`, [PENDING_ORDER_STATUSES]),
+        pool.query(
+            `SELECT id, created_at, total, status, customer_name,
+                    CASE WHEN jsonb_typeof(items) = 'array' THEN jsonb_array_length(items) ELSE 0 END AS item_count
+             FROM orders WHERE status = ANY($1::text[]) ORDER BY id DESC LIMIT 100`,
+            [PENDING_ORDER_STATUSES]
+        )
+    ]);
+    return {
+        pending_count: Number(count.rows[0]?.n || 0),
+        pending: rows.rows.map(row => ({
+            id: Number(row.id),
+            created_at: row.created_at,
+            total: Number(row.total || 0),
+            status: row.status || "",
+            customer_name: row.customer_name || "",
+            item_count: Number(row.item_count || 0)
+        }))
+    };
+}
+
+// Hubungkan pesanan ke percakapan chat pelanggan (dibuat jika belum ada), supaya admin
+// bisa mengonfirmasi pesanan lewat chat. Token pengunjung tetap diverifikasi.
+function sha256Hex(value) { return crypto.createHash("sha256").update(value).digest("hex"); }
+async function linkOrderToChat(orderId, publicId, visitorToken, customerName, referral) {
+    publicId = String(publicId || "").trim();
+    visitorToken = String(visitorToken || "").trim();
+    if (!/^[a-zA-Z0-9_-]{12,100}$/.test(publicId) || !/^[a-f0-9]{64}$/i.test(visitorToken)) return false;
+    await ensureChatTable();
+    const tokenHash = sha256Hex(visitorToken);
+    const name = String(customerName || "Pelanggan").trim().slice(0, 60) || "Pelanggan";
+    await pool.query(
+        `INSERT INTO public.chat_conversations
+            (visitor_id, conversation_token, visitor_name, customer_name, referral, visitor_token_hash)
+         VALUES ($1, $1, $2, $2, $3, $4)
+         ON CONFLICT (conversation_token) DO NOTHING`,
+        [publicId, name, String(referral || "").slice(0, 100), tokenHash]
+    );
+    const owner = await pool.query(
+        `SELECT visitor_token_hash FROM public.chat_conversations WHERE conversation_token = $1`, [publicId]
+    );
+    const stored = Buffer.from(String(owner.rows[0]?.visitor_token_hash || ""), "hex");
+    const given = Buffer.from(tokenHash, "hex");
+    if (!owner.rowCount || stored.length !== given.length || !crypto.timingSafeEqual(stored, given)) return false;
+    await pool.query(
+        `UPDATE public.chat_conversations SET visitor_name = $2, customer_name = $2
+         WHERE conversation_token = $1 AND visitor_name = 'Pelanggan'`, [publicId, name]
+    );
+    await pool.query(`UPDATE orders SET chat_conversation_token = $2 WHERE id = $1`, [orderId, publicId]);
+    return true;
 }
 
 async function updateOrderStatus(id, status, keterangan) {
@@ -1496,6 +1577,17 @@ async function ensureChatTableOnce() {
         )
     `);
     await pool.query(`CREATE INDEX IF NOT EXISTS chat_messages_conversation_idx ON public.chat_messages(conversation_id, id)`);
+    // Edit/hapus pesan (hapus = isi dikosongkan, baris tetap ada sebagai "Pesan dihapus")
+    // dan "hapus obrolan" di sisi pelanggan (hanya menyembunyikan riwayat dari tampilannya).
+    await pool.query(`
+        ALTER TABLE public.chat_messages
+        ADD COLUMN IF NOT EXISTS edited_at TIMESTAMPTZ,
+        ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMPTZ
+    `);
+    await pool.query(`
+        ALTER TABLE public.chat_conversations
+        ADD COLUMN IF NOT EXISTS customer_cleared_before BIGINT NOT NULL DEFAULT 0
+    `);
     await pool.query(`
         CREATE TABLE IF NOT EXISTS public.chat_push_subscriptions (
             id BIGSERIAL PRIMARY KEY,
@@ -1537,6 +1629,39 @@ async function notifyAdminOfCustomerMessage(publicConversationId, message) {
                 await pool.query(`DELETE FROM public.chat_push_subscriptions WHERE id = $1`, [row.id]).catch(() => {});
             } else {
                 console.warn("Pengiriman Web Push gagal:", statusCode || error.message);
+            }
+        }
+    }));
+}
+
+// Push ke semua perangkat admin saat ada pesanan masuk (baru dicatat atau baru dibayar).
+async function notifyAdminOfOrder(orderId) {
+    if (!webPushConfigured || !pool) return;
+    await ensureChatTable();
+    const [orderResult, subscriptionsResult] = await Promise.all([
+        pool.query(`SELECT id, total, customer_name, items FROM orders WHERE id = $1`, [orderId]),
+        pool.query(`SELECT id, endpoint, subscription FROM public.chat_push_subscriptions`)
+    ]);
+    if (!orderResult.rowCount || !subscriptionsResult.rowCount) return;
+    const order = orderResult.rows[0];
+    const qty = Array.isArray(order.items) ? order.items.reduce((sum, item) => sum + Number(item?.qty || 0), 0) : 0;
+    const who = String(order.customer_name || "").trim().slice(0, 60);
+    const total = "Rp" + Math.round(Number(order.total || 0)).toLocaleString("id-ID");
+    const payload = JSON.stringify({
+        title: "Pesanan masuk — Kicks Station",
+        body: `#${order.id}${who ? " · " + who : ""} · ${qty} item · ${total}`,
+        url: "./admin.html?openOrders=1",
+        tag: `kicks-order-${order.id}`
+    });
+    await Promise.all(subscriptionsResult.rows.map(async row => {
+        try {
+            await webpush.sendNotification(row.subscription, payload, { TTL: 300, urgency: "high" });
+        } catch (error) {
+            const statusCode = Number(error.statusCode || error.status || 0);
+            if (statusCode === 404 || statusCode === 410) {
+                await pool.query(`DELETE FROM public.chat_push_subscriptions WHERE id = $1`, [row.id]).catch(() => {});
+            } else {
+                console.warn("Pengiriman Web Push pesanan gagal:", statusCode || error.message);
             }
         }
     }));
@@ -1704,6 +1829,7 @@ const server = http.createServer(async (req, res) => {
         if (await handlePaymentRoutes(req, res, pathname, {
             pool, sendJSON, readBody, getClientIP, isRateLimited, publicErrorMessage,
             validateOrderData, applyCatalogPrices, ensureOrdersTable,
+            linkOrderToChat, notifyAdminOfOrder,
         })) return;
 
         if (await handleReviewRoutes(req, res, pathname, {
@@ -1727,6 +1853,7 @@ const server = http.createServer(async (req, res) => {
                     validateOrderData(await readBody(req, 100 * 1024))
                 );
                 const savedOrder = await createOrder(order);
+                notifyAdminOfOrder(savedOrder.id).catch(error => console.warn("Notifikasi pesanan tidak terkirim:", error.message));
                 sendJSON(res, 201, { success:true, message:"Checkout berhasil dicatat.", order:{ id:Number(savedOrder.id), created_at:savedOrder.created_at, referral:savedOrder.referral || "", total:Number(savedOrder.total || 0), status:savedOrder.status } });
             } catch (error) {
                 console.error("Gagal menyimpan pesanan:", error);
@@ -2195,6 +2322,16 @@ const server = http.createServer(async (req, res) => {
         }
 
         // =====================================================
+        // RINGKASAN PESANAN MASUK (badge + dering) - ADMIN
+        // =====================================================
+        if (req.method === "GET" && pathname === "/api/admin/orders/pending") {
+            if (!requireAdmin(req, res)) return;
+            try { sendJSON(res, 200, { success:true, ...(await getPendingOrders()) }); }
+            catch (error) { console.error("Gagal mengambil ringkasan pesanan:", error); sendJSON(res, 500, { success:false, message:publicErrorMessage(error) || "Ringkasan pesanan tidak dapat diambil." }); }
+            return;
+        }
+
+        // =====================================================
         // GET SEMUA PESANAN - ADMIN
         // =====================================================
         if (req.method === "GET" && pathname === "/api/orders") {
@@ -2323,10 +2460,10 @@ const server = http.createServer(async (req, res) => {
                 const result = await pool.query(
                     `SELECT c.id, c.customer_name, c.visitor_name, c.referral, c.status,
                             c.created_at, c.last_message_at,
-                            (SELECT m.message FROM public.chat_messages m
+                            (SELECT CASE WHEN m.deleted_at IS NOT NULL THEN 'Pesan dihapus' ELSE m.message END FROM public.chat_messages m
                              WHERE m.conversation_id = c.id ORDER BY m.id DESC LIMIT 1) AS last_message,
                             (SELECT COUNT(*)::int FROM public.chat_messages m
-                             WHERE m.conversation_id = c.id AND m.sender = 'customer' AND m.read_at IS NULL) AS unread_admin
+                             WHERE m.conversation_id = c.id AND m.sender = 'customer' AND m.read_at IS NULL AND m.deleted_at IS NULL) AS unread_admin
                      FROM public.chat_conversations c
                      ORDER BY c.last_message_at DESC LIMIT 200`
                 );
@@ -2348,7 +2485,7 @@ const server = http.createServer(async (req, res) => {
                     return;
                 }
                 const result = await pool.query(
-                    `SELECT id, sender, message, created_at FROM public.chat_messages
+                    `SELECT id, sender, message, created_at, edited_at, deleted_at FROM public.chat_messages
                      WHERE conversation_id = $1 AND id > $2 ORDER BY id ASC LIMIT 300`, [id, afterId]
                 );
                 await pool.query(
@@ -2396,6 +2533,60 @@ const server = http.createServer(async (req, res) => {
                     try { await client.query("ROLLBACK"); } catch {}
                     throw error;
                 } finally { client.release(); }
+                return;
+            }
+
+            if (isAdminChatRoute && req.method === "PATCH" && pathname === "/api/admin/chat/messages") {
+                const data = await readBody(req, 8192);
+                const messageId = Number(data?.message_id);
+                const message = String(data?.message || "").trim();
+                if (!Number.isSafeInteger(messageId) || messageId <= 0 || !message || message.length > 2000) {
+                    sendJSON(res, 400, { success: false, message: "Pesan atau ID pesan tidak valid." });
+                    return;
+                }
+                const result = await pool.query(
+                    `UPDATE public.chat_messages SET message = $2, edited_at = NOW()
+                     WHERE id = $1 AND sender = 'admin' AND deleted_at IS NULL
+                     RETURNING id, sender, message, created_at, edited_at, deleted_at`, [messageId, message]
+                );
+                if (!result.rowCount) {
+                    sendJSON(res, 404, { success: false, message: "Pesan tidak ditemukan, sudah dihapus, atau bukan pesan admin." });
+                    return;
+                }
+                sendJSON(res, 200, { success: true, message: result.rows[0] });
+                return;
+            }
+
+            if (isAdminChatRoute && req.method === "DELETE" && pathname === "/api/admin/chat/messages") {
+                const messageId = Number(new URL(req.url, "http://localhost").searchParams.get("message_id"));
+                if (!Number.isSafeInteger(messageId) || messageId <= 0) {
+                    sendJSON(res, 400, { success: false, message: "ID pesan tidak valid." });
+                    return;
+                }
+                const result = await pool.query(
+                    `UPDATE public.chat_messages SET message = '', deleted_at = NOW(), read_at = COALESCE(read_at, NOW())
+                     WHERE id = $1 AND deleted_at IS NULL RETURNING id`, [messageId]
+                );
+                if (!result.rowCount) {
+                    sendJSON(res, 404, { success: false, message: "Pesan tidak ditemukan atau sudah dihapus." });
+                    return;
+                }
+                sendJSON(res, 200, { success: true, id: Number(result.rows[0].id) });
+                return;
+            }
+
+            if (isAdminChatRoute && req.method === "DELETE" && pathname === "/api/admin/chat/conversations") {
+                const id = Number(new URL(req.url, "http://localhost").searchParams.get("conversation_id"));
+                if (!Number.isSafeInteger(id) || id <= 0) {
+                    sendJSON(res, 400, { success: false, message: "ID percakapan tidak valid." });
+                    return;
+                }
+                const result = await pool.query(`DELETE FROM public.chat_conversations WHERE id = $1 RETURNING id`, [id]);
+                if (!result.rowCount) {
+                    sendJSON(res, 404, { success: false, message: "Percakapan tidak ditemukan." });
+                    return;
+                }
+                sendJSON(res, 200, { success: true, id: Number(result.rows[0].id) });
                 return;
             }
 
@@ -2471,7 +2662,7 @@ const server = http.createServer(async (req, res) => {
                     return;
                 }
                 const owner = await pool.query(
-                    `SELECT id, visitor_token_hash FROM public.chat_conversations WHERE conversation_token = $1`,
+                    `SELECT id, visitor_token_hash, customer_cleared_before FROM public.chat_conversations WHERE conversation_token = $1`,
                     [publicId]
                 );
                 if (!owner.rowCount || !tokenMatches(owner.rows[0].visitor_token_hash, hashVisitorToken(visitorToken))) {
@@ -2480,8 +2671,9 @@ const server = http.createServer(async (req, res) => {
                 }
                 const internalId = owner.rows[0].id;
                 const result = await pool.query(
-                    `SELECT id, sender, message, created_at FROM public.chat_messages
-                     WHERE conversation_id = $1 ORDER BY id ASC LIMIT 300`, [internalId]
+                    `SELECT id, sender, message, created_at, edited_at, deleted_at FROM public.chat_messages
+                     WHERE conversation_id = $1 AND id > $2::bigint ORDER BY id ASC LIMIT 300`,
+                    [internalId, owner.rows[0].customer_cleared_before || 0]
                 );
                 await pool.query(
                     `UPDATE public.chat_messages SET read_at = NOW()
@@ -2565,16 +2757,106 @@ const server = http.createServer(async (req, res) => {
                 return;
             }
 
+            const ownConversation = async (publicId, visitorToken) => {
+                if (!validPublicId(publicId) || !/^[a-f0-9]{64}$/i.test(visitorToken)) return null;
+                const owner = await pool.query(
+                    `SELECT id, visitor_token_hash FROM public.chat_conversations WHERE conversation_token = $1`, [publicId]
+                );
+                if (!owner.rowCount || !tokenMatches(owner.rows[0].visitor_token_hash, hashVisitorToken(visitorToken))) return null;
+                return owner.rows[0].id;
+            };
+
+            if (req.method === "PATCH" && pathname === "/api/chat/messages") {
+                if (isRateLimited(`chat-edit:${getClientIP(req)}`, 60, TEN_MINUTES)) {
+                    sendJSON(res, 429, { success: false, message: "Terlalu sering mengubah pesan. Coba lagi sebentar." });
+                    return;
+                }
+                const data = await readBody(req, 8192);
+                const messageId = Number(data?.message_id);
+                const message = String(data?.message || "").trim();
+                if (!Number.isSafeInteger(messageId) || messageId <= 0 || !message || message.length > 2000) {
+                    sendJSON(res, 400, { success: false, message: "Pesan tidak valid (maksimal 2000 karakter)." });
+                    return;
+                }
+                const internalId = await ownConversation(String(data?.conversation_id || "").trim(), String(data?.visitor_token || "").trim());
+                if (!internalId) { sendJSON(res, 403, { success: false, message: "Akses percakapan ditolak." }); return; }
+                // read_at dikosongkan agar admin melihat pesan yang diubah sebagai belum dibaca.
+                const result = await pool.query(
+                    `UPDATE public.chat_messages SET message = $3, edited_at = NOW(), read_at = NULL
+                     WHERE id = $1 AND conversation_id = $2 AND sender = 'customer' AND deleted_at IS NULL
+                     RETURNING id, sender, message, created_at, edited_at, deleted_at`, [messageId, internalId, message]
+                );
+                if (!result.rowCount) {
+                    sendJSON(res, 404, { success: false, message: "Pesan tidak ditemukan atau sudah dihapus." });
+                    return;
+                }
+                sendJSON(res, 200, { success: true, message: result.rows[0] });
+                return;
+            }
+
+            if (req.method === "DELETE" && pathname === "/api/chat/messages") {
+                if (isRateLimited(`chat-edit:${getClientIP(req)}`, 60, TEN_MINUTES)) {
+                    sendJSON(res, 429, { success: false, message: "Terlalu sering menghapus pesan. Coba lagi sebentar." });
+                    return;
+                }
+                const url = new URL(req.url, "http://localhost");
+                const messageId = Number(url.searchParams.get("message_id"));
+                if (!Number.isSafeInteger(messageId) || messageId <= 0) {
+                    sendJSON(res, 400, { success: false, message: "ID pesan tidak valid." });
+                    return;
+                }
+                const internalId = await ownConversation(
+                    String(url.searchParams.get("conversation_id") || "").trim(),
+                    String(req.headers["x-chat-token"] || "").trim()
+                );
+                if (!internalId) { sendJSON(res, 403, { success: false, message: "Akses percakapan ditolak." }); return; }
+                const result = await pool.query(
+                    `UPDATE public.chat_messages SET message = '', deleted_at = NOW(), read_at = COALESCE(read_at, NOW())
+                     WHERE id = $1 AND conversation_id = $2 AND sender = 'customer' AND deleted_at IS NULL RETURNING id`,
+                    [messageId, internalId]
+                );
+                if (!result.rowCount) {
+                    sendJSON(res, 404, { success: false, message: "Pesan tidak ditemukan atau sudah dihapus." });
+                    return;
+                }
+                sendJSON(res, 200, { success: true, id: Number(result.rows[0].id) });
+                return;
+            }
+
+            // "Hapus obrolan" dari sisi pelanggan: riwayat disembunyikan dari tampilannya saja.
+            // Arsip admin tetap ada, agar riwayat konfirmasi pesanan tidak hilang.
+            if (req.method === "POST" && pathname === "/api/chat/clear") {
+                if (isRateLimited(`chat-edit:${getClientIP(req)}`, 60, TEN_MINUTES)) {
+                    sendJSON(res, 429, { success: false, message: "Terlalu sering. Coba lagi sebentar." });
+                    return;
+                }
+                const data = await readBody(req, 4096);
+                const internalId = await ownConversation(String(data?.conversation_id || "").trim(), String(data?.visitor_token || "").trim());
+                if (!internalId) { sendJSON(res, 403, { success: false, message: "Akses percakapan ditolak." }); return; }
+                await pool.query(
+                    `UPDATE public.chat_conversations
+                     SET customer_cleared_before = COALESCE((SELECT MAX(id) FROM public.chat_messages WHERE conversation_id = $1), 0),
+                         unread_customer = 0
+                     WHERE id = $1`, [internalId]
+                );
+                await pool.query(
+                    `UPDATE public.chat_messages SET read_at = NOW()
+                     WHERE conversation_id = $1 AND sender = 'admin' AND read_at IS NULL`, [internalId]
+                );
+                sendJSON(res, 200, { success: true });
+                return;
+            }
+
             if (req.method === "GET" && pathname === "/api/chat/conversations") {
                 const result = await pool.query(
                     `SELECT c.conversation_token AS id, c.conversation_token, c.visitor_name,
                             c.referral, c.status, c.created_at, c.last_message_at,
-                            (SELECT m.message FROM public.chat_messages m
+                            (SELECT CASE WHEN m.deleted_at IS NOT NULL THEN 'Pesan dihapus' ELSE m.message END FROM public.chat_messages m
                              WHERE m.conversation_id = c.id ORDER BY m.id DESC LIMIT 1) AS last_message,
                             (SELECT COUNT(*)::int FROM public.chat_messages m
-                             WHERE m.conversation_id = c.id AND m.sender = 'customer' AND m.read_at IS NULL) AS unread_count,
+                             WHERE m.conversation_id = c.id AND m.sender = 'customer' AND m.read_at IS NULL AND m.deleted_at IS NULL) AS unread_count,
                             (SELECT COUNT(*)::int FROM public.chat_messages m
-                             WHERE m.conversation_id = c.id AND m.sender = 'customer' AND m.read_at IS NULL) AS unread_admin
+                             WHERE m.conversation_id = c.id AND m.sender = 'customer' AND m.read_at IS NULL AND m.deleted_at IS NULL) AS unread_admin
                      FROM public.chat_conversations c
                      ORDER BY c.last_message_at DESC LIMIT 200`
                 );
@@ -2597,7 +2879,7 @@ const server = http.createServer(async (req, res) => {
                 }
                 const internalId = conversation.rows[0].id;
                 const result = await pool.query(
-                    `SELECT id, sender, message, created_at FROM public.chat_messages
+                    `SELECT id, sender, message, created_at, edited_at, deleted_at FROM public.chat_messages
                      WHERE conversation_id = $1 ORDER BY id ASC LIMIT 300`, [internalId]
                 );
                 await pool.query(
