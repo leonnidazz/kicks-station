@@ -3118,7 +3118,7 @@ html.ks-chat-open, html.ks-chat-open body { overflow: hidden !important; overscr
    }catch(err){showError(err.message||'Obrolan gagal dihapus.');}
  };
  // Toko tidak memakai service worker. Hapus SW/cache lama (yang dulu ikut menyimpan halaman admin) dari perangkat pelanggan.
- if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});}).catch(function(){});if(window.caches){caches.keys().then(function(ks){ks.filter(function(k){return k.indexOf('kicks-station-shell-')===0;}).forEach(function(k){caches.delete(k);});}).catch(function(){});}}
+ if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});}).catch(function(){});}
 })();;
 </script>
 <script>
