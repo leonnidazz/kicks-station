@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kicks-station-shell-v9';
+const CACHE_NAME = 'kicks-station-shell-v10';
 const APP_SHELL = [
   './admin.html',
   './manifest.webmanifest',

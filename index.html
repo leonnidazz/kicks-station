@@ -2432,23 +2432,64 @@ html.ks-chat-open, html.ks-chat-open body { overflow: hidden !important; overscr
                     }
                 }
 
-                // Chrome Android menyamarkan model perangkat menjadi "K" di User-Agent.
-                // Model asli diminta lewat User-Agent Client Hints (tanpa izin pengguna),
-                // lalu dipasang kembali ke string UA agar admin bisa membacanya.
+                // Menentukan perangkat sebenarnya, walau UA-nya disamarkan:
+                //  1) Chrome Android menyamarkan model menjadi "K" -> model asli diminta lewat
+                //     User-Agent Client Hints (tanpa izin pengguna).
+                //  2) "Desktop site" di HP/tablet membuat UA terbaca komputer (Linux/Mac) ->
+                //     perangkat layar sentuh utama (pointer kasar, tanpa hover) dikenali sebagai
+                //     HP/tablet, dan UA ditulis ulang agar admin menampilkannya dengan benar.
+                // Mode incognito tidak memengaruhi ini. Model hanya bisa dibaca bila browser
+                // memberikannya; selain itu hanya jenis perangkat (HP/tablet) yang diketahui.
                 async function getRealUserAgent() {
                     const ua = navigator.userAgent;
                     try {
+                        const cleanModel = value => String(value || "").replace(/[^\w .+\-\/]/g, "").trim().slice(0, 40);
+                        const majorVersion = value => String(value || "").split(".")[0].replace(/\D/g, "");
                         const uad = navigator.userAgentData;
-                        if (!uad || typeof uad.getHighEntropyValues !== "function" || !/Android/i.test(ua)) return ua;
-                        const hints = await Promise.race([
-                            uad.getHighEntropyValues(["model", "platformVersion"]),
-                            new Promise(resolve => setTimeout(() => resolve(null), 1500))
-                        ]);
-                        if (!hints) return ua;
-                        const model = String(hints.model || "").replace(/[^\w .+\-\/]/g, "").trim().slice(0, 40);
-                        const version = String(hints.platformVersion || "").split(".")[0].replace(/\D/g, "");
-                        if (!model) return ua;
-                        return ua.replace(/(Android\s+)([\d.]+)(;\s*)([^;)]+)/i, (m, a, v, sep) => a + (version || v) + sep + model);
+                        const readHints = async () => {
+                            if (!uad || typeof uad.getHighEntropyValues !== "function") return null;
+                            return Promise.race([
+                                uad.getHighEntropyValues(["model", "platformVersion"]),
+                                new Promise(resolve => setTimeout(() => resolve(null), 1500))
+                            ]);
+                        };
+
+                        // Kasus 1: UA Android biasa (model tersamar "K")
+                        if (/Android/i.test(ua)) {
+                            const hints = await readHints();
+                            const model = cleanModel(hints && hints.model);
+                            const version = majorVersion(hints && hints.platformVersion);
+                            if (!model) return ua;
+                            return ua.replace(/(Android\s+)([\d.]+)(;\s*)([^;)]+)/i, (m, a, v, sep) => a + (version || v) + sep + model);
+                        }
+
+                        // Kasus 2: UA terbaca komputer, tetapi perangkat layar sentuh utama
+                        const coarseTouch =
+                            window.matchMedia &&
+                            window.matchMedia("(pointer: coarse) and (hover: none)").matches &&
+                            (navigator.maxTouchPoints || 0) > 0;
+                        if (!coarseTouch || /CrOS|iPhone|iPad|iPod/i.test(ua)) return ua;
+
+                        const shortSide = Math.min(screen.width || 0, screen.height || 0);
+                        const isPhone = !shortSide || shortSide < 600;
+
+                        if (/Macintosh/i.test(ua)) {
+                            const platform = isPhone
+                                ? "(iPhone; CPU iPhone OS like Mac OS X)"
+                                : "(iPad; CPU OS like Mac OS X)";
+                            return ua.replace(/\([^)]*\)/, platform) + " KS-DesktopMode";
+                        }
+
+                        if (/X11|Linux|Windows|Android/i.test(ua)) {
+                            const hints = await readHints();
+                            const model = cleanModel(hints && hints.model);
+                            const version = majorVersion(hints && hints.platformVersion);
+                            const platform = "(Linux; Android" + (version ? " " + version : "") + "; " + (model || (isPhone ? "Mobile" : "Tablet")) + ")";
+                            let rewritten = ua.replace(/\([^)]*\)/, platform);
+                            if (isPhone) rewritten = rewritten.replace(/Safari\//, "Mobile Safari/");
+                            return rewritten + " KS-DesktopMode";
+                        }
+                        return ua;
                     } catch (_) {
                         return ua;
                     }
