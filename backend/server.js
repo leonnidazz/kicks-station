@@ -26,6 +26,9 @@ const PORT = process.env.PORT || 3000;
 const PUBLIC_BASE_URL =
     process.env.RENDER_EXTERNAL_URL || "https://kicks-station.onrender.com";
 
+// Bot Telegram untuk upload produk (opsional). Aktif bila TELEGRAM_BOT_TOKEN diisi di Render.
+let telegramHandler = null;
+
 const SUPABASE_URL = String(process.env.SUPABASE_URL || "").replace(/\/+$/, "");
 const SUPABASE_SERVICE_ROLE_KEY = String(
     process.env.SUPABASE_SERVICE_ROLE_KEY || ""
@@ -1071,27 +1074,28 @@ function renumberProducts(products) {
     });
 }
 
-async function renumberDatabaseProducts(products) {
-    // Renumbering dilakukan dalam transaction agar tidak bentrok dengan
-    // primary key ketika ID 1,2,3,... berubah.
+async function renumberDatabaseProducts() {
+    // Merapikan ID menjadi 1..N sesuai urutan (upload_order, id) dengan 2 query
+    // saja (sebelumnya 2 query per produk, sehingga lambat saat produk banyak).
+    // Langkah 1 menggeser semua ID ke angka besar agar tidak bentrok primary key,
+    // langkah 2 memberi nomor baru berurutan.
     const client = await pool.connect();
 
     try {
         await client.query("BEGIN");
 
-        for (const product of products) {
-            await client.query(
-                "UPDATE products SET id=$2, upload_order=$3 WHERE id=$1",
-                [product._oldId, 1000000000 + product._oldId, product.upload_order]
-            );
-        }
+        await client.query("UPDATE products SET id = id + 1000000000");
 
-        for (const product of products) {
-            await client.query(
-                "UPDATE products SET id=$2, upload_order=$3 WHERE id=$1",
-                [1000000000 + product._oldId, product.id, product.upload_order]
-            );
-        }
+        await client.query(`
+            UPDATE products AS p
+            SET id = n.new_id, upload_order = n.new_id
+            FROM (
+                SELECT id,
+                       ROW_NUMBER() OVER (ORDER BY upload_order ASC, id ASC) AS new_id
+                FROM products
+            ) AS n
+            WHERE p.id = n.id
+        `);
 
         await client.query("COMMIT");
     } catch (error) {
@@ -1758,6 +1762,11 @@ const server = http.createServer(async (req, res) => {
                 message: "Kicks Station Backend berhasil berjalan!",
                 database: databaseReady ? "supabase" : "not-ready",
             });
+            return;
+        }
+
+        if (req.method === "POST" && pathname === "/telegram" && telegramHandler) {
+            telegramHandler(req, res);
             return;
         }
 
@@ -3076,4 +3085,18 @@ server.listen(PORT, () => {
     console.log(`Server berjalan di http://localhost:${PORT}`);
     console.log("Database: Supabase PostgreSQL");
     console.log(`Storage: Supabase bucket "${SUPABASE_BUCKET}"`);
+
+    if (process.env.TELEGRAM_BOT_TOKEN) {
+        import("./telegram/index.mjs")
+            .then(async (module) => {
+                const telegram = module.createTelegramBot({
+                    env: process.env,
+                    port: PORT,
+                    publicBaseUrl: PUBLIC_BASE_URL,
+                });
+                telegramHandler = telegram.handler;
+                await telegram.ready;
+            })
+            .catch((error) => console.error("[Telegram] Gagal memulai bot:", error.message));
+    }
 });
